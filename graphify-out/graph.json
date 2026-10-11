@@ -5439,8 +5439,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_orders_submissionrefview_from_ref",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".from_ref()"
     },
     {
@@ -5464,8 +5464,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_orders_servicelineview_from_line",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".from_line()"
     },
     {
@@ -5489,8 +5489,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_orders_consentview_from_consent",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".from_consent()"
     },
     {
@@ -5514,8 +5514,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_orders_totalpriceview_from_snapshot",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".from_snapshot()"
     },
     {
@@ -5539,8 +5539,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_orders_applicationstatuschangeview_from_change",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".from_change()"
     },
     {
@@ -5590,8 +5590,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_orders_applicationview_from_application",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".from_application()"
     },
     {
@@ -5628,8 +5628,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_orders_applicationoperationresultdto",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "applicationoperationresultdto"
     },
     {
@@ -5640,8 +5640,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_orders_applicationoperationresultdto_of",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".of()"
     },
     {
@@ -5651,8 +5651,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_orders_py_domainevent",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "domainevent"
     },
     {
@@ -5772,8 +5772,8 @@
       "source_location": "L254",
       "_origin": "ast",
       "id": "backend_apps_applications_application_dto_orders_rationale_254",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "the outcome of an order command: the affected application plus its events."
     },
     {
@@ -6139,8 +6139,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions_submissionstateconflicterror_init",
-      "community": 226,
-      "community_name": "Clock",
+      "community": 40,
+      "community_name": "translate_domain_errors",
       "norm_label": ".__init__()"
     },
     {
@@ -6164,8 +6164,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions_submissionchildnotfounderror_init",
-      "community": 226,
-      "community_name": "Clock",
+      "community": 40,
+      "community_name": "translate_domain_errors",
       "norm_label": ".__init__()"
     },
     {
@@ -6189,8 +6189,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions_duplicatechilderror_init",
-      "community": 226,
-      "community_name": "Clock",
+      "community": 40,
+      "community_name": "translate_domain_errors",
       "norm_label": ".__init__()"
     },
     {
@@ -6214,8 +6214,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions_submissioninvariantviolationerror_init",
-      "community": 226,
-      "community_name": "Clock",
+      "community": 40,
+      "community_name": "translate_domain_errors",
       "norm_label": ".__init__()"
     },
     {
@@ -6239,8 +6239,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions_applicationnotfounderror",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "applicationnotfounderror"
     },
     {
@@ -6368,8 +6368,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions_applicationstateconflicterror_init",
-      "community": 226,
-      "community_name": "Clock",
+      "community": 40,
+      "community_name": "translate_domain_errors",
       "norm_label": ".__init__()"
     },
     {
@@ -6393,8 +6393,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions_applicationreferencenotfounderror_init",
-      "community": 226,
-      "community_name": "Clock",
+      "community": 40,
+      "community_name": "translate_domain_errors",
       "norm_label": ".__init__()"
     },
     {
@@ -6418,8 +6418,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions_applicationconflicterror_init",
-      "community": 226,
-      "community_name": "Clock",
+      "community": 40,
+      "community_name": "translate_domain_errors",
       "norm_label": ".__init__()"
     },
     {
@@ -6443,8 +6443,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions_applicationinvariantviolationerror_init",
-      "community": 226,
-      "community_name": "Clock",
+      "community": 40,
+      "community_name": "translate_domain_errors",
       "norm_label": ".__init__()"
     },
     {
@@ -6455,8 +6455,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions_translate_application_domain_errors",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "translate_application_domain_errors()"
     },
     {
@@ -6642,8 +6642,8 @@
       "source_location": "L219",
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions_rationale_219",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "no application (order) matched the identifier a use case required."
     },
     {
@@ -6785,8 +6785,8 @@
       "source_location": "L331",
       "_origin": "ast",
       "id": "backend_apps_applications_application_exceptions_rationale_331",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "translate **application (order)** domain errors into application errors. the..."
     },
     {
@@ -7495,8 +7495,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_interfaces_eventpublisher_publish",
-      "community": 226,
-      "community_name": "Clock",
+      "community": 1009,
+      "community_name": ".publish",
       "norm_label": ".publish()"
     },
     {
@@ -7506,8 +7506,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_applications_application_interfaces_py_domainevent",
-      "community": 226,
-      "community_name": "Clock",
+      "community": 1009,
+      "community_name": ".publish",
       "norm_label": "domainevent"
     },
     {
@@ -8343,8 +8343,8 @@
       "source_location": "L495",
       "_origin": "ast",
       "id": "backend_apps_applications_application_interfaces_rationale_495",
-      "community": 226,
-      "community_name": "Clock",
+      "community": 1009,
+      "community_name": ".publish",
       "norm_label": "publish ``events`` in order to the platform's event transport."
     },
     {
@@ -8640,8 +8640,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "orders/_support.py"
     },
     {
@@ -8652,8 +8652,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_parse_application_id",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "parse_application_id()"
     },
     {
@@ -8664,8 +8664,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_parse_user_id",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "parse_user_id()"
     },
     {
@@ -8675,8 +8675,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_py_userid",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "userid"
     },
     {
@@ -8687,8 +8687,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_load_application",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "load_application()"
     },
     {
@@ -8699,8 +8699,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_ensure_owner",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "ensure_owner()"
     },
     {
@@ -8723,8 +8723,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_apply_additional_performance_discount",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "_apply_additional_performance_discount()"
     },
     {
@@ -8735,8 +8735,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_claims_a_benefit",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "_claims_a_benefit()"
     },
     {
@@ -8747,8 +8747,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_load_order_submissions",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "load_order_submissions()"
     },
     {
@@ -8759,8 +8759,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_order_participation_format_ids",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "order_participation_format_ids()"
     },
     {
@@ -8771,8 +8771,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_resubmit_returned_submissions",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "resubmit_returned_submissions()"
     },
     {
@@ -8782,8 +8782,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_py_datetime",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "datetime"
     },
     {
@@ -8793,8 +8793,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_py_domainevent",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "domainevent"
     },
     {
@@ -8805,8 +8805,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_refresh_submission_refs",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "refresh_submission_refs()"
     },
     {
@@ -8816,8 +8816,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_rationale_1",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "shared orchestration helpers for the application (order) use cases. thin,..."
     },
     {
@@ -8827,8 +8827,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_rationale_46",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "parse an ``applicationid`` from a command, translating validation errors."
     },
     {
@@ -8838,8 +8838,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_rationale_52",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "parse a ``userid`` from a command, translating validation errors. ``userid``..."
     },
     {
@@ -8849,8 +8849,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_rationale_63",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "load the application or raise :class:`applicationnotfounderror`."
     },
     {
@@ -8860,8 +8860,8 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_rationale_71",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "assert ``actor`` owns ``application`` (the applicant), else deny."
     },
     {
@@ -8882,8 +8882,8 @@
       "source_location": "L131",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_rationale_131",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "whether the order carries a benefit certificate on any of its submissions."
     },
     {
@@ -8893,8 +8893,8 @@
       "source_location": "L136",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_rationale_136",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "load the live submission aggregates the order references (skipping any gone)."
     },
     {
@@ -8904,8 +8904,8 @@
       "source_location": "L146",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_rationale_146",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "the set of participation-format ids used across the order's performances."
     },
     {
@@ -8915,8 +8915,8 @@
       "source_location": "L157",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_rationale_157",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "put every returned entry of this order back in the queue, and say which moved...."
     },
     {
@@ -8926,8 +8926,8 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_support_rationale_195",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "refresh every attached submission's cached snapshot from its live aggregate. a..."
     },
     {
@@ -8949,8 +8949,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_applicable_submissions",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "_applicable_submissions()"
     },
     {
@@ -9068,8 +9068,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_addsubmissiontoapplicationhandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9105,8 +9105,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_removesubmissionfromapplicationhandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9142,8 +9142,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_selectadditionalservicehandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9179,8 +9179,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_removeadditionalservicehandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9190,8 +9190,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_py_removeadditionalservicecommand",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "removeadditionalservicecommand"
     },
     {
@@ -9227,8 +9227,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_recordconsentshandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9264,8 +9264,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_selecteducationalorganizationhandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9301,8 +9301,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_setapplicationpayerhandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9349,8 +9349,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_submitapplicationhandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9361,8 +9361,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_submitapplicationhandler_notify_waitlisted",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "._notify_waitlisted()"
     },
     {
@@ -9445,8 +9445,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_requestapplicationpaymenthandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9482,8 +9482,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_markapplicationpaidhandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9494,8 +9494,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_markapplicationpaidhandler_ensure_receipt_present",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "._ensure_receipt_present()"
     },
     {
@@ -9531,8 +9531,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_completeapplicationhandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9568,8 +9568,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_cancelapplicationhandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9605,8 +9605,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_autocancelunpaidapplicationhandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9691,8 +9691,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_syncapplicationhandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9728,8 +9728,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_uploadapplicationreceipthandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9765,8 +9765,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_removeapplicationreceipthandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -9787,8 +9787,8 @@
       "source_location": "L160",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_rationale_160",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "the order's performances a service applies to (all with a format if unscoped)."
     },
     {
@@ -9908,8 +9908,8 @@
       "source_location": "L574",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_rationale_574",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "tell the applicant they are in a queue, not in the programme. its own notice..."
     },
     {
@@ -9963,8 +9963,8 @@
       "source_location": "L751",
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_commands_rationale_751",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "refuse to record payment while a receipt the competition demands is missing...."
     },
     {
@@ -10110,8 +10110,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_queries_getapplicationhandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -10170,8 +10170,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_queries_listapplicationshandler_handle",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".handle()"
     },
     {
@@ -10182,8 +10182,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_application_orders_queries_listapplicationshandler_try_submit_submission",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": "._try_submit_submission()"
     },
     {
@@ -19755,8 +19755,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_applications_domain_value_objects_educationalorganizationid_from_string",
-      "community": 15,
-      "community_name": "ApplicationOperationResultDto",
+      "community": 226,
+      "community_name": "Clock",
       "norm_label": ".from_string()"
     },
     {
@@ -105229,8 +105229,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_application_handlers_change_staff_role_changestaffrolehandler_init",
-      "community": 25,
-      "community_name": "FakeOrganizationRepository",
+      "community": 1032,
+      "community_name": ".__init__",
       "norm_label": ".__init__()"
     },
     {
@@ -105240,8 +105240,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_organization_application_handlers_change_staff_role_py_clock",
-      "community": 25,
-      "community_name": "FakeOrganizationRepository",
+      "community": 1032,
+      "community_name": ".__init__",
       "norm_label": "clock"
     },
     {
@@ -105251,8 +105251,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_organization_application_handlers_change_staff_role_py_eventpublisher",
-      "community": 25,
-      "community_name": "FakeOrganizationRepository",
+      "community": 1032,
+      "community_name": ".__init__",
       "norm_label": "eventpublisher"
     },
     {
@@ -106200,8 +106200,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_organization_application_handlers_list_staff_invitations_liststaffinvitationshandler",
-      "community": 485,
-      "community_name": "organization/composition.py",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": "liststaffinvitationshandler"
     },
     {
@@ -106246,8 +106246,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "backend_apps_organization_application_handlers_list_staff_invitations_rationale_19",
-      "community": 485,
-      "community_name": "organization/composition.py",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": "use case: list every invitation of the caller's own organization. a read-only..."
     },
     {
@@ -107145,7 +107145,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_moduleentitlementrepository_list_by_organization",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".list_by_organization()"
     },
     {
@@ -107169,7 +107169,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_moduleentitlementrepository_save",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".save()"
     },
     {
@@ -107241,8 +107241,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_staffmembershiprepository_list_by_organization",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".list_by_organization()"
     },
     {
@@ -107253,8 +107253,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_staffmembershiprepository_save",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".save()"
     },
     {
@@ -107291,7 +107291,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_staffinvitationrepository_get_by_token_hash",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".get_by_token_hash()"
     },
     {
@@ -107315,7 +107315,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_staffinvitationrepository_list_by_organization",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".list_by_organization()"
     },
     {
@@ -107327,7 +107327,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_staffinvitationrepository_save",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".save()"
     },
     {
@@ -107448,8 +107448,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_invitationtokenservice_build_accept_url",
-      "community": 1103,
-      "community_name": ".build_accept_url",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": ".build_accept_url()"
     },
     {
@@ -107510,8 +107510,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_uuidgenerator_new",
-      "community": 869,
-      "community_name": ".__init__",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": ".new()"
     },
     {
@@ -107521,8 +107521,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_py_uuid",
-      "community": 869,
-      "community_name": ".__init__",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": "uuid"
     },
     {
@@ -107668,7 +107668,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_rationale_102",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "return every decided entitlement of the organization."
     },
     {
@@ -107690,7 +107690,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_rationale_110",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "persist the entitlement (insert or update), honouring its version."
     },
     {
@@ -107755,8 +107755,8 @@
       "source_location": "L143",
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_rationale_143",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": "return all non-deleted memberships of the organization."
     },
     {
@@ -107766,8 +107766,8 @@
       "source_location": "L147",
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_rationale_147",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": "persist ``membership`` (insert or update), honouring its version."
     },
     {
@@ -107800,7 +107800,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_rationale_160",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "return the invitation whose token digest is ``token_hash``, or ``none``."
     },
     {
@@ -107822,7 +107822,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_rationale_168",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "return all non-deleted invitations of the organization."
     },
     {
@@ -107833,7 +107833,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_rationale_172",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "persist ``invitation`` (insert or update), honouring its version."
     },
     {
@@ -107920,8 +107920,8 @@
       "source_location": "L236",
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_rationale_236",
-      "community": 1103,
-      "community_name": ".build_accept_url",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": "return the complete web-client url that accepts ``raw_token``."
     },
     {
@@ -107975,8 +107975,8 @@
       "source_location": "L263",
       "_origin": "ast",
       "id": "backend_apps_organization_application_interfaces_rationale_263",
-      "community": 869,
-      "community_name": ".__init__",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": "return a brand-new time-ordered uuid version 7."
     },
     {
@@ -109317,7 +109317,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_organization_post_init",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".__post_init__()"
     },
     {
@@ -109351,7 +109351,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_py_datetime",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "datetime"
     },
     {
@@ -109362,7 +109362,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_py_domainevent",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "domainevent"
     },
     {
@@ -109539,7 +109539,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_organization_created_at",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".created_at()"
     },
     {
@@ -109551,7 +109551,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_organization_updated_at",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".updated_at()"
     },
     {
@@ -109563,7 +109563,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_organization_deleted_at",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".deleted_at()"
     },
     {
@@ -109586,8 +109586,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_organization_is_active",
-      "community": 1104,
-      "community_name": ".is_active",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": ".is_active()"
     },
     {
@@ -109599,7 +109599,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_organization_suspend",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".suspend()"
     },
     {
@@ -109611,7 +109611,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_organization_reactivate",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".reactivate()"
     },
     {
@@ -109623,7 +109623,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_organization_change_commission_rate",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".change_commission_rate()"
     },
     {
@@ -109635,7 +109635,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_organization_change_fee_schedule",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".change_fee_schedule()"
     },
     {
@@ -109647,7 +109647,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_organization_update_profile",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".update_profile()"
     },
     {
@@ -109659,7 +109659,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_organization_touch",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "._touch()"
     },
     {
@@ -109707,8 +109707,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": "staffmembership"
     },
     {
@@ -109720,7 +109720,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_post_init",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".__post_init__()"
     },
     {
@@ -109767,8 +109767,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_id",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".id()"
     },
     {
@@ -109779,8 +109779,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_organization_id",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".organization_id()"
     },
     {
@@ -109791,8 +109791,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_user_id",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".user_id()"
     },
     {
@@ -109803,8 +109803,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_role",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".role()"
     },
     {
@@ -109815,8 +109815,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_status",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".status()"
     },
     {
@@ -109827,8 +109827,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_created_at",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".created_at()"
     },
     {
@@ -109839,8 +109839,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_updated_at",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".updated_at()"
     },
     {
@@ -109851,8 +109851,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_created_by",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".created_by()"
     },
     {
@@ -109863,8 +109863,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_updated_by",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".updated_by()"
     },
     {
@@ -109875,8 +109875,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_invited_by",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".invited_by()"
     },
     {
@@ -109887,8 +109887,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_revoked_by",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".revoked_by()"
     },
     {
@@ -109899,8 +109899,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_invited_at",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".invited_at()"
     },
     {
@@ -109911,8 +109911,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_accepted_at",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".accepted_at()"
     },
     {
@@ -109923,8 +109923,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_revoked_at",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".revoked_at()"
     },
     {
@@ -109935,8 +109935,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_deleted_at",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".deleted_at()"
     },
     {
@@ -109947,8 +109947,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_version",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".version()"
     },
     {
@@ -109959,8 +109959,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_is_active",
-      "community": 1052,
-      "community_name": ".has_role",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".is_active()"
     },
     {
@@ -109971,8 +109971,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_has_role",
-      "community": 1052,
-      "community_name": ".has_role",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".has_role()"
     },
     {
@@ -109984,7 +109984,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_activate",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".activate()"
     },
     {
@@ -109996,7 +109996,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_change_role",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".change_role()"
     },
     {
@@ -110008,7 +110008,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_revoke",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".revoke()"
     },
     {
@@ -110020,7 +110020,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_touch",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "._touch()"
     },
     {
@@ -110031,8 +110031,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_eq",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".__eq__()"
     },
     {
@@ -110043,8 +110043,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_hash",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".__hash__()"
     },
     {
@@ -110055,8 +110055,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffmembership_repr",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".__repr__()"
     },
     {
@@ -110069,7 +110069,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "staffinvitation"
     },
     {
@@ -110081,7 +110081,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_post_init",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".__post_init__()"
     },
     {
@@ -110093,7 +110093,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_issue",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".issue()"
     },
     {
@@ -110105,7 +110105,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_rehydrate",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".rehydrate()"
     },
     {
@@ -110117,7 +110117,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_id",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".id()"
     },
     {
@@ -110129,7 +110129,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_organization_id",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".organization_id()"
     },
     {
@@ -110141,7 +110141,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_email",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".email()"
     },
     {
@@ -110153,7 +110153,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_role",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".role()"
     },
     {
@@ -110165,7 +110165,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_token_hash",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".token_hash()"
     },
     {
@@ -110177,7 +110177,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_expires_at",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".expires_at()"
     },
     {
@@ -110189,7 +110189,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_invited_by",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".invited_by()"
     },
     {
@@ -110201,7 +110201,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_created_at",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".created_at()"
     },
     {
@@ -110213,7 +110213,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_updated_at",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".updated_at()"
     },
     {
@@ -110225,7 +110225,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_accepted_at",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".accepted_at()"
     },
     {
@@ -110237,7 +110237,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_revoked_at",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".revoked_at()"
     },
     {
@@ -110249,7 +110249,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_deleted_at",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".deleted_at()"
     },
     {
@@ -110261,7 +110261,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_version",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".version()"
     },
     {
@@ -110273,7 +110273,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_is_pending",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".is_pending()"
     },
     {
@@ -110285,7 +110285,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_is_expired",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".is_expired()"
     },
     {
@@ -110297,7 +110297,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_accept",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".accept()"
     },
     {
@@ -110309,7 +110309,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_revoke",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".revoke()"
     },
     {
@@ -110321,7 +110321,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_touch",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "._touch()"
     },
     {
@@ -110333,7 +110333,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_eq",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".__eq__()"
     },
     {
@@ -110345,7 +110345,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_hash",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".__hash__()"
     },
     {
@@ -110357,7 +110357,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_staffinvitation_repr",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".__repr__()"
     },
     {
@@ -110370,7 +110370,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "moduleentitlement"
     },
     {
@@ -110382,7 +110382,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_post_init",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".__post_init__()"
     },
     {
@@ -110418,7 +110418,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_rehydrate",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".rehydrate()"
     },
     {
@@ -110430,7 +110430,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_enable",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".enable()"
     },
     {
@@ -110442,7 +110442,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_disable",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".disable()"
     },
     {
@@ -110454,7 +110454,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_touch",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "._touch()"
     },
     {
@@ -110466,7 +110466,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_id",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".id()"
     },
     {
@@ -110478,7 +110478,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_organization_id",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".organization_id()"
     },
     {
@@ -110490,7 +110490,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_module",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".module()"
     },
     {
@@ -110502,7 +110502,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_enabled",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".enabled()"
     },
     {
@@ -110514,7 +110514,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_created_at",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".created_at()"
     },
     {
@@ -110526,7 +110526,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_updated_at",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".updated_at()"
     },
     {
@@ -110538,7 +110538,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_enabled_at",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".enabled_at()"
     },
     {
@@ -110550,7 +110550,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_enabled_by",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".enabled_by()"
     },
     {
@@ -110562,7 +110562,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_disabled_at",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".disabled_at()"
     },
     {
@@ -110574,7 +110574,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_disabled_by",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".disabled_by()"
     },
     {
@@ -110586,7 +110586,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_deleted_at",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".deleted_at()"
     },
     {
@@ -110598,7 +110598,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_version",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".version()"
     },
     {
@@ -110610,7 +110610,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_eq",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".__eq__()"
     },
     {
@@ -110622,7 +110622,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_hash",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".__hash__()"
     },
     {
@@ -110634,7 +110634,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_moduleentitlement_repr",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".__repr__()"
     },
     {
@@ -110743,8 +110743,8 @@
       "source_location": "L327",
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_327",
-      "community": 1104,
-      "community_name": ".is_active",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": "whether the organization is currently operational."
     },
     {
@@ -110755,7 +110755,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_335",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "suspend the organization (administrative break-glass)."
     },
     {
@@ -110766,7 +110766,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_343",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "reactivate a suspended organization."
     },
     {
@@ -110777,7 +110777,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_351",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "bill this organization a share of its participation fees, at ``rate``. a..."
     },
     {
@@ -110788,7 +110788,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_373",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "bill this organization a flat fee per performance, on ``schedule``. the..."
     },
     {
@@ -110799,7 +110799,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_396",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "apply the staff edit form: an optional new display name, the profile, the..."
     },
     {
@@ -110810,7 +110810,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_431",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "advance the change timestamp and optimistic-concurrency version once."
     },
     {
@@ -110820,8 +110820,8 @@
       "source_location": "L447",
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_447",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": "a user's staff role over the organization \u2014 the authorization fact. lifecycle..."
     },
     {
@@ -110864,8 +110864,8 @@
       "source_location": "L661",
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_661",
-      "community": 1052,
-      "community_name": ".has_role",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": "whether this membership currently grants staff access."
     },
     {
@@ -110875,8 +110875,8 @@
       "source_location": "L665",
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_665",
-      "community": 1052,
-      "community_name": ".has_role",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": "whether this membership is active and carries one of ``roles``."
     },
     {
@@ -110887,7 +110887,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_673",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "transition a pending membership to active (invitation accepted)."
     },
     {
@@ -110898,7 +110898,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_691",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "change the role of an active membership."
     },
     {
@@ -110909,7 +110909,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_713",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "revoke the membership, removing staff access."
     },
     {
@@ -110920,7 +110920,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_734",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "advance the change timestamp/version and record who made the change."
     },
     {
@@ -110931,7 +110931,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_752",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "a pending, email-based grant of a staff role, awaiting acceptance. only its..."
     },
     {
@@ -110942,7 +110942,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_797",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "issue a new invitation, stamping expiry from the injected policy. returns the..."
     },
     {
@@ -110953,7 +110953,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_845",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "reconstruct the aggregate from persistence (no re-validation, no events)."
     },
     {
@@ -110964,7 +110964,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_920",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "whether the invitation is still open (neither accepted nor revoked)."
     },
     {
@@ -110975,7 +110975,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_924",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "whether the invitation's validity window has lapsed at ``now``."
     },
     {
@@ -110986,7 +110986,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_938",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "accept the invitation, guarding single-use, revocation, and expiry. verifying..."
     },
     {
@@ -110997,7 +110997,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_962",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "revoke a still-pending invitation before it is accepted."
     },
     {
@@ -111008,7 +111008,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_982",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "advance the change timestamp and optimistic-concurrency version once."
     },
     {
@@ -111019,7 +111019,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_998",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "whether one organization holds one sellable module of the platform. one row per..."
     },
     {
@@ -111052,7 +111052,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_1112",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "reconstruct from persistence: no validation, no events."
     },
     {
@@ -111063,7 +111063,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_1134",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "switch the module on. idempotent: already-on returns no events."
     },
     {
@@ -111074,7 +111074,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_entities_rationale_1152",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "switch the module off. idempotent: already-off returns no events."
     },
     {
@@ -111096,8 +111096,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_events_utcnow",
-      "community": 1067,
-      "community_name": "_utcnow",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": "_utcnow()"
     },
     {
@@ -111107,8 +111107,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_organization_domain_events_py_datetime",
-      "community": 1067,
-      "community_name": "_utcnow",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": "datetime"
     },
     {
@@ -111374,8 +111374,8 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "backend_apps_organization_domain_events_rationale_68",
-      "community": 1067,
-      "community_name": "_utcnow",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": "the current instant as a timezone-aware **utc** datetime (default factory)."
     },
     {
@@ -111608,7 +111608,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_organizationdomainerror",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "organizationdomainerror"
     },
     {
@@ -111619,7 +111619,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_py_exception",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "exception"
     },
     {
@@ -111877,7 +111877,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_directconstructionerror",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "directconstructionerror"
     },
     {
@@ -111890,7 +111890,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_organizationstateerror",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "organizationstateerror"
     },
     {
@@ -111903,7 +111903,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_organizationsuspendederror",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "organizationsuspendederror"
     },
     {
@@ -111916,7 +111916,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_organizationnotsuspendederror",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "organizationnotsuspendederror"
     },
     {
@@ -111929,7 +111929,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_staffmembershipstateerror",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "staffmembershipstateerror"
     },
     {
@@ -111942,7 +111942,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_membershipnotpendingerror",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "membershipnotpendingerror"
     },
     {
@@ -111955,7 +111955,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_membershipalreadyactiveerror",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "membershipalreadyactiveerror"
     },
     {
@@ -111968,7 +111968,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_membershipalreadyrevokederror",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "membershipalreadyrevokederror"
     },
     {
@@ -111981,7 +111981,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_staffinvitationstateerror",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "staffinvitationstateerror"
     },
     {
@@ -111994,7 +111994,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_invitationalreadyacceptederror",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "invitationalreadyacceptederror"
     },
     {
@@ -112007,7 +112007,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_invitationrevokederror",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "invitationrevokederror"
     },
     {
@@ -112020,7 +112020,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_invitationexpirederror",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "invitationexpirederror"
     },
     {
@@ -112042,7 +112042,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_rationale_41",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "base class for all errors raised by the organization domain."
     },
     {
@@ -112251,7 +112251,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_rationale_126",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "raised when an aggregate is built directly instead of via its factories. an..."
     },
     {
@@ -112262,7 +112262,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_rationale_136",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "base for an operation illegal in the ``organization`` aggregate's state."
     },
     {
@@ -112273,7 +112273,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_rationale_140",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "the organization is suspended; the operation requires an active organization."
     },
     {
@@ -112284,7 +112284,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_rationale_144",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "a reactivation was attempted on an organization that is not suspended."
     },
     {
@@ -112295,7 +112295,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_rationale_148",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "base for an operation illegal in the ``staffmembership`` aggregate's state."
     },
     {
@@ -112306,7 +112306,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_rationale_152",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "the membership is not pending; it cannot be accepted."
     },
     {
@@ -112317,7 +112317,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_rationale_156",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "the membership is already active; it cannot be activated again."
     },
     {
@@ -112328,7 +112328,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_rationale_160",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "the membership is already revoked; the operation is not permitted."
     },
     {
@@ -112339,7 +112339,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_rationale_164",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "base for an operation illegal in the ``staffinvitation`` aggregate's state."
     },
     {
@@ -112350,7 +112350,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_rationale_168",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "the invitation has already been accepted; it cannot be accepted again."
     },
     {
@@ -112361,7 +112361,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_rationale_172",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "the invitation was revoked and can no longer be accepted."
     },
     {
@@ -112372,7 +112372,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_domain_exceptions_rationale_176",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "the invitation's validity window has lapsed; it can no longer be accepted."
     },
     {
@@ -112690,8 +112690,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_value_objects_staffmembershipid_json",
-      "community": 1107,
-      "community_name": ".json",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": ".json()"
     },
     {
@@ -112787,8 +112787,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_value_objects_moduleentitlementid_json",
-      "community": 1105,
-      "community_name": ".json",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": ".json()"
     },
     {
@@ -112969,8 +112969,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_value_objects_staffuserid_json",
-      "community": 869,
-      "community_name": ".__init__",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": ".json()"
     },
     {
@@ -113248,8 +113248,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_domain_value_objects_performancefeetier_is_open_ended",
-      "community": 1106,
-      "community_name": ".is_open_ended",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": ".is_open_ended()"
     },
     {
@@ -113772,8 +113772,8 @@
       "source_location": "L185",
       "_origin": "ast",
       "id": "backend_apps_organization_domain_value_objects_rationale_185",
-      "community": 1107,
-      "community_name": ".json",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": "the canonical string form for json payloads and api responses."
     },
     {
@@ -113827,8 +113827,8 @@
       "source_location": "L227",
       "_origin": "ast",
       "id": "backend_apps_organization_domain_value_objects_rationale_227",
-      "community": 1105,
-      "community_name": ".json",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": "the canonical string form for json payloads and api responses."
     },
     {
@@ -113926,8 +113926,8 @@
       "source_location": "L311",
       "_origin": "ast",
       "id": "backend_apps_organization_domain_value_objects_rationale_311",
-      "community": 869,
-      "community_name": ".__init__",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": "the canonical string form for json payloads and api responses."
     },
     {
@@ -114058,8 +114058,8 @@
       "source_location": "L522",
       "_origin": "ast",
       "id": "backend_apps_organization_domain_value_objects_rationale_522",
-      "community": 1106,
-      "community_name": ".is_open_ended",
+      "community": 16,
+      "community_name": "StaffUserId",
       "norm_label": "whether the band has no upper bound (\"6 and up\")."
     },
     {
@@ -114357,8 +114357,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_cache",
-      "community": 485,
-      "community_name": "organization/composition.py",
+      "community": 605,
+      "community_name": "DjangoModuleCache",
       "norm_label": "infrastructure/cache.py"
     },
     {
@@ -114370,8 +114370,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_cache_djangomodulecache",
-      "community": 485,
-      "community_name": "organization/composition.py",
+      "community": 605,
+      "community_name": "DjangoModuleCache",
       "norm_label": "djangomodulecache"
     },
     {
@@ -114382,8 +114382,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_cache_djangomodulecache_key",
-      "community": 485,
-      "community_name": "organization/composition.py",
+      "community": 605,
+      "community_name": "DjangoModuleCache",
       "norm_label": "._key()"
     },
     {
@@ -114393,8 +114393,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_cache_py_uuid",
-      "community": 485,
-      "community_name": "organization/composition.py",
+      "community": 605,
+      "community_name": "DjangoModuleCache",
       "norm_label": "uuid"
     },
     {
@@ -114405,8 +114405,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_cache_djangomodulecache_get",
-      "community": 485,
-      "community_name": "organization/composition.py",
+      "community": 605,
+      "community_name": "DjangoModuleCache",
       "norm_label": ".get()"
     },
     {
@@ -114417,8 +114417,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_cache_djangomodulecache_set",
-      "community": 485,
-      "community_name": "organization/composition.py",
+      "community": 605,
+      "community_name": "DjangoModuleCache",
       "norm_label": ".set()"
     },
     {
@@ -114429,8 +114429,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_cache_djangomodulecache_invalidate",
-      "community": 485,
-      "community_name": "organization/composition.py",
+      "community": 605,
+      "community_name": "DjangoModuleCache",
       "norm_label": ".invalidate()"
     },
     {
@@ -114440,8 +114440,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_cache_rationale_1",
-      "community": 485,
-      "community_name": "organization/composition.py",
+      "community": 605,
+      "community_name": "DjangoModuleCache",
       "norm_label": "cache adapters for the organization bounded context. concrete implementations..."
     },
     {
@@ -114451,8 +114451,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_cache_rationale_17",
-      "community": 485,
-      "community_name": "organization/composition.py",
+      "community": 605,
+      "community_name": "DjangoModuleCache",
       "norm_label": "concrete :class:`modulecache` over the configured django cache. structurally..."
     },
     {
@@ -114877,7 +114877,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_mappers_staff_invitation_mapper_staffinvitationmapper_to_domain",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".to_domain()"
     },
     {
@@ -114934,7 +114934,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_mappers_staff_invitation_mapper_rationale_24",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "reconstruct the aggregate from a persisted row (no re-validation, no events)."
     },
     {
@@ -116983,7 +116983,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_repositories_django_staff_invitation_repository_djangostaffinvitationrepository_get",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".get()"
     },
     {
@@ -116995,7 +116995,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_repositories_django_staff_invitation_repository_djangostaffinvitationrepository_get_by_token_hash",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".get_by_token_hash()"
     },
     {
@@ -117007,7 +117007,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_repositories_django_staff_invitation_repository_djangostaffinvitationrepository_find_pending_by_email",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".find_pending_by_email()"
     },
     {
@@ -117019,7 +117019,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_repositories_django_staff_invitation_repository_djangostaffinvitationrepository_list_by_organization",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".list_by_organization()"
     },
     {
@@ -117076,7 +117076,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_repositories_django_staff_invitation_repository_rationale_29",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "return the invitation with ``invitation_id``, or ``none``."
     },
     {
@@ -117087,7 +117087,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_repositories_django_staff_invitation_repository_rationale_39",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "return the invitation whose token digest is ``token_hash``, or ``none``. the..."
     },
     {
@@ -117098,7 +117098,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_repositories_django_staff_invitation_repository_rationale_52",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "return an open invitation for ``email`` in the organization, or ``none``. open..."
     },
     {
@@ -117109,7 +117109,7 @@
       "_origin": "ast",
       "id": "backend_apps_organization_infrastructure_repositories_django_staff_invitation_repository_rationale_72",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": "return all non-deleted invitations of the organization (newest first)."
     },
     {
@@ -187646,8 +187646,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_organization_fakes_fakestaffmembershiprepository_find_active_for_user",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".find_active_for_user()"
     },
     {
@@ -187670,8 +187670,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_organization_fakes_fakestaffmembershiprepository_list_by_organization",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".list_by_organization()"
     },
     {
@@ -187682,8 +187682,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "backend_tests_application_organization_fakes_fakestaffmembershiprepository_save",
-      "community": 16,
-      "community_name": "StaffUserId",
+      "community": 11,
+      "community_name": "StaffMembership",
       "norm_label": ".save()"
     },
     {
@@ -187732,7 +187732,7 @@
       "_origin": "ast",
       "id": "backend_tests_application_organization_fakes_fakestaffinvitationrepository_get_by_token_hash",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".get_by_token_hash()"
     },
     {
@@ -187756,7 +187756,7 @@
       "_origin": "ast",
       "id": "backend_tests_application_organization_fakes_fakestaffinvitationrepository_list_by_organization",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".list_by_organization()"
     },
     {
@@ -187768,7 +187768,7 @@
       "_origin": "ast",
       "id": "backend_tests_application_organization_fakes_fakestaffinvitationrepository_save",
       "community": 11,
-      "community_name": "StaffInvitation",
+      "community_name": "StaffMembership",
       "norm_label": ".save()"
     },
     {
@@ -255014,7 +255014,7 @@
       "label": "draft()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.test.tsx",
-      "source_location": "L1534",
+      "source_location": "L1526",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_test_draft",
@@ -255121,7 +255121,7 @@
       "label": "ProgramStart()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L464",
+      "source_location": "L469",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_programstart",
@@ -255133,7 +255133,7 @@
       "label": "RunningOrder()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L580",
+      "source_location": "L584",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_runningorder",
@@ -255145,7 +255145,7 @@
       "label": "FIXED_COLUMN_WIDTHS",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L871",
+      "source_location": "L875",
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_fixed_column_widths",
       "community": 765,
@@ -255156,7 +255156,7 @@
       "label": "FLEXIBLE_COLUMN_WEIGHTS",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L878",
+      "source_location": "L882",
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_flexible_column_weights",
       "community": 765,
@@ -255167,7 +255167,7 @@
       "label": "columnWidths()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L916",
+      "source_location": "L920",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_columnwidths",
@@ -255179,7 +255179,7 @@
       "label": "GroupByControl()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L952",
+      "source_location": "L956",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_groupbycontrol",
@@ -255191,7 +255191,7 @@
       "label": "VisibleColumnsControl()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L992",
+      "source_location": "L996",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_visiblecolumnscontrol",
@@ -255203,7 +255203,7 @@
       "label": "GroupHeaderRow()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1041",
+      "source_location": "L1045",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_groupheaderrow",
@@ -255215,7 +255215,7 @@
       "label": "plural()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1127",
+      "source_location": "L1131",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_plural",
@@ -255227,7 +255227,7 @@
       "label": "ProgramItemRow()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1139",
+      "source_location": "L1143",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_programitemrow",
@@ -255239,7 +255239,7 @@
       "label": "BlockTitle()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1330",
+      "source_location": "L1334",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_blocktitle",
@@ -255251,7 +255251,7 @@
       "label": "EditBlockDuration()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1370",
+      "source_location": "L1374",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_editblockduration",
@@ -255263,7 +255263,7 @@
       "label": "AddColumnControls()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1403",
+      "source_location": "L1407",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_addcolumncontrols",
@@ -255275,7 +255275,7 @@
       "label": "CustomColumnHeader()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1444",
+      "source_location": "L1448",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_customcolumnheader",
@@ -255287,7 +255287,7 @@
       "label": "CustomCell()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1491",
+      "source_location": "L1495",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_customcell",
@@ -255299,7 +255299,7 @@
       "label": "ArrangeControls()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1533",
+      "source_location": "L1537",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_arrangecontrols",
@@ -255311,7 +255311,7 @@
       "label": "RenumberButton()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1577",
+      "source_location": "L1581",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_renumberbutton",
@@ -255323,7 +255323,7 @@
       "label": "AddBreakControls()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1598",
+      "source_location": "L1602",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_addbreakcontrols",
@@ -255335,7 +255335,7 @@
       "label": "ExportPanel()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1654",
+      "source_location": "L1658",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_exportpanel",
@@ -255347,7 +255347,7 @@
       "label": "CandidateList()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1820",
+      "source_location": "L1824",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_candidatelist",
@@ -255359,7 +255359,7 @@
       "label": "PublicLinks()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1911",
+      "source_location": "L1915",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_publiclinks",
@@ -255371,7 +255371,7 @@
       "label": "AnnounceShare()",
       "file_type": "code",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L2110",
+      "source_location": "L2114",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_applications_staff_pages_program_index_announceshare",
@@ -265917,8 +265917,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_api_diplomas_api_usecreateassignmentmutation",
-      "community": 766,
-      "community_name": "setup",
+      "community": 162,
+      "community_name": "diplomas-workspace/index.ts",
       "norm_label": "usecreateassignmentmutation()"
     },
     {
@@ -265929,8 +265929,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_features_diplomas_api_diplomas_api_usedeleteassignmentmutation",
-      "community": 766,
-      "community_name": "setup",
+      "community": 162,
+      "community_name": "diplomas-workspace/index.ts",
       "norm_label": "usedeleteassignmentmutation()"
     },
     {
@@ -289404,7 +289404,7 @@
       "label": "Column()",
       "file_type": "code",
       "source_file": "frontend/src/shared/ui/time-picker/time-picker.tsx",
-      "source_location": "L164",
+      "source_location": "L183",
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_shared_ui_time_picker_time_picker_column",
@@ -294082,7 +294082,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_lib_derive_widget_status",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "derive-widget-status.ts"
     },
     {
@@ -294105,7 +294105,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_lib_index",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "dashboard/lib/index.ts"
     },
     {
@@ -294219,7 +294219,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_format_formatdate",
       "community": 153,
-      "community_name": "upcoming-events.tsx",
+      "community_name": "recent-competitions.tsx",
       "norm_label": "formatdate()"
     },
     {
@@ -294231,7 +294231,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_format_formatrelativetime",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "formatrelativetime()"
     },
     {
@@ -294288,7 +294288,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_format_application_status",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "application_status"
     },
     {
@@ -294298,8 +294298,8 @@
       "source_location": "L123",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_format_event_kind_labels",
-      "community": 153,
-      "community_name": "upcoming-events.tsx",
+      "community": 139,
+      "community_name": "model/format.ts",
       "norm_label": "event_kind_labels"
     },
     {
@@ -294310,7 +294310,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_index",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "model/index.ts"
     },
     {
@@ -294365,8 +294365,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_mock_data_mock_competitions",
-      "community": 121,
-      "community_name": "mock-data.ts",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "mock_competitions"
     },
     {
@@ -294434,7 +294434,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_types_widgetstatus",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "widgetstatus"
     },
     {
@@ -294511,8 +294511,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_types_competitionsummary",
-      "community": 115,
-      "community_name": "notification-center.tsx",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "competitionsummary"
     },
     {
@@ -294538,7 +294538,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_types_applicationsummary",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "applicationsummary"
     },
     {
@@ -294551,7 +294551,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_types_notificationkind",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "notificationkind"
     },
     {
@@ -294564,7 +294564,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_types_notificationitem",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "notificationitem"
     },
     {
@@ -294576,8 +294576,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_types_eventkind",
-      "community": 153,
-      "community_name": "upcoming-events.tsx",
+      "community": 139,
+      "community_name": "model/format.ts",
       "norm_label": "eventkind"
     },
     {
@@ -294589,7 +294589,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_types_upcomingevent",
-      "community": 153,
+      "community": 115,
       "community_name": "upcoming-events.tsx",
       "norm_label": "upcomingevent"
     },
@@ -294602,8 +294602,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_types_activitykind",
-      "community": 115,
-      "community_name": "notification-center.tsx",
+      "community": 139,
+      "community_name": "model/format.ts",
       "norm_label": "activitykind"
     },
     {
@@ -294616,7 +294616,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_model_types_activityevent",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "activityevent"
     },
     {
@@ -294753,7 +294753,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "activity-timeline.tsx"
     },
     {
@@ -294764,7 +294764,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline_activity_meta",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "activity_meta"
     },
     {
@@ -294776,7 +294776,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline_timelineskeleton",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "timelineskeleton()"
     },
     {
@@ -294788,7 +294788,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline_timelineitem",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "timelineitem()"
     },
     {
@@ -294801,7 +294801,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_activity_timeline_activity_timeline_activitytimelineviewprops",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "activitytimelineviewprops"
     },
     {
@@ -294959,7 +294959,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "notification-center.tsx"
     },
     {
@@ -294970,7 +294970,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_kind_style",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "kind_style"
     },
     {
@@ -294982,7 +294982,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_notificationsskeleton",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "notificationsskeleton()"
     },
     {
@@ -294994,7 +294994,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_notificationrow",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "notificationrow()"
     },
     {
@@ -295007,7 +295007,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_notification_center_notification_center_notificationcenterviewprops",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "notificationcenterviewprops"
     },
     {
@@ -295247,7 +295247,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_applications_recent_applications",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "recent-applications.tsx"
     },
     {
@@ -295259,7 +295259,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_applications_recent_applications_applicationsskeleton",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "applicationsskeleton()"
     },
     {
@@ -295271,7 +295271,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_applications_recent_applications_aliasinitials",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "aliasinitials()"
     },
     {
@@ -295283,7 +295283,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_applications_recent_applications_applicationrow",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "applicationrow()"
     },
     {
@@ -295296,7 +295296,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_applications_recent_applications_recentapplicationsviewprops",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "recentapplicationsviewprops"
     },
     {
@@ -295330,8 +295330,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_index",
-      "community": 115,
-      "community_name": "notification-center.tsx",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "recent-competitions/index.ts"
     },
     {
@@ -295341,8 +295341,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions_stories",
-      "community": 121,
-      "community_name": "mock-data.ts",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "recent-competitions.stories.tsx"
     },
     {
@@ -295352,8 +295352,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions_stories_meta",
-      "community": 121,
-      "community_name": "mock-data.ts",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "meta"
     },
     {
@@ -295365,8 +295365,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions_stories_story",
-      "community": 121,
-      "community_name": "mock-data.ts",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "story"
     },
     {
@@ -295376,8 +295376,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions_stories_success",
-      "community": 121,
-      "community_name": "mock-data.ts",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "success"
     },
     {
@@ -295387,8 +295387,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions_stories_loading",
-      "community": 121,
-      "community_name": "mock-data.ts",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "loading"
     },
     {
@@ -295398,8 +295398,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions_stories_empty",
-      "community": 121,
-      "community_name": "mock-data.ts",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "empty"
     },
     {
@@ -295409,8 +295409,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions_stories_errored",
-      "community": 121,
-      "community_name": "mock-data.ts",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "errored"
     },
     {
@@ -295420,8 +295420,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions_test",
-      "community": 121,
-      "community_name": "mock-data.ts",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "recent-competitions.test.tsx"
     },
     {
@@ -295432,8 +295432,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions_test_renderview",
-      "community": 121,
-      "community_name": "mock-data.ts",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "renderview()"
     },
     {
@@ -295443,8 +295443,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions",
-      "community": 115,
-      "community_name": "notification-center.tsx",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "recent-competitions.tsx"
     },
     {
@@ -295455,8 +295455,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions_competitionsskeleton",
-      "community": 115,
-      "community_name": "notification-center.tsx",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "competitionsskeleton()"
     },
     {
@@ -295468,7 +295468,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions_competitionrow",
       "community": 153,
-      "community_name": "upcoming-events.tsx",
+      "community_name": "recent-competitions.tsx",
       "norm_label": "competitionrow()"
     },
     {
@@ -295480,8 +295480,8 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions_recentcompetitionsviewprops",
-      "community": 115,
-      "community_name": "notification-center.tsx",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "recentcompetitionsviewprops"
     },
     {
@@ -295492,8 +295492,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_recent_competitions_recent_competitions_recentcompetitionsview",
-      "community": 115,
-      "community_name": "notification-center.tsx",
+      "community": 153,
+      "community_name": "recent-competitions.tsx",
       "norm_label": "recentcompetitionsview()"
     },
     {
@@ -295889,7 +295889,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_upcoming_events_upcoming_events",
-      "community": 153,
+      "community": 115,
       "community_name": "upcoming-events.tsx",
       "norm_label": "upcoming-events.tsx"
     },
@@ -295900,7 +295900,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_upcoming_events_upcoming_events_kind_icon",
-      "community": 153,
+      "community": 115,
       "community_name": "upcoming-events.tsx",
       "norm_label": "kind_icon"
     },
@@ -295912,7 +295912,7 @@
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_upcoming_events_upcoming_events_eventsskeleton",
-      "community": 153,
+      "community": 115,
       "community_name": "upcoming-events.tsx",
       "norm_label": "eventsskeleton()"
     },
@@ -295925,7 +295925,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_upcoming_events_upcoming_events_eventrow",
       "community": 153,
-      "community_name": "upcoming-events.tsx",
+      "community_name": "recent-competitions.tsx",
       "norm_label": "eventrow()"
     },
     {
@@ -295937,7 +295937,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_upcoming_events_upcoming_events_upcomingeventsviewprops",
-      "community": 153,
+      "community": 115,
       "community_name": "upcoming-events.tsx",
       "norm_label": "upcomingeventsviewprops"
     },
@@ -296122,7 +296122,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_widget_card_index",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "widget-card/index.ts"
     },
     {
@@ -296133,7 +296133,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_widget_card_widget_card_test",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "widget-card.test.tsx"
     },
     {
@@ -296144,7 +296144,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_widget_card_widget_card_test_baseprops",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "baseprops"
     },
     {
@@ -296155,7 +296155,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_widget_card_widget_card",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "widget-card.tsx"
     },
     {
@@ -296168,7 +296168,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_widget_card_widget_card_widgetcardprops",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "widgetcardprops"
     },
     {
@@ -296180,7 +296180,7 @@
       "_origin": "ast",
       "id": "frontend_src_widgets_dashboard_ui_widget_card_widget_card_widgetcard",
       "community": 115,
-      "community_name": "notification-center.tsx",
+      "community_name": "upcoming-events.tsx",
       "norm_label": "widgetcard()"
     },
     {
@@ -297986,8 +297986,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_workspace_ui_diplomas_workspace_layout_diplomasworkspacelayout",
-      "community": 953,
-      "community_name": "diplomas-workspace-layout.tsx",
+      "community": 162,
+      "community_name": "diplomas-workspace/index.ts",
       "norm_label": "diplomasworkspacelayout()"
     },
     {
@@ -298125,8 +298125,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_workspace_ui_sections_assignments_section_test",
-      "community": 766,
-      "community_name": "setup",
+      "community": 162,
+      "community_name": "diplomas-workspace/index.ts",
       "norm_label": "assignments-section.test.tsx"
     },
     {
@@ -298160,8 +298160,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_workspace_ui_sections_assignments_section_test_assigned_vocals",
-      "community": 766,
-      "community_name": "setup",
+      "community": 162,
+      "community_name": "diplomas-workspace/index.ts",
       "norm_label": "assigned_vocals"
     },
     {
@@ -298171,8 +298171,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_workspace_ui_sections_assignments_section_test_templates",
-      "community": 766,
-      "community_name": "setup",
+      "community": 162,
+      "community_name": "diplomas-workspace/index.ts",
       "norm_label": "templates"
     },
     {
@@ -298183,8 +298183,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_workspace_ui_sections_assignments_section_test_setup",
-      "community": 766,
-      "community_name": "setup",
+      "community": 162,
+      "community_name": "diplomas-workspace/index.ts",
       "norm_label": "setup()"
     },
     {
@@ -298195,8 +298195,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_workspace_ui_sections_assignments_section_test_choosecompetition",
-      "community": 766,
-      "community_name": "setup",
+      "community": 162,
+      "community_name": "diplomas-workspace/index.ts",
       "norm_label": "choosecompetition()"
     },
     {
@@ -298207,8 +298207,8 @@
       "_callable": true,
       "_origin": "ast",
       "id": "frontend_src_widgets_diplomas_workspace_ui_sections_assignments_section_test_opendialogforcompetition",
-      "community": 766,
-      "community_name": "setup",
+      "community": 162,
+      "community_name": "diplomas-workspace/index.ts",
       "norm_label": "opendialogforcompetition()"
     },
     {
@@ -301995,8 +301995,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "docs_api_readme",
-      "community": 111,
-      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
+      "community": 364,
+      "community_name": "api/README.md",
       "norm_label": "api/readme.md"
     },
     {
@@ -302006,8 +302006,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "docs_api_readme_api_documentation",
-      "community": 1009,
-      "community_name": "API Documentation",
+      "community": 364,
+      "community_name": "api/README.md",
       "norm_label": "api documentation"
     },
     {
@@ -302017,8 +302017,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "docs_api_readme_purpose",
-      "community": 1009,
-      "community_name": "API Documentation",
+      "community": 364,
+      "community_name": "api/README.md",
       "norm_label": "purpose"
     },
     {
@@ -302028,8 +302028,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "docs_api_readme_scope",
-      "community": 1009,
-      "community_name": "API Documentation",
+      "community": 364,
+      "community_name": "api/README.md",
       "norm_label": "scope"
     },
     {
@@ -302039,8 +302039,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "docs_api_readme_prefix",
-      "community": 1009,
-      "community_name": "API Documentation",
+      "community": 364,
+      "community_name": "api/README.md",
       "norm_label": "prefix"
     },
     {
@@ -302050,8 +302050,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "docs_api_readme_documents",
-      "community": 1009,
-      "community_name": "API Documentation",
+      "community": 364,
+      "community_name": "api/README.md",
       "norm_label": "documents"
     },
     {
@@ -302061,8 +302061,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "docs_api_readme_future_documents",
-      "community": 1009,
-      "community_name": "API Documentation",
+      "community": 364,
+      "community_name": "api/README.md",
       "norm_label": "future documents"
     },
     {
@@ -302182,8 +302182,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "docs_architecture_readme_architecture_documentation",
-      "community": 1032,
-      "community_name": "Architecture Documentation",
+      "community": 111,
+      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
       "norm_label": "architecture documentation"
     },
     {
@@ -302193,8 +302193,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "docs_architecture_readme_purpose",
-      "community": 1032,
-      "community_name": "Architecture Documentation",
+      "community": 111,
+      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
       "norm_label": "purpose"
     },
     {
@@ -302204,8 +302204,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "docs_architecture_readme_scope",
-      "community": 1032,
-      "community_name": "Architecture Documentation",
+      "community": 111,
+      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
       "norm_label": "scope"
     },
     {
@@ -302215,8 +302215,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "docs_architecture_readme_documents",
-      "community": 1032,
-      "community_name": "Architecture Documentation",
+      "community": 111,
+      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
       "norm_label": "documents"
     },
     {
@@ -302226,8 +302226,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "docs_architecture_readme_future_documents",
-      "community": 1032,
-      "community_name": "Architecture Documentation",
+      "community": 111,
+      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
       "norm_label": "future documents"
     },
     {
@@ -302237,8 +302237,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "docs_backend_readme",
-      "community": 111,
-      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
+      "community": 364,
+      "community_name": "api/README.md",
       "norm_label": "backend/readme.md"
     },
     {
@@ -302249,7 +302249,7 @@
       "_origin": "ast",
       "id": "docs_backend_readme_backend_documentation",
       "community": 364,
-      "community_name": "Backend Documentation",
+      "community_name": "api/README.md",
       "norm_label": "backend documentation"
     },
     {
@@ -302260,7 +302260,7 @@
       "_origin": "ast",
       "id": "docs_backend_readme_purpose",
       "community": 364,
-      "community_name": "Backend Documentation",
+      "community_name": "api/README.md",
       "norm_label": "purpose"
     },
     {
@@ -302271,7 +302271,7 @@
       "_origin": "ast",
       "id": "docs_backend_readme_scope",
       "community": 364,
-      "community_name": "Backend Documentation",
+      "community_name": "api/README.md",
       "norm_label": "scope"
     },
     {
@@ -302282,7 +302282,7 @@
       "_origin": "ast",
       "id": "docs_backend_readme_prefix",
       "community": 364,
-      "community_name": "Backend Documentation",
+      "community_name": "api/README.md",
       "norm_label": "prefix"
     },
     {
@@ -302293,7 +302293,7 @@
       "_origin": "ast",
       "id": "docs_backend_readme_documents",
       "community": 364,
-      "community_name": "Backend Documentation",
+      "community_name": "api/README.md",
       "norm_label": "documents"
     },
     {
@@ -302304,7 +302304,7 @@
       "_origin": "ast",
       "id": "docs_backend_readme_future_documents",
       "community": 364,
-      "community_name": "Backend Documentation",
+      "community_name": "api/README.md",
       "norm_label": "future documents"
     },
     {
@@ -302325,8 +302325,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "docs_business_readme_business_documentation",
-      "community": 220,
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community": 881,
+      "community_name": "Business Documentation",
       "norm_label": "business documentation"
     },
     {
@@ -302336,8 +302336,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "docs_business_readme_purpose",
-      "community": 220,
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community": 881,
+      "community_name": "Business Documentation",
       "norm_label": "purpose"
     },
     {
@@ -302347,8 +302347,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "docs_business_readme_scope",
-      "community": 220,
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community": 881,
+      "community_name": "Business Documentation",
       "norm_label": "scope"
     },
     {
@@ -302358,8 +302358,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "docs_business_readme_prefix",
-      "community": 220,
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community": 881,
+      "community_name": "Business Documentation",
       "norm_label": "prefix"
     },
     {
@@ -302369,8 +302369,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "docs_business_readme_documents",
-      "community": 220,
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community": 881,
+      "community_name": "Business Documentation",
       "norm_label": "documents"
     },
     {
@@ -302380,8 +302380,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "docs_business_readme_future_documents",
-      "community": 220,
-      "community_name": "DATA-001 \u00b7 Business Data Model",
+      "community": 881,
+      "community_name": "Business Documentation",
       "norm_label": "future documents"
     },
     {
@@ -303062,8 +303062,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "docs_frontend_readme",
-      "community": 111,
-      "community_name": "ARCH-001 \u00b7 VT Platform Architecture",
+      "community": 364,
+      "community_name": "api/README.md",
       "norm_label": "frontend/readme.md"
     },
     {
@@ -303074,7 +303074,7 @@
       "_origin": "ast",
       "id": "docs_frontend_readme_frontend_documentation",
       "community": 364,
-      "community_name": "Backend Documentation",
+      "community_name": "api/README.md",
       "norm_label": "frontend documentation"
     },
     {
@@ -303085,7 +303085,7 @@
       "_origin": "ast",
       "id": "docs_frontend_readme_purpose",
       "community": 364,
-      "community_name": "Backend Documentation",
+      "community_name": "api/README.md",
       "norm_label": "purpose"
     },
     {
@@ -303096,7 +303096,7 @@
       "_origin": "ast",
       "id": "docs_frontend_readme_scope",
       "community": 364,
-      "community_name": "Backend Documentation",
+      "community_name": "api/README.md",
       "norm_label": "scope"
     },
     {
@@ -303107,7 +303107,7 @@
       "_origin": "ast",
       "id": "docs_frontend_readme_prefix",
       "community": 364,
-      "community_name": "Backend Documentation",
+      "community_name": "api/README.md",
       "norm_label": "prefix"
     },
     {
@@ -303118,7 +303118,7 @@
       "_origin": "ast",
       "id": "docs_frontend_readme_documents",
       "community": 364,
-      "community_name": "Backend Documentation",
+      "community_name": "api/README.md",
       "norm_label": "documents"
     },
     {
@@ -303129,7 +303129,7 @@
       "_origin": "ast",
       "id": "docs_frontend_readme_future_documents",
       "community": 364,
-      "community_name": "Backend Documentation",
+      "community_name": "api/README.md",
       "norm_label": "future documents"
     },
     {
@@ -304023,9 +304023,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Core bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 126,
+      "community": 15,
       "norm_label": "participants context",
-      "community_name": "Identity & Access Context",
+      "community_name": "Participants Context",
       "_origin": "semantic",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_participants_context"
     },
@@ -304039,9 +304039,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Supporting bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 167,
+      "community": 766,
       "norm_label": "institutions context",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Institutions Context",
       "_origin": "semantic",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_institutions_context"
     },
@@ -304071,9 +304071,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Core bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 605,
+      "community": 167,
       "norm_label": "applications context",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_applications_context"
     },
@@ -304119,9 +304119,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Core bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 881,
+      "community": 220,
       "norm_label": "results context",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_results_context"
     },
@@ -304135,9 +304135,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Supporting bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 605,
+      "community": 167,
       "norm_label": "finance/billing context",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_finance_billing_context"
     },
@@ -304183,9 +304183,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Supporting bounded context. Modules communicate via published interfaces and domain events, never cross-module ORM reach-in.",
-      "community": 167,
+      "community": 15,
       "norm_label": "audit context",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Participants Context",
       "_origin": "semantic",
       "id": "docs_architecture_arch_001_vt_platform_architecture_context_audit_context"
     },
@@ -304231,9 +304231,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Verified guardian/institution + consent before Active",
-      "community": 126,
+      "community": 15,
       "norm_label": "participant (aggregate root)",
-      "community_name": "Identity & Access Context",
+      "community_name": "Participants Context",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_participant"
     },
@@ -304247,9 +304247,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Verified institution required for bulk/analytics; tenancy scope",
-      "community": 167,
+      "community": 766,
       "norm_label": "institution (aggregate root)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Institutions Context",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_institution"
     },
@@ -304279,9 +304279,9 @@
       "author": null,
       "contributor": null,
       "rationale": "No submit without consent; no accept without eligibility (+payment if paid)",
-      "community": 605,
+      "community": 167,
       "norm_label": "application (aggregate root)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_application"
     },
@@ -304375,9 +304375,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Published only after judging finalized; immutable except governed correction",
-      "community": 881,
+      "community": 220,
       "norm_label": "result (aggregate root)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_result"
     },
@@ -304391,9 +304391,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Ties resolved before finalization",
-      "community": 881,
+      "community": 220,
       "norm_label": "ranking (aggregate root)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_ranking"
     },
@@ -304407,9 +304407,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Unique verification code per diploma; revoked & reissued on upheld dispute",
-      "community": 881,
+      "community": 220,
       "norm_label": "diploma (aggregate root)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_diploma"
     },
@@ -304423,9 +304423,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Single financial identity per payer",
-      "community": 605,
+      "community": 167,
       "norm_label": "billing account (aggregate root)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_billing_account"
     },
@@ -304439,9 +304439,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Total = line items \u2212 discounts, one currency; paid before entitlement",
-      "community": 605,
+      "community": 167,
       "norm_label": "order (aggregate root)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_order"
     },
@@ -304455,9 +304455,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Immutable once issued; corrected by void + reissue, never edited",
-      "community": 605,
+      "community": 167,
       "norm_label": "invoice (aggregate root)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_invoice"
     },
@@ -304471,9 +304471,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Money captured against an order; refunds are separate compensating actions",
-      "community": 605,
+      "community": 167,
       "norm_label": "payment (aggregate root)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_payment"
     },
@@ -304503,9 +304503,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Immutable, append-only; never updated/deleted outside retention policy",
-      "community": 167,
+      "community": 15,
       "norm_label": "audit log entry (aggregate root)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Participants Context",
       "_origin": "semantic",
       "id": "docs_business_data_001_business_data_model_aggregate_audit_log_entry"
     },
@@ -304765,9 +304765,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 126,
+      "community": 15,
       "norm_label": "participantcreated (domain event)",
-      "community_name": "Identity & Access Context",
+      "community_name": "Participants Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_participantcreated"
     },
@@ -304780,9 +304780,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 126,
+      "community": 15,
       "norm_label": "guardianlinked (domain event)",
-      "community_name": "Identity & Access Context",
+      "community_name": "Participants Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_guardianlinked"
     },
@@ -304795,9 +304795,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 126,
+      "community": 15,
       "norm_label": "participantverified (domain event)",
-      "community_name": "Identity & Access Context",
+      "community_name": "Participants Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_participantverified"
     },
@@ -304810,9 +304810,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 126,
+      "community": 15,
       "norm_label": "participantactivated (domain event)",
-      "community_name": "Identity & Access Context",
+      "community_name": "Participants Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_participantactivated"
     },
@@ -304825,9 +304825,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 126,
+      "community": 15,
       "norm_label": "participantarchived (domain event)",
-      "community_name": "Identity & Access Context",
+      "community_name": "Participants Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_participantarchived"
     },
@@ -304840,9 +304840,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 126,
+      "community": 15,
       "norm_label": "participanterasurerequested (domain event)",
-      "community_name": "Identity & Access Context",
+      "community_name": "Participants Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_participanterasurerequested"
     },
@@ -304855,9 +304855,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 766,
       "norm_label": "institutionregistered (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Institutions Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_institutionregistered"
     },
@@ -304870,9 +304870,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 766,
       "norm_label": "institutionverified (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Institutions Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_institutionverified"
     },
@@ -304885,9 +304885,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 766,
       "norm_label": "teacherassigned (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Institutions Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_teacherassigned"
     },
@@ -304900,9 +304900,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 766,
       "norm_label": "classgroupcreated (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Institutions Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_classgroupcreated"
     },
@@ -304915,9 +304915,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 766,
       "norm_label": "participantjoinedinstitution (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Institutions Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_participantjoinedinstitution"
     },
@@ -305065,9 +305065,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 605,
+      "community": 167,
       "norm_label": "applicationsubmitted (domain event)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_applicationsubmitted"
     },
@@ -305080,9 +305080,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 605,
+      "community": 167,
       "norm_label": "eligibilitychecked (domain event)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_eligibilitychecked"
     },
@@ -305095,9 +305095,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 605,
+      "community": 167,
       "norm_label": "applicationaccepted (domain event)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_applicationaccepted"
     },
@@ -305110,9 +305110,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 605,
+      "community": 167,
       "norm_label": "applicationwaitlisted (domain event)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_applicationwaitlisted"
     },
@@ -305125,9 +305125,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 605,
+      "community": 167,
       "norm_label": "applicationrejected (domain event)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_applicationrejected"
     },
@@ -305140,9 +305140,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 605,
+      "community": 167,
       "norm_label": "applicationwithdrawn (domain event)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_applicationwithdrawn"
     },
@@ -305365,9 +305365,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 881,
+      "community": 220,
       "norm_label": "rankingfinalized (domain event)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_rankingfinalized"
     },
@@ -305380,9 +305380,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 881,
+      "community": 220,
       "norm_label": "resultpublished (domain event)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_resultpublished"
     },
@@ -305395,9 +305395,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 881,
+      "community": 220,
       "norm_label": "diplomagenerated (domain event)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_diplomagenerated"
     },
@@ -305410,9 +305410,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 881,
+      "community": 220,
       "norm_label": "prizeallocated (domain event)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_prizeallocated"
     },
@@ -305425,9 +305425,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 881,
+      "community": 220,
       "norm_label": "resultdisputed (domain event)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_resultdisputed"
     },
@@ -305440,9 +305440,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 881,
+      "community": 220,
       "norm_label": "disputeresolved (domain event)",
-      "community_name": "Results Context",
+      "community_name": "DATA-001 \u00b7 Business Data Model",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_disputeresolved"
     },
@@ -305455,9 +305455,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 605,
+      "community": 167,
       "norm_label": "ordercreated (domain event)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_ordercreated"
     },
@@ -305470,9 +305470,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 605,
+      "community": 167,
       "norm_label": "discountapplied (domain event)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_discountapplied"
     },
@@ -305485,9 +305485,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 605,
+      "community": 167,
       "norm_label": "invoiceissued (domain event)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_invoiceissued"
     },
@@ -305500,9 +305500,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 605,
+      "community": 167,
       "norm_label": "paymentcaptured (domain event)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_paymentcaptured"
     },
@@ -305515,9 +305515,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 605,
+      "community": 167,
       "norm_label": "paymentfailed (domain event)",
-      "community_name": "Finance/Billing Context",
+      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_paymentfailed"
     },
@@ -305650,9 +305650,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 15,
       "norm_label": "actionrecorded (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Participants Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_actionrecorded"
     },
@@ -305665,9 +305665,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 15,
       "norm_label": "datasubjectrequestreceived (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Participants Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_datasubjectrequestreceived"
     },
@@ -305680,9 +305680,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 15,
       "norm_label": "dataerased (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Participants Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_dataerased"
     },
@@ -305695,9 +305695,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 167,
+      "community": 15,
       "norm_label": "legalholdplaced (domain event)",
-      "community_name": "DATA-003 \u00b7 Domain Event Catalog",
+      "community_name": "Participants Context",
       "_origin": "semantic",
       "id": "docs_business_data_003_domain_event_catalog_legalholdplaced"
     },
@@ -1143060,7 +1143060,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1181",
+      "source_location": "L1185",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index_programitemrow",
@@ -1144909,7 +1144909,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.test.tsx",
-      "source_location": "L1534",
+      "source_location": "L1526",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index_test",
@@ -1145158,7 +1145158,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.test.tsx",
-      "source_location": "L1535",
+      "source_location": "L1527",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index_test_draft",
@@ -1145433,7 +1145433,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1598",
+      "source_location": "L1602",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145444,7 +1145444,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1403",
+      "source_location": "L1407",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145455,7 +1145455,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L2110",
+      "source_location": "L2114",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145466,7 +1145466,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1533",
+      "source_location": "L1537",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145477,7 +1145477,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1330",
+      "source_location": "L1334",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145499,7 +1145499,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1820",
+      "source_location": "L1824",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145510,7 +1145510,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L916",
+      "source_location": "L920",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145532,7 +1145532,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1491",
+      "source_location": "L1495",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145543,7 +1145543,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1444",
+      "source_location": "L1448",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145554,7 +1145554,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1370",
+      "source_location": "L1374",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145565,7 +1145565,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1654",
+      "source_location": "L1658",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145576,7 +1145576,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L871",
+      "source_location": "L875",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145587,7 +1145587,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L878",
+      "source_location": "L882",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145598,7 +1145598,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L952",
+      "source_location": "L956",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145609,7 +1145609,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1041",
+      "source_location": "L1045",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145620,7 +1145620,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1127",
+      "source_location": "L1131",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145631,7 +1145631,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1139",
+      "source_location": "L1143",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145664,7 +1145664,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L464",
+      "source_location": "L469",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145697,7 +1145697,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1911",
+      "source_location": "L1915",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145708,7 +1145708,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1577",
+      "source_location": "L1581",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145719,7 +1145719,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L580",
+      "source_location": "L584",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145741,7 +1145741,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L992",
+      "source_location": "L996",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index",
@@ -1145789,7 +1145789,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L769",
+      "source_location": "L773",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index_runningorder",
@@ -1145801,7 +1145801,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1096",
+      "source_location": "L1100",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index_groupheaderrow",
@@ -1145814,7 +1145814,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "frontend/src/applications/staff/pages/program/index.tsx",
-      "source_location": "L1181",
+      "source_location": "L1185",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_applications_staff_pages_program_index_programitemrow",
@@ -1210222,7 +1210222,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/src/shared/ui/date-picker/date-picker.tsx",
-      "source_location": "L183",
+      "source_location": "L182",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_shared_ui_date_picker_date_picker_datetimepicker",
@@ -1210234,7 +1210234,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/src/shared/ui/date-picker/date-picker.tsx",
-      "source_location": "L174",
+      "source_location": "L173",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_shared_ui_date_picker_date_picker_datetimepicker",
@@ -1220130,7 +1220130,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/src/shared/ui/time-picker/time-picker.tsx",
-      "source_location": "L109",
+      "source_location": "L105",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_shared_ui_time_picker_time_picker_timepicker",
@@ -1220226,7 +1220226,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/src/shared/ui/time-picker/time-picker.tsx",
-      "source_location": "L117",
+      "source_location": "L136",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_shared_ui_time_picker_time_picker_timepicker",
@@ -1220250,7 +1220250,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/src/shared/ui/time-picker/time-picker.tsx",
-      "source_location": "L116",
+      "source_location": "L135",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_shared_ui_time_picker_time_picker_timepicker",
@@ -1220295,7 +1220295,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "frontend/src/shared/ui/time-picker/time-picker.tsx",
-      "source_location": "L164",
+      "source_location": "L183",
       "weight": 1.0,
       "_origin": "ast",
       "source": "frontend_src_shared_ui_time_picker_time_picker",
@@ -1247965,5 +1247965,5 @@
       "source_file": "frontend/docs/festival-catalog.md"
     }
   ],
-  "built_at_commit": "01dc6a4e4789a12c88caf7b58d1393a8a39901ed"
+  "built_at_commit": "c8ffc4eeb0264440748f541412787864f3a9ffa4"
 }

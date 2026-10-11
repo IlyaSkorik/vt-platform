@@ -8240,13 +8240,13 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/program/index.test.tsx": {
-    "mtime": 1791745006.9639251,
-    "ast_hash": "10fde268422ed51402325968c86eb2ed",
+    "mtime": 1791745924.9264784,
+    "ast_hash": "e75e64830f169936d03e9fde66ec835b",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/program/index.tsx": {
-    "mtime": 1791744624.9466555,
-    "ast_hash": "cf493669348e5782048f0d456f5c14a8",
+    "mtime": 1791746296.87076,
+    "ast_hash": "2821e801e0f5abdc0b3d02a7e8b78f50",
     "semantic_hash": ""
   },
   "frontend/src/features/program-builder/api.ts": {
@@ -9645,8 +9645,8 @@
     "semantic_hash": ""
   },
   "frontend/src/shared/ui/date-picker/date-picker.tsx": {
-    "mtime": 1791744626.0808198,
-    "ast_hash": "05e8a8f829ed1c9990e0e48a19e7b7ed",
+    "mtime": 1791745637.4227955,
+    "ast_hash": "0d44e24e5388d5265964bbc7ded1243b",
     "semantic_hash": ""
   },
   "frontend/src/shared/ui/date-picker/index.ts": {
@@ -9665,8 +9665,8 @@
     "semantic_hash": ""
   },
   "frontend/src/shared/ui/date-picker/types.ts": {
-    "mtime": 1791744546.501537,
-    "ast_hash": "741f56dfd0a46cbde20e9ef8d7f49283",
+    "mtime": 1791745596.237881,
+    "ast_hash": "7d9ed0679c3df9f9099ba3ab29b60859",
     "semantic_hash": ""
   },
   "frontend/src/shared/ui/popover/index.ts": {
@@ -9705,8 +9705,8 @@
     "semantic_hash": ""
   },
   "frontend/src/shared/ui/time-picker/time-picker.tsx": {
-    "mtime": 1791744546.5026162,
-    "ast_hash": "dd1db733b47506358352345deea0a45a",
+    "mtime": 1791745844.1694481,
+    "ast_hash": "5249e34cba9b9f4c3d928284e8dd99ab",
     "semantic_hash": ""
   },
   "frontend/src/shared/ui/time-picker/types.ts": {
@@ -11765,8 +11765,8 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/program/start-time.integration.test.tsx": {
-    "mtime": 1791744624.9731169,
-    "ast_hash": "bc72b009d771633b234cc6aa1d555ba6",
+    "mtime": 1791746391.1338916,
+    "ast_hash": "128f9008bd42727460cf159813d18245",
     "semantic_hash": ""
   }
 }
