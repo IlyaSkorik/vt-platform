@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -33,6 +33,7 @@ import {
   useUpdateProgram,
 } from "@/features/program-builder";
 
+import { festivalInputToIso } from "@/shared/lib";
 import { toast } from "@/shared/ui";
 
 import { StaffProgramPage } from "./index";
@@ -1118,7 +1119,9 @@ describe("StaffProgramPage — the buffer", () => {
     stub();
     await renderPage();
 
-    expect(screen.getByText("0:30")).toBeInTheDocument();
+    // Named in minutes and seconds, not as a stopwatch reading: «1:30» was read as an
+    // hour and a half often enough to be worth the extra characters.
+    expect(screen.getByText("30 сек")).toBeInTheDocument();
   });
 
   it("sends a new buffer when another preset is chosen", async () => {
@@ -1126,7 +1129,7 @@ describe("StaffProgramPage — the buffer", () => {
     await renderPage();
 
     await userEvent.click(screen.getByRole("combobox", { name: /Буфер между выступлениями/ }));
-    await userEvent.click(await screen.findByRole("option", { name: "1:00" }));
+    await userEvent.click(await screen.findByRole("option", { name: "1 мин" }));
 
     expect(updateProgram).toHaveBeenCalledTimes(1);
     expect(updateProgram.mock.calls[0]?.[0]).toEqual({ bufferSeconds: 60 });
@@ -1137,6 +1140,72 @@ describe("StaffProgramPage — the buffer", () => {
     await renderPage();
 
     expect(screen.getByText(/не меняет длительность номера/)).toBeInTheDocument();
+  });
+
+  it("offers the twenty seconds a tight changeover actually takes", async () => {
+    stub();
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("combobox", { name: /Буфер между выступлениями/ }));
+    await userEvent.click(await screen.findByRole("option", { name: "20 сек" }));
+
+    expect(updateProgram.mock.calls[0]?.[0]).toEqual({ bufferSeconds: 20 });
+  });
+});
+
+/**
+ * The start time, which is typed rather than chosen — and therefore passes through
+ * states that are not answers.
+ *
+ * Both of these were reported from real festivals. A field wired straight into the
+ * mutation sent one PATCH per keystroke that happened to make a valid time, and the
+ * whole programme comes back on every reply — so the buffer set a moment earlier was
+ * put back to its old value by a reply to an older write. The fix is upstream of the
+ * race: do not write until the organizer has finished saying what they mean.
+ */
+describe("StaffProgramPage — the start time", () => {
+  it("saves once the typing stops, not once per keystroke", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      stub();
+      await renderPage();
+
+      const time = screen.getByLabelText("Время начала");
+      await userEvent.clear(time);
+      // «1047» passes through «10:4», which is a perfectly valid 10:04 — the state the
+      // old field saved on its way to the time the organizer was actually typing.
+      await userEvent.type(time, "1047");
+      expect(updateProgram).not.toHaveBeenCalled();
+
+      await act(async () => {
+        vi.advanceTimersByTime(1500);
+      });
+      expect(updateProgram).toHaveBeenCalledTimes(1);
+      expect(updateProgram.mock.calls[0]?.[0]).toEqual({
+        startsAt: festivalInputToIso("2026-08-01T10:47"),
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("waits for the hour rather than saving a day at midnight", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      stub();
+      await renderPage();
+
+      // Emptying the time to retype it is not «эта программа начинается в полночь», and
+      // the old field saved exactly that on the way past.
+      await userEvent.clear(screen.getByLabelText("Время начала"));
+      await act(async () => {
+        vi.advanceTimersByTime(1500);
+      });
+
+      expect(updateProgram).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

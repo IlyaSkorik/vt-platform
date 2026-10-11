@@ -381,7 +381,9 @@ function ProgramWorkspaceInner({ program }: { program: Program }): React.JSX.Ele
 }
 
 function ProgramSettings({ program }: { program: Program }): React.JSX.Element {
-  const update = useUpdateProgramSettings(program.id);
+  const update = useUpdateProgram(program.id);
+  const setBuffer = (bufferSeconds: number) =>
+    update.mutate({ bufferSeconds }, { onError: () => toast.error("Не удалось изменить буфер") });
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -396,35 +398,103 @@ function ProgramSettings({ program }: { program: Program }): React.JSX.Element {
           label="Буфер между выступлениями"
           options={BUFFER_PRESETS.map((seconds) => ({
             value: String(seconds),
-            label: seconds === 0 ? "Без буфера" : formatDuration(seconds),
+            label: bufferLabel(seconds),
           }))}
           value={String(program.bufferSeconds)}
-          onValueChange={(value: string) => update.setBuffer(Number(value))}
+          onValueChange={(value: string) => setBuffer(Number(value))}
           description="Добавляется к каждому выступлению при расчёте расписания и не меняет длительность номера."
         />
-        <DateTimePicker
-          label="Начало программы"
-          value={isoToFestivalInput(program.startsAt)}
-          onChange={update.setStart}
-        />
+        <ProgramStart program={program} />
       </div>
     </div>
   );
 }
 
-/** The two program-level settings, as one small hook so the form stays declarative. */
-function useUpdateProgramSettings(programId: string) {
-  const update = useUpdateProgram(programId);
-  return {
-    setBuffer: (bufferSeconds: number) =>
-      update.mutate({ bufferSeconds }, { onError: () => toast.error("Не удалось изменить буфер") }),
-    setStart: (localValue: string) =>
-      update.mutate(
-        { startsAt: festivalInputToIso(localValue) },
-        { onError: () => toast.error("Не удалось изменить время начала") },
-      ),
-  };
+/**
+ * «Буфер» in words, not on a stopwatch.
+ *
+ * {@link formatDuration} renders `m:ss`, which is right in the «Хронометраж» column of a
+ * three-minute act and ambiguous here: a buffer shown as «1:30» was read as an hour and
+ * a half at least as often as the minute and a half it is. The unit is spelled out
+ * because this control is answered once per programme — there is nothing to keep compact.
+ */
+function bufferLabel(seconds: number): string {
+  if (seconds === 0) {
+    return "Без буфера";
+  }
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  if (minutes === 0) {
+    return `${rest} сек`;
+  }
+  return rest === 0 ? `${minutes} мин` : `${minutes} мин ${rest} сек`;
 }
+
+/**
+ * «Начало программы» — the one field here that is typed into rather than chosen from.
+ *
+ * Which is why it keeps a draft instead of saving every change the picker reports. The
+ * picker reports one on nearly every keystroke: typing «1047» passes through `10:4`,
+ * which *is* a valid time (10:04), so a field edited straight into the mutation sent two
+ * PATCHes for one correction and left whichever reply happened to land second on screen.
+ * That is the «дата ставится неправильно» organizers reported — and clearing the time to
+ * retype it reported midnight on the way past, which is the «потом она пропадает».
+ *
+ * So: a local draft, saved once the typing stops, and never saved half-finished. A date
+ * with no time yet is not an instant and waits; an emptied date *is* an answer («у этой
+ * программы пока нет времени») and clears the start, which is the only way back to an
+ * untimed running order.
+ */
+function ProgramStart({ program }: { program: Program }): React.JSX.Element {
+  const update = useUpdateProgram(program.id);
+  const saved = isoToFestivalInput(program.startsAt);
+  const [draft, setDraft] = useState(saved);
+
+  // Follow the programme when it changes underneath — a reply landing, another tab, a
+  // different programme opened into the same form — but never over an unsaved edit.
+  useEffect(() => setDraft(saved), [saved]);
+
+  // `update` is deliberately not a dependency: it is a fresh object on every render, so
+  // depending on it would restart the timer forever and nothing would ever be saved.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see above.
+  useEffect(() => {
+    if (draft === saved) {
+      return;
+    }
+    const [date = "", time = ""] = draft.split("T");
+    // Half an answer: the day is chosen and the hour is still being typed. Waiting costs
+    // nothing — the next keystroke restarts this timer anyway.
+    if (date !== "" && time.length < 5) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      update.mutate(
+        { startsAt: festivalInputToIso(draft) },
+        { onError: () => toast.error("Не удалось изменить время начала") },
+      );
+    }, START_SAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [draft, saved]);
+
+  // `timeLabel` is overridden because the table below has a «Время» column: two things
+  // called «Время» on one screen is one too many for anybody reading it out loud.
+  return (
+    <DateTimePicker
+      label="Начало программы"
+      timeLabel="Время начала"
+      value={draft}
+      onChange={setDraft}
+    />
+  );
+}
+
+/**
+ * How long the start time waits after the last keystroke before it is saved.
+ *
+ * Long enough to cover the pause between the hour and the minutes, short enough that
+ * nobody navigates away from a change they thought they had made.
+ */
+const START_SAVE_DELAY_MS = 900;
 
 /**
  * The running order: the table the whole constructor exists to arrange.

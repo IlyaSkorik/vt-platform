@@ -386,8 +386,14 @@ export interface CreateShareInput {
   controlsRunningOrder?: boolean;
 }
 
-/** The buffer presets the constructor offers (seconds). */
-export const BUFFER_PRESETS = [0, 30, 45, 60, 90, 120] as const;
+/**
+ * The buffer presets the constructor offers (seconds).
+ *
+ * Twenty seconds is the shortest one worth having: it is a soloist walking off while the
+ * next walks on, which is the gap a tightly run festival actually leaves — anything
+ * smaller is not a changeover, and the schedule it produces does not survive the day.
+ */
+export const BUFFER_PRESETS = [0, 20, 30, 45, 60, 90, 120] as const;
 
 /** What a public link shows when the organizer has not chosen otherwise. */
 export const DEFAULT_SHARE_COLUMNS: ProgramColumnKey[] = [
