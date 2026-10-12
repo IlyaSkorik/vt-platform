@@ -891,7 +891,7 @@ describe("StaffProgramPage — printing the programme", () => {
     stub();
     await renderPage();
 
-    const strip = screen.getByRole("group", { name: "Порядок колонок в PDF" });
+    const strip = screen.getByRole("group", { name: /Порядок колонок в PDF/ });
     expect(within(strip).getByRole("button", { name: "Левее: №" })).toBeDisabled();
     expect(within(strip).getByRole("button", { name: "Правее: Организация" })).toBeDisabled();
 
@@ -930,7 +930,7 @@ describe("StaffProgramPage — printing the programme", () => {
       await userEvent.click(within(panel).getByRole("checkbox", { name: label }));
     }
 
-    expect(screen.queryByRole("group", { name: "Порядок колонок в PDF" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: /Порядок колонок в PDF/ })).not.toBeInTheDocument();
   });
 
   it("cannot export nothing at all", async () => {
@@ -1361,7 +1361,7 @@ describe("StaffProgramPage — public links", () => {
     await renderPage();
 
     await userEvent.type(screen.getByLabelText("Название ссылки"), "Экран у сцены");
-    const strip = screen.getByRole("group", { name: "Порядок колонок по ссылке" });
+    const strip = screen.getByRole("group", { name: /Порядок колонок по ссылке/ });
     await userEvent.click(within(strip).getByRole("button", { name: "Левее: Участник" }));
     await userEvent.click(screen.getByRole("button", { name: /Создать ссылку/ }));
 

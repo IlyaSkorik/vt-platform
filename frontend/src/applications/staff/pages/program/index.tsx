@@ -1666,8 +1666,11 @@ function ColumnOrderStrip({
     return null;
   }
   return (
-    <div role="group" aria-label={label} className="flex min-w-0 flex-wrap items-center gap-2">
-      <span className="text-muted-foreground text-xs">Порядок слева направо:</span>
+    // A `fieldset`, like the pickers it follows: the arrows are a group of controls over
+    // one decision, and its `legend` names which cut of the table is being arranged —
+    // both are on screen at once.
+    <fieldset className="flex min-w-0 flex-wrap items-center gap-2">
+      <legend className="px-1 text-muted-foreground text-xs">{label} — слева направо</legend>
       {chosen.map((key, index) => (
         <span
           key={key}
@@ -1694,7 +1697,7 @@ function ColumnOrderStrip({
           </Button>
         </span>
       ))}
-    </div>
+    </fieldset>
   );
 }
 
