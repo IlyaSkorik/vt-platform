@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   type PublicProgram,
+  type PublicProgramRow,
   useHostReorder,
   usePublicProgram,
   useSetRowProgress,
@@ -129,12 +130,30 @@ describe("PublicProgramPage", () => {
   });
 
   it("renders a blank cell as a dash rather than an empty gap", () => {
+    const base = anEngineerProgram();
+    stub({
+      ...base,
+      rows: [{ ...base.rows[0], cells: ["10:00", "Катюша", "3:20", ""] } as PublicProgramRow],
+    });
+    renderPage();
+
+    const cells = within(screen.getAllByRole("row")[1] as HTMLElement).getAllByRole("cell");
+    expect(cells[3]).toHaveTextContent("—");
+  });
+
+  it("draws a break as one line instead of a row of blank cells", () => {
+    // The sound desk's table is cut wide for the acts; «Перерыв» must not sit two screens
+    // to the right of the clock because the columns around it have nothing to say.
     stub(anEngineerProgram());
     renderPage();
 
-    const rows = screen.getAllByRole("row").slice(1);
-    const breakCells = within(rows[1] as HTMLElement).getAllByRole("cell");
-    expect(breakCells[3]).toHaveTextContent("—");
+    const rows = screen.getAllByTestId("program-row");
+    const cells = within(rows[1] as HTMLElement).getAllByRole("cell");
+    expect(cells).toHaveLength(1);
+    expect(cells[0]).toHaveAttribute("colspan", "4");
+    expect(cells[0]).toHaveTextContent("10:04");
+    expect(cells[0]).toHaveTextContent("Перерыв");
+    expect(cells[0]).toHaveTextContent("15:00");
   });
 
   it("names the festival and the nomination above the table", () => {

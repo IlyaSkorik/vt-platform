@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, Check, Play, SkipForward } from "lucide-react";
 import { useParams } from "react-router";
 
 import {
+  blockLine,
   moveRowNextTo,
   moveRowTo,
   type PublicProgram,
@@ -193,6 +194,7 @@ function ProgramTableRow({
   const isPerformance = row.kind === "PERFORMANCE";
   const onStage = row.progress === "ON_STAGE";
   const behindUs = row.progress === "PERFORMED" || row.progress === "SKIPPED";
+  const block = isPerformance ? null : blockLine(row, columns);
 
   return (
     <tr
@@ -208,31 +210,58 @@ function ProgramTableRow({
               : "border-border border-b bg-muted/40 last:border-0"
       }
     >
-      {row.cells.map((cell, cellIndex) => {
-        const column = columns[cellIndex];
-        const emphasise = column === "TIME" || (column === "TITLE" && !isPerformance);
-        return (
-          <td
-            key={column ?? String(cellIndex)}
-            className={
-              emphasise
-                ? "whitespace-nowrap px-2 py-1.5 font-semibold text-sm tabular-nums sm:px-3"
-                : "px-2 py-1.5 text-sm sm:px-3"
-            }
-          >
-            <span className={behindUs ? "line-through decoration-1" : undefined}>
-              {cell || <span className="text-muted-foreground">—</span>}
-            </span>
-            {/* The state is announced beside the first column so it is legible from the
-                hall without hunting for a status column that may not be published. */}
-            {cellIndex === 0 && onStage ? (
-              <Badge variant="success" className="ml-1.5">
-                Сейчас
-              </Badge>
+      {block !== null ? (
+        // A break is not an act with blank cells, so it is not drawn as one: one line
+        // across the whole table, pinned to the left edge, where it is readable without
+        // scrolling a table cut wide for the acts around it.
+        <td colSpan={columns.length} className="px-2 py-1.5 sm:px-3">
+          {/* Pinned at the cell's own padding, not at `left-0`: scrolled right, the line
+              keeps the gap it has at rest instead of riding the table's border. */}
+          <div className="sticky left-2 flex w-fit flex-wrap items-baseline gap-x-2 gap-y-0.5 sm:left-3">
+            {block.time ? (
+              <span className="font-semibold text-sm tabular-nums">{block.time}</span>
             ) : null}
-          </td>
-        );
-      })}
+            <span
+              className={
+                behindUs
+                  ? "font-medium text-sm uppercase tracking-wide line-through decoration-1"
+                  : "font-medium text-sm uppercase tracking-wide"
+              }
+            >
+              {block.title || "—"}
+            </span>
+            {block.extras.length > 0 ? (
+              <span className="text-muted-foreground text-xs">{block.extras.join(" · ")}</span>
+            ) : null}
+            {onStage ? <Badge variant="success">Сейчас</Badge> : null}
+          </div>
+        </td>
+      ) : (
+        row.cells.map((cell, cellIndex) => {
+          const column = columns[cellIndex];
+          return (
+            <td
+              key={column ?? String(cellIndex)}
+              className={
+                column === "TIME"
+                  ? "whitespace-nowrap px-2 py-1.5 font-semibold text-sm tabular-nums sm:px-3"
+                  : "px-2 py-1.5 text-sm sm:px-3"
+              }
+            >
+              <span className={behindUs ? "line-through decoration-1" : undefined}>
+                {cell || <span className="text-muted-foreground">—</span>}
+              </span>
+              {/* The state is announced beside the first column so it is legible from the
+                  hall without hunting for a status column that may not be published. */}
+              {cellIndex === 0 && onStage ? (
+                <Badge variant="success" className="ml-1.5">
+                  Сейчас
+                </Badge>
+              ) : null}
+            </td>
+          );
+        })
+      )}
       {isHost ? (
         <td className="px-2 py-1.5 sm:px-3">
           <HostControls slug={slug} row={row} rows={rows} index={index} columns={columns} />

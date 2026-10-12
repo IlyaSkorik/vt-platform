@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { PublicProgramRow } from "./api";
-import { moveRowNextTo, moveRowTo, rowNumber } from "./model";
+import { blockLine, moveRowNextTo, moveRowTo, rowNumber } from "./model";
 
 const COLUMNS = ["POSITION", "TIME", "TITLE"];
 
@@ -90,5 +90,58 @@ describe("moveRowNextTo", () => {
     const rows = published();
     moveRowNextTo(rows, COLUMNS, 2, 4, "before");
     expect(rows.map((row) => row.id)).toEqual(["item-4", "item-9", "item-7"]);
+  });
+});
+
+/**
+ * A break read as a line rather than as a row. Get this wrong and the screen beside the
+ * stage announces a blank, or hides «Перерыв» off the right edge of a wide table.
+ */
+describe("blockLine", () => {
+  const CUT = ["TIME", "TITLE", "DURATION", "COMMENT"];
+
+  it("pulls the clock, the name and the rest out of the published cells", () => {
+    const row: PublicProgramRow = {
+      kind: "BREAK",
+      cells: ["10:04", "Перерыв", "15:00", "Сцена под награждение"],
+      progress: "PENDING",
+      id: null,
+    };
+
+    expect(blockLine(row, CUT)).toEqual({
+      time: "10:04",
+      title: "Перерыв",
+      extras: ["15:00", "Сцена под награждение"],
+    });
+  });
+
+  it("drops the blank cells a block has instead of listing them", () => {
+    const row: PublicProgramRow = {
+      kind: "AWARD",
+      cells: ["", "10:04", "Награждение", ""],
+      progress: "PENDING",
+      id: null,
+    };
+
+    expect(blockLine(row, ["POSITION", "TIME", "TITLE", "PARTICIPANT"])).toEqual({
+      time: "10:04",
+      title: "Награждение",
+      extras: [],
+    });
+  });
+
+  it("falls back to whatever the row does say when «Номер» was not published", () => {
+    const row: PublicProgramRow = {
+      kind: "BREAK",
+      cells: ["10:04", "Перерыв на обед"],
+      progress: "PENDING",
+      id: null,
+    };
+
+    expect(blockLine(row, ["TIME", "COMMENT"])).toEqual({
+      time: "10:04",
+      title: "Перерыв на обед",
+      extras: [],
+    });
   });
 });

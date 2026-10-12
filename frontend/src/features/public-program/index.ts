@@ -12,6 +12,8 @@ export {
   useSetRowProgress,
 } from "./api";
 export {
+  type BlockLine,
+  blockLine,
   moveRowNextTo,
   moveRowTo,
   type Placement,
