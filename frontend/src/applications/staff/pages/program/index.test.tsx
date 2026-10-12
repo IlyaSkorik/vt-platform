@@ -863,9 +863,9 @@ describe("StaffProgramPage — printing the programme", () => {
 
   /**
    * Which columns *and in what order*: a page printed for the sound desk wants the number
-   * and the act first, the one taken to the register wants the organization there. Only
-   * the export is ordered this way — a published edition keeps the canonical order so a
-   * column sits in the same place on every screen.
+   * and the act first, the one taken to the register wants the organization there. A
+   * published link is arranged the same way, by the same strip — see the public links
+   * below.
    */
   it("prints the columns in the order the organizer arranged them", async () => {
     stub();
@@ -891,10 +891,11 @@ describe("StaffProgramPage — printing the programme", () => {
     stub();
     await renderPage();
 
-    expect(screen.getByRole("button", { name: "Левее: №" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Правее: Организация" })).toBeDisabled();
+    const strip = screen.getByRole("group", { name: "Порядок колонок в PDF" });
+    expect(within(strip).getByRole("button", { name: "Левее: №" })).toBeDisabled();
+    expect(within(strip).getByRole("button", { name: "Правее: Организация" })).toBeDisabled();
 
-    await userEvent.click(screen.getByRole("button", { name: "Правее: №" }));
+    await userEvent.click(within(strip).getByRole("button", { name: "Правее: №" }));
     await userEvent.click(screen.getByRole("button", { name: /Скачать PDF/ }));
 
     await waitFor(() => expect(downloadProgramPdf).toHaveBeenCalled());
@@ -929,7 +930,7 @@ describe("StaffProgramPage — printing the programme", () => {
       await userEvent.click(within(panel).getByRole("checkbox", { name: label }));
     }
 
-    expect(screen.queryByText("Порядок слева направо:")).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Порядок колонок в PDF" })).not.toBeInTheDocument();
   });
 
   it("cannot export nothing at all", async () => {
@@ -1351,6 +1352,21 @@ describe("StaffProgramPage — public links", () => {
     }
 
     expect(screen.getByRole("button", { name: /Создать ссылку/ })).toBeDisabled();
+  });
+
+  it("publishes the columns in the order the organizer arranged them", async () => {
+    // The reader of a public link should not scroll to reach the column their job
+    // depends on, so the strip is the order the screen draws.
+    stub();
+    await renderPage();
+
+    await userEvent.type(screen.getByLabelText("Название ссылки"), "Экран у сцены");
+    const strip = screen.getByRole("group", { name: "Порядок колонок по ссылке" });
+    await userEvent.click(within(strip).getByRole("button", { name: "Левее: Участник" }));
+    await userEvent.click(screen.getByRole("button", { name: /Создать ссылку/ }));
+
+    const payload = createShare.mock.calls[0]?.[0] as { columns: string[] };
+    expect(payload.columns).toEqual(["POSITION", "PARTICIPANT", "TIME", "TITLE"]);
   });
 
   it("publishes the whole programme, so a link picks up items added later", async () => {

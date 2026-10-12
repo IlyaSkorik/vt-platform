@@ -1643,6 +1643,62 @@ function AddBreakControls({ programId }: { programId: string }): React.JSX.Eleme
 }
 
 /**
+ * The chosen columns, left to right, with the arrows that rearrange them.
+ *
+ * Shared by the two places a cut of the table is taken — a printed page and a published
+ * link — because it is the same decision in both: the strip reads in the order the
+ * reader's eye will, so what is being arranged is the table itself rather than a list of
+ * names. Silent below two columns, where there is no order to arrange.
+ */
+function ColumnOrderStrip({
+  label,
+  chosen,
+  labels,
+  onShift,
+}: {
+  /** What this order is *for* — two cuts of one table are arranged on the same screen. */
+  label: string;
+  chosen: ColumnKey[];
+  labels: Map<ColumnKey, string>;
+  onShift: (key: ColumnKey, by: -1 | 1) => void;
+}): React.JSX.Element | null {
+  if (chosen.length < 2) {
+    return null;
+  }
+  return (
+    <div role="group" aria-label={label} className="flex min-w-0 flex-wrap items-center gap-2">
+      <span className="text-muted-foreground text-xs">Порядок слева направо:</span>
+      {chosen.map((key, index) => (
+        <span
+          key={key}
+          className="flex items-center gap-0.5 rounded-md border border-border py-0.5 pr-0.5 pl-2 text-xs"
+        >
+          {labels.get(key)}
+          <Button
+            variant="ghost"
+            size="xs"
+            aria-label={`Левее: ${labels.get(key)}`}
+            disabled={index === 0}
+            onClick={() => onShift(key, -1)}
+          >
+            <ArrowLeft className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="xs"
+            aria-label={`Правее: ${labels.get(key)}`}
+            disabled={index === chosen.length - 1}
+            onClick={() => onShift(key, 1)}
+          >
+            <ArrowRight className="size-3.5" />
+          </Button>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/**
  * Print the programme: tick the columns, get a PDF.
  *
  * The same column-picking shape as publishing a link, because it is the same decision —
@@ -1650,10 +1706,10 @@ function AddBreakControls({ programId }: { programId: string }): React.JSX.Eleme
  * printed running order almost always wants, rather than to everything, since a thirteen-
  * column page is unreadable.
  *
- * Their order is the organizer's too, and only here: a published edition keeps the
- * canonical order so a column sits in the same place on every screen, while a page is
- * printed for one job — the number and the act first for the sound desk, the organization
- * first for the register — and the eye reads left to right whatever the table thinks.
+ * Their order is the organizer's too: a page is printed for one job — the number and the
+ * act first for the sound desk, the organization first for the register — and the eye
+ * reads left to right whatever the table thinks. A published link is arranged the same
+ * way, by the same strip.
  */
 function ExportPanel({ program }: { program: Program }): React.JSX.Element {
   const [columns, setColumns] = useState<ColumnKey[]>(DEFAULT_EXPORT_COLUMNS);
@@ -1781,39 +1837,12 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
           />
         ))}
       </fieldset>
-      {chosen.length > 1 ? (
-        // Order, not selection: the strip reads left to right exactly as the printed page
-        // will, so what is being arranged is the page itself rather than a list of names.
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="text-muted-foreground text-xs">Порядок слева направо:</span>
-          {chosen.map((key, index) => (
-            <span
-              key={key}
-              className="flex items-center gap-0.5 rounded-md border border-border py-0.5 pr-0.5 pl-2 text-xs"
-            >
-              {available.get(key)}
-              <Button
-                variant="ghost"
-                size="xs"
-                aria-label={`Левее: ${available.get(key)}`}
-                disabled={index === 0}
-                onClick={() => shift(key, -1)}
-              >
-                <ArrowLeft className="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="xs"
-                aria-label={`Правее: ${available.get(key)}`}
-                disabled={index === chosen.length - 1}
-                onClick={() => shift(key, 1)}
-              >
-                <ArrowRight className="size-3.5" />
-              </Button>
-            </span>
-          ))}
-        </div>
-      ) : null}
+      <ColumnOrderStrip
+        label="Порядок колонок в PDF"
+        chosen={chosen}
+        labels={available}
+        onShift={shift}
+      />
       <p className="text-muted-foreground text-xs">
         Таблица печатается на A4 в альбомной ориентации, заголовок повторяется на каждой странице.
       </p>
@@ -1919,7 +1948,13 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
   const [columns, setColumns] = useState<ColumnKey[]>(DEFAULT_SHARE_COLUMNS);
   const [controls, setControls] = useState(false);
 
+  // A column the organizer has since deleted would still be ticked here and would fail
+  // the request; dropping it keeps the strip below readable and what is published valid.
+  const available = new Map(program.availableColumns.map((column) => [column.key, column.label]));
+  const chosen = columns.filter((key) => available.has(key));
+
   const toggle = (key: ColumnKey, checked: boolean) => {
+    // A newly ticked column goes last, which is where somebody adding one expects it.
     setColumns((current) =>
       checked
         ? [...current.filter((item) => item !== key), key]
@@ -1927,12 +1962,19 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
     );
   };
 
+  const shift = (key: ColumnKey, by: -1 | 1) => {
+    setColumns((current) => {
+      const from = current.indexOf(key);
+      return moveItem(current, from, from + by);
+    });
+  };
+
   const publish = () => {
     // An empty list means the whole programme, and the whole programme is what a link is
     // for: the sound engineer's copy should grow when the day does, rather than go stale
     // the moment the organizer adds an item past the end of a hand-typed range.
     create.mutate(
-      { name: name.trim(), columns, itemIds: [], controlsRunningOrder: controls },
+      { name: name.trim(), columns: chosen, itemIds: [], controlsRunningOrder: controls },
       {
         onSuccess: () => {
           setName("");
@@ -1949,9 +1991,9 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
     <div className="flex flex-col gap-3">
       <p className="font-medium text-sm">Публичные программы</p>
       <p className="text-muted-foreground text-xs">
-        Отметьте колонки, которые нужно показать по ссылке: звукорежиссёру — время, номер и
-        комментарий; экрану у сцены — время, участника и номер. Неотмеченные колонки по ссылке не
-        передаются вообще.
+        Отметьте колонки, которые нужно показать по ссылке, и расставьте их в том порядке, в котором
+        их будут читать: звукорежиссёру — время, номер и комментарий; экрану у сцены — время,
+        участника и номер. Неотмеченные колонки по ссылке не передаются вообще.
       </p>
 
       <div className="flex flex-wrap items-end gap-2">
@@ -1964,7 +2006,7 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
         />
         <Button
           loading={create.isPending}
-          disabled={name.trim().length === 0 || columns.length === 0}
+          disabled={name.trim().length === 0 || chosen.length === 0}
           onClick={publish}
         >
           <Link2 className="size-4" /> Создать ссылку
@@ -1983,6 +2025,12 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
           />
         ))}
       </fieldset>
+      <ColumnOrderStrip
+        label="Порядок колонок по ссылке"
+        chosen={chosen}
+        labels={available}
+        onShift={shift}
+      />
       <div className="flex flex-col gap-1">
         <Checkbox
           label="Программа ведущего — можно отмечать номера и менять порядок по ссылке"
