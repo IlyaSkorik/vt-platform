@@ -6,13 +6,16 @@
  * полосы (оператор не знает, что он в чужом кабинете, — а организатор смотрит на
  * тот же экран).
  */
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { authKeys } from "@/features/auth";
 import { actingOrganizationStore, apiClient } from "@/shared/api";
+import type { CurrentUser } from "@/shared/api/generated/model";
+import { useEnterOrganizationPanel } from "./model";
 import { ActingAsBanner } from "./ui/acting-banner";
 
 const originalFetch = globalThis.fetch;
@@ -112,5 +115,64 @@ describe("the banner over somebody else's panel", () => {
 
     expect(actingOrganizationStore.get()).toBeNull();
     expect(screen.queryByRole("status")).toBeNull();
+  });
+});
+
+describe("entering a panel", () => {
+  const ORGANIZATION = { id: "0199-org", name: "Созвездие" };
+
+  /** Что `/users/me` ответит на следующий запрос. */
+  let session: CurrentUser;
+
+  function Probe(): React.JSX.Element {
+    useQuery({ queryKey: authKeys.currentUser, queryFn: async () => session });
+    const enter = useEnterOrganizationPanel();
+    return (
+      <button type="button" onClick={() => void enter(ORGANIZATION)}>
+        Войти
+      </button>
+    );
+  }
+
+  async function pressEnter(answered: CurrentUser): Promise<void> {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    session = { staffMembership: null } as CurrentUser;
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <Probe />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(queryClient.getQueryData(authKeys.currentUser)).toBeDefined());
+    session = answered;
+    await userEvent.click(screen.getByRole("button", { name: "Войти" }));
+  }
+
+  it("stays inside once the server answers as that organization's staff", async () => {
+    await pressEnter({
+      staffMembership: { role: "OWNER", status: "ACTIVE", organizationId: ORGANIZATION.id },
+    } as CurrentUser);
+
+    expect(actingOrganizationStore.get()).toEqual(ORGANIZATION);
+  });
+
+  it("backs out and says so when the server did not take the header", async () => {
+    // Старый бэкенд, снятый доступ оператора, исчезнувшая организация — снаружи
+    // это одно и то же: сессия приходит прежняя. Раньше `/staff` молча
+    // возвращал нажавшего в кабинет, и кнопка выглядела сломанной.
+    await pressEnter({ staffMembership: null } as CurrentUser);
+
+    expect(actingOrganizationStore.get()).toBeNull();
+  });
+
+  it("does not take somebody else's organization for the one asked for", async () => {
+    await pressEnter({
+      staffMembership: { role: "OWNER", status: "ACTIVE", organizationId: "0199-another" },
+    } as CurrentUser);
+
+    expect(actingOrganizationStore.get()).toBeNull();
   });
 });

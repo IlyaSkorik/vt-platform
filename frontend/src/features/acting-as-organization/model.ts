@@ -11,12 +11,21 @@
  * долю секунды показать оператору чужие строки в чужом кабинете, а это ровно то,
  * чего поддержка себе позволить не может: организатор обычно смотрит на тот же
  * экран.
+ *
+ * Вход ждёт ответа сервера и проверяет его. Панель рисуется из `/users/me`, и
+ * если сервер заголовок не прочёл — не та версия бэкенда, отозванный доступ
+ * оператора, организация, которой больше нет, — то ответ приходит прежний, «вы
+ * не сотрудник», и `/staff` молча возвращает нажавшего в кабинет. Молча — это и
+ * есть худшее: кнопка нажата, ничего не произошло, причины не названо.
  */
-import { useQueryClient } from "@tanstack/react-query";
+import { hashKey, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useSyncExternalStore } from "react";
 import { useNavigate } from "react-router";
+import { authKeys } from "@/features/auth";
 import { type ActingOrganization, actingOrganizationStore } from "@/shared/api";
+import type { CurrentUser } from "@/shared/api/generated/model";
 import { ROUTES } from "@/shared/config";
+import { toast } from "@/shared/ui";
 
 /** Организация, в кабинете которой оператор сейчас находится, или `null`. */
 export function useActingOrganization(): ActingOrganization | null {
@@ -28,14 +37,30 @@ export function useActingOrganization(): ActingOrganization | null {
 }
 
 /** Войти в кабинет организации и открыть её панель. */
-export function useEnterOrganizationPanel(): (organization: ActingOrganization) => void {
+export function useEnterOrganizationPanel(): (organization: ActingOrganization) => Promise<void> {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   return useCallback(
-    (organization: ActingOrganization) => {
+    async (organization: ActingOrganization) => {
       actingOrganizationStore.set(organization);
-      queryClient.clear();
+      // Ответы, снятые до входа, относятся к другой организации — их не должно
+      // остаться ни в одном кэше. Сессию трогаем отдельно: её надо не выбросить,
+      // а переспросить, потому что именно по ней решается, пускать ли в панель.
+      const sessionHash = hashKey(authKeys.currentUser);
+      queryClient.removeQueries({ predicate: (query) => query.queryHash !== sessionHash });
+      await queryClient.refetchQueries({ queryKey: authKeys.currentUser });
+
+      const session = queryClient.getQueryData<CurrentUser>(authKeys.currentUser);
+      if (session?.staffMembership?.organizationId !== organization.id) {
+        actingOrganizationStore.set(null);
+        await queryClient.refetchQueries({ queryKey: authKeys.currentUser });
+        toast.error(
+          `Не удалось войти в кабинет «${organization.name}»: сервер не признал заход. Проверьте, что доступ оператора в силе, а API обновлён.`,
+        );
+        return;
+      }
+
       void navigate(ROUTES.staff);
     },
     [queryClient, navigate],
