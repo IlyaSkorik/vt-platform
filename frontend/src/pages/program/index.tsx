@@ -136,9 +136,14 @@ function PublicProgramTable({
                     <th
                       key={column.key}
                       scope="col"
-                      className="whitespace-nowrap px-2 py-1.5 font-medium text-muted-foreground text-[11px] uppercase tracking-wide sm:px-3"
+                      className="px-2 py-1.5 align-bottom font-medium text-muted-foreground text-[11px] uppercase tracking-wide sm:px-3"
                     >
-                      {column.label}
+                      {/* Capped like the cells below it: a column the organizer named
+                          «Ответственный за фонограмму» would otherwise set the column's
+                          width from its header alone. */}
+                      <span className="block max-w-[26ch] [overflow-wrap:anywhere]">
+                        {column.label}
+                      </span>
                     </th>
                   ))}
                   {isHost ? (
@@ -244,20 +249,23 @@ function ProgramTableRow({
               key={column ?? String(cellIndex)}
               className={
                 column === "TIME"
-                  ? "whitespace-nowrap px-2 py-1.5 font-semibold text-sm tabular-nums sm:px-3"
-                  : "px-2 py-1.5 text-sm sm:px-3"
+                  ? "whitespace-nowrap px-2 py-1.5 align-top font-semibold text-sm tabular-nums sm:px-3"
+                  : "px-2 py-1.5 align-top text-sm sm:px-3"
               }
             >
-              <span className={behindUs ? "line-through decoration-1" : undefined}>
-                {cell || <span className="text-muted-foreground">—</span>}
-              </span>
-              {/* The state is announced beside the first column so it is legible from the
-                  hall without hunting for a status column that may not be published. */}
-              {cellIndex === 0 && onStage ? (
-                <Badge variant="success" className="ml-1.5">
-                  Сейчас
-                </Badge>
-              ) : null}
+              {/* The cap is what keeps the table narrow: a collective with six surnames in
+                  its name, or a title that is half a sentence, wraps onto a second and a
+                  third line instead of widening its column and pushing everything to the
+                  right of it off the screen. `align-top` above is its other half — beside a
+                  cell that wrapped, the short ones still start at the first line. */}
+              <div className="flex max-w-[26ch] flex-wrap items-baseline gap-x-1.5 [overflow-wrap:anywhere]">
+                <span className={behindUs ? "line-through decoration-1" : undefined}>
+                  {cell || <span className="text-muted-foreground">—</span>}
+                </span>
+                {/* The state is announced beside the first column so it is legible from the
+                    hall without hunting for a status column that may not be published. */}
+                {cellIndex === 0 && onStage ? <Badge variant="success">Сейчас</Badge> : null}
+              </div>
             </td>
           );
         })
