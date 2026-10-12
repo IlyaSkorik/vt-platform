@@ -676,14 +676,16 @@ class TestPublicRead:
         assert "Выход с точки 3" not in flattened
         assert "Иванов Иван" not in flattened
 
-    def test_columns_are_published_in_canonical_order_whatever_order_was_sent(self) -> None:
+    def test_columns_are_published_in_the_order_they_were_sent(self) -> None:
+        # The organizer arranges the link for whoever reads it, and a public screen shows
+        # exactly that: no scrolling to reach the column the job depends on.
         env = Env(_act("Катюша", 200))
         program_id = env.program()
         env.service.fill_from_scope(program_id)
         _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Жюри", columns=("TEACHERS", "TITLE", "TIME")))
         public = env.service.public_program(share.slug)
         assert public is not None
-        assert [column.key for column in public.columns] == ["TIME", "TITLE", "TEACHERS"]
+        assert [column.key for column in public.columns] == ["TEACHERS", "TITLE", "TIME"]
 
     def test_every_available_column_can_be_published(self) -> None:
         act = _act("Катюша", 200, comment="Нужен микрофон")

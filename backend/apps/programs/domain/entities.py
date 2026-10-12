@@ -312,7 +312,12 @@ class ProgramShare:
 
     @property
     def columns(self) -> tuple[ColumnRef, ...]:
-        """The columns this edition shows, in the programme's canonical order.
+        """The columns this edition shows, left to right as the organizer arranged them.
+
+        The order is part of the edition, not of the programme: the sound desk wants the
+        time and the act first, the screen beside the stage wants the participant, and
+        whoever publishes the link is the one who knows which. A reader of a public
+        screen never scrolls to find the column their job depends on.
 
         Never empty: an edition published without a choice shows the default columns, so
         there is no state in which "no columns were chosen" has to be handled downstream.
@@ -612,30 +617,16 @@ class Program:
                 return candidate
         raise ProgramColumnNotFoundError("Этой колонки нет в программе — обновите страницу.")
 
-    def normalize_columns(self, refs: Sequence[ColumnRef | ProgramColumn]) -> tuple[ColumnRef, ...]:
-        """Order a selection canonically and reject anything this programme has not got.
-
-        Built-ins keep their enum order and custom columns follow in the order the
-        organizer created them, so a column sits in the same place on every screen
-        whichever subset was chosen.
-
-        Accepts a bare :class:`ProgramColumn` as a convenience - naming a built-in column
-        should not require wrapping it first.
-        """
-        chosen = {ref if isinstance(ref, ColumnRef) else ColumnRef.of(ref) for ref in refs}
-        unknown = [ref.key for ref in chosen if ref.is_custom and ref.custom_id not in {column.id for column in self._custom_columns}]
-        if unknown:
-            raise ProgramColumnNotFoundError("Некоторых колонок нет в программе — обновите страницу.")
-        return tuple(ref for ref in self.columns if ref in chosen)
-
     def select_columns(self, refs: Sequence[ColumnRef | ProgramColumn]) -> tuple[ColumnRef, ...]:
         """Take a selection in the order it was given, rejecting anything this programme has not got.
 
-        The counterpart of :meth:`normalize_columns`, and the difference is the point of
-        both. A published edition keeps the canonical order, so a column sits in the same
-        place on every screen whichever subset was chosen. A printed page is laid out for
-        one purpose by the person printing it — the number and the act first for the desk,
-        the organization first for the register — and that order is theirs to decide.
+        The one way a cut of this table is chosen, for a printed page and for a published
+        link alike: both are laid out for one job by the person who knows it — the number
+        and the act first for the sound desk, the organization first for the register —
+        and that order is theirs rather than the enum's.
+
+        Accepts a bare :class:`ProgramColumn` as a convenience - naming a built-in column
+        should not require wrapping it first.
 
         A column named twice collapses onto its first mention: a table cannot carry the
         same column in two places, and refusing the whole export over it would be rude.
@@ -899,7 +890,7 @@ class Program:
         """Publish a named edition of this program behind its own slug.
 
         ``columns`` is what the edition is *for*: the columns of the table its reader
-        sees. Passing none falls back to the default columns.
+        sees, in the order they are given. Passing none falls back to the default columns.
 
         ``item_ids`` optionally narrows the rows; pass none for "the whole program, kept
         current". Every id must belong to this program - an edition cannot point at a
@@ -921,7 +912,7 @@ class Program:
             _id=share_id,
             _name=name,
             _slug=slug,
-            _columns=self.normalize_columns(columns),
+            _columns=self.select_columns(columns),
             _item_ids=selection,
             _controls_running_order=controls_running_order,
             _created_at=now,
@@ -938,9 +929,9 @@ class Program:
         return share
 
     def set_share_columns(self, share_id: uuid.UUID, columns: Sequence[ColumnRef | ProgramColumn], *, now: datetime) -> ProgramShare:
-        """Change which columns a published edition shows, keeping its link."""
+        """Change which columns a published edition shows — and their order — keeping its link."""
         share = self.share(share_id)
-        share.show_columns(self.normalize_columns(columns))
+        share.show_columns(self.select_columns(columns))
         self._touch(now)
         return share
 

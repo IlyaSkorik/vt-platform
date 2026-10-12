@@ -437,7 +437,9 @@ class TestPublishedColumns:
         share = program.add_share(share_id=uuid.uuid4(), name=ShareName("Экран"), slug=PublicSlug("Screen234"), now=NOW)
         assert [ref.key for ref in share.columns] == [column.value for column in DEFAULT_PUBLIC_COLUMNS]
 
-    def test_columns_are_kept_in_canonical_order(self) -> None:
+    def test_columns_are_published_in_the_order_the_organizer_chose(self) -> None:
+        # The sound desk reads the act first and the time beside it; the enum's order is
+        # nobody's reading order.
         program = _program()
         share = program.add_share(
             share_id=uuid.uuid4(),
@@ -446,7 +448,7 @@ class TestPublishedColumns:
             now=NOW,
             columns=[ProgramColumn.COMMENT, ProgramColumn.TITLE, ProgramColumn.TIME],
         )
-        assert [ref.key for ref in share.columns] == ["TIME", "TITLE", "COMMENT"]
+        assert [ref.key for ref in share.columns] == ["COMMENT", "TITLE", "TIME"]
 
     def test_columns_can_be_changed_later_and_the_slug_survives(self) -> None:
         program = _program()
@@ -457,8 +459,8 @@ class TestPublishedColumns:
             now=NOW,
             columns=[ProgramColumn.TIME],
         )
-        program.set_share_columns(share.id, [ProgramColumn.TIME, ProgramColumn.PARTICIPANT], now=NOW)
-        assert [ref.key for ref in program.share(share.id).columns] == ["TIME", "PARTICIPANT"]
+        program.set_share_columns(share.id, [ProgramColumn.PARTICIPANT, ProgramColumn.TIME], now=NOW)
+        assert [ref.key for ref in program.share(share.id).columns] == ["PARTICIPANT", "TIME"]
         assert str(program.share(share.id).slug) == "Host23456"
 
     def test_two_editions_of_one_program_show_different_columns(self) -> None:
@@ -496,22 +498,16 @@ class TestPublishedColumns:
 
 
 class TestPrintedColumns:
-    """A printed cut is laid out by the person printing it, not by the programme.
+    """A cut of the table is laid out by the person taking it, not by the programme.
 
-    The counterpart of the class above, and the two rules live side by side on purpose: a
-    published edition keeps a column in the same place on every screen, while a page taken
-    to the sound desk or to the register is ordered for the job it is doing there.
+    The same rule the class above publishes links by: a page taken to the sound desk and
+    one taken to the register are ordered for the job each is doing there.
     """
 
     def test_a_selection_is_taken_in_the_order_it_was_given(self) -> None:
         program = _program()
         chosen = program.select_columns([ProgramColumn.COMMENT, ProgramColumn.TITLE, ProgramColumn.TIME])
         assert [ref.key for ref in chosen] == ["COMMENT", "TITLE", "TIME"]
-
-    def test_the_same_selection_is_still_canonical_for_a_published_edition(self) -> None:
-        program = _program()
-        published = program.normalize_columns([ProgramColumn.COMMENT, ProgramColumn.TITLE, ProgramColumn.TIME])
-        assert [ref.key for ref in published] == ["TIME", "TITLE", "COMMENT"]
 
     def test_a_column_named_twice_collapses_onto_its_first_mention(self) -> None:
         # A table cannot carry the same column in two places.
@@ -609,8 +605,9 @@ class TestCustomColumns:
             now=NOW,
             columns=[column.ref, ColumnRef.of(ProgramColumn.TIME)],
         )
-        # Built-ins first in their own order, then the programme's own columns.
-        assert [ref.key for ref in share.columns] == ["TIME", column.ref.key]
+        # A column of the organizer's own is placed by them like any other — including
+        # ahead of the built-ins, which is where a sound desk wants «Микрофон».
+        assert [ref.key for ref in share.columns] == [column.ref.key, "TIME"]
 
     def test_publishing_a_column_from_another_programme_is_refused(self) -> None:
         program = _program()

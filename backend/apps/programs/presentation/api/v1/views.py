@@ -638,9 +638,8 @@ class ProgramExportView(_StaffView):
     file. Columns arrive as a comma-separated list so the URL stays something that can be
     copied, bookmarked, or wired into a print button; omitting them exports every column.
 
-    The list is ordered, and the page follows it: a printed cut is laid out for one job by
-    the person printing it. A published edition is the other way round — canonical order,
-    so a column sits in the same place on every screen.
+    The list is ordered, and the page follows it: a cut of the table is laid out for one
+    job by the person taking it — the same rule a public link is published by.
     """
 
     @extend_schema(

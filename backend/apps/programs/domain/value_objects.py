@@ -92,8 +92,9 @@ class ProgramColumn(StrEnum):
     act and its notes while the audience screen gets the time, the participant and the
     act and nothing else.
 
-    Order here is the canonical order a table is rendered in, whichever subset was
-    chosen: a column means the same thing and sits in the same place on every screen.
+    Order here is the order the constructor offers them in and the default a cut starts
+    from; the left-to-right order of a printed page or a published link is the
+    organizer's, chosen per cut (:meth:`Program.select_columns`).
     """
 
     POSITION = "POSITION"
