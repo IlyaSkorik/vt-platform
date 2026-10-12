@@ -8240,13 +8240,13 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/program/index.test.tsx": {
-    "mtime": 1791794079.3199096,
-    "ast_hash": "bb5c3ef2d3b88303778b2a97a6828591",
+    "mtime": 1791795377.4890795,
+    "ast_hash": "d6b2226f7e2cb84b54c2b2d56dae0e67",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/program/index.tsx": {
-    "mtime": 1791794079.2799096,
-    "ast_hash": "e11e7717377060070c9f54e3b496c84a",
+    "mtime": 1791795364.5640385,
+    "ast_hash": "a04ddb4b606e7ebb93e6c156d99e05b3",
     "semantic_hash": ""
   },
   "frontend/src/features/program-builder/api.ts": {

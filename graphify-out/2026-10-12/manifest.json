@@ -8240,12 +8240,12 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/program/index.test.tsx": {
-    "mtime": 1791793028.7284513,
+    "mtime": 1791794079.3199096,
     "ast_hash": "bb5c3ef2d3b88303778b2a97a6828591",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/program/index.tsx": {
-    "mtime": 1791792897.3407075,
+    "mtime": 1791794079.2799096,
     "ast_hash": "e11e7717377060070c9f54e3b496c84a",
     "semantic_hash": ""
   },
@@ -8275,8 +8275,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/program/index.tsx": {
-    "mtime": 1791792794.9452164,
-    "ast_hash": "fd84c8a64f084673793719943857e18f",
+    "mtime": 1791794182.1093554,
+    "ast_hash": "3316725e1676b4f0a1fcd19063c94904",
     "semantic_hash": ""
   },
   "frontend/src/features/program-builder/model.test.ts": {
