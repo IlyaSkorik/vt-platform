@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, use, useCallback, useEffect, useMemo, useState } from "react";
 import { authKeys, fetchCurrentUser } from "@/features/auth";
-import { onSessionEvent, refreshAccessToken, tokenStore } from "@/shared/api";
+import {
+  actingOrganizationStore,
+  onSessionEvent,
+  refreshAccessToken,
+  tokenStore,
+} from "@/shared/api";
 import { deleteCurrentSession } from "@/shared/api/generated/identity/identity";
 import type {
   CurrentUser,
@@ -136,6 +141,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
 
   const signOut = useCallback(async () => {
     await logout.mutateAsync().catch(() => undefined);
+    // Кабинет организации, в который зашёл оператор, живёт в localStorage и сам
+    // по себе сессию пережить не должен: следующий вошедший на этой машине не
+    // наследует чужой заголовок.
+    actingOrganizationStore.set(null);
     setEnabled(false);
     setSessionExpired(false);
     queryClient.setQueryData(authKeys.currentUser, null);
@@ -147,6 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     return onSessionEvent("session-expired", () => {
       const wasAuthenticated = queryClient.getQueryData(authKeys.currentUser) != null;
       tokenStore.clear();
+      actingOrganizationStore.set(null);
       queryClient.setQueryData(authKeys.currentUser, null);
       setEnabled(false);
       setSessionExpired(wasAuthenticated);

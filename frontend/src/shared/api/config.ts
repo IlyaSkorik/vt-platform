@@ -24,6 +24,7 @@ export const HEADER = {
   idempotencyKey: "Idempotency-Key",
   ifMatch: "If-Match",
   acceptLanguage: "Accept-Language",
+  actingOrganization: "X-Acting-Organization",
 } as const;
 
 /** Primary locale (ARCH-001 §8.6 — ru-RU primary, i18n-ready). */

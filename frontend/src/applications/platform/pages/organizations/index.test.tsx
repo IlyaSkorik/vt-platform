@@ -48,6 +48,15 @@ vi.mock("@/applications/platform/ui/module-switchboard", () => ({
   ModuleSwitchboard: () => null,
 }));
 
+// Same reason, and the same seam: entering an organization's panel clears the
+// query cache and navigates, so the real button wants providers this suite has
+// no business standing up. What belongs here is that the card offers it.
+vi.mock("@/features/acting-as-organization", () => ({
+  EnterPanelButton: ({ organizationName }: { organizationName: string }) => (
+    <button type="button">Войти в кабинет «{organizationName}»</button>
+  ),
+}));
+
 const { PlatformOrganizationsPage } = await import("./index");
 
 // jsdom implements neither, and the Radix select the model picker is built on calls
