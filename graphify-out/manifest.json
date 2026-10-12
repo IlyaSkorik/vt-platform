@@ -8040,8 +8040,8 @@
     "semantic_hash": ""
   },
   "backend/apps/programs/domain/entities.py": {
-    "mtime": 1791741743.802298,
-    "ast_hash": "d8b50642a64ed3a622c4dcb84c0de983",
+    "mtime": 1791792535.7819035,
+    "ast_hash": "fec8e862ef0507139d43f834e36e609f",
     "semantic_hash": ""
   },
   "backend/apps/programs/domain/exceptions.py": {
@@ -8055,8 +8055,8 @@
     "semantic_hash": ""
   },
   "backend/apps/programs/domain/value_objects.py": {
-    "mtime": 1791735048.2318444,
-    "ast_hash": "2daae7a0bcf28331c6c9b3806aeddeb1",
+    "mtime": 1791793336.5577114,
+    "ast_hash": "2a61588591f1af32ff7a2a6c9cc8701c",
     "semantic_hash": ""
   },
   "backend/apps/programs/infrastructure/__init__.py": {
@@ -8170,8 +8170,8 @@
     "semantic_hash": ""
   },
   "backend/apps/programs/presentation/api/v1/views.py": {
-    "mtime": 1791733948.5294528,
-    "ast_hash": "6b62052bc3c081304f849e67cd3998c0",
+    "mtime": 1791793336.5568795,
+    "ast_hash": "1c46f9ec22476eb2d1fe0d3db0307dfa",
     "semantic_hash": ""
   },
   "backend/apps/programs/presentation/public_urls.py": {
@@ -8195,8 +8195,8 @@
     "semantic_hash": ""
   },
   "backend/tests/application/programs/test_services.py": {
-    "mtime": 1791660953.2183921,
-    "ast_hash": "9d7e709e1381146a9462fcecd4c76f54",
+    "mtime": 1791792625.6691513,
+    "ast_hash": "df8e455066cf4ef821262551eb1478be",
     "semantic_hash": ""
   },
   "backend/tests/domain/programs/__init__.py": {
@@ -8205,8 +8205,8 @@
     "semantic_hash": ""
   },
   "backend/tests/domain/programs/test_entities.py": {
-    "mtime": 1791660928.806268,
-    "ast_hash": "fc385afefbc5b7175a6863c5661fa64a",
+    "mtime": 1791792625.667564,
+    "ast_hash": "544386b4a68312461d7a7e437dc241ba",
     "semantic_hash": ""
   },
   "backend/tests/domain/programs/test_schedule.py": {
@@ -8240,13 +8240,13 @@
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/program/index.test.tsx": {
-    "mtime": 1791745924.9264784,
-    "ast_hash": "e75e64830f169936d03e9fde66ec835b",
+    "mtime": 1791794079.3199096,
+    "ast_hash": "bb5c3ef2d3b88303778b2a97a6828591",
     "semantic_hash": ""
   },
   "frontend/src/applications/staff/pages/program/index.tsx": {
-    "mtime": 1791746296.87076,
-    "ast_hash": "2821e801e0f5abdc0b3d02a7e8b78f50",
+    "mtime": 1791794079.2799096,
+    "ast_hash": "e11e7717377060070c9f54e3b496c84a",
     "semantic_hash": ""
   },
   "frontend/src/features/program-builder/api.ts": {
@@ -8270,13 +8270,13 @@
     "semantic_hash": ""
   },
   "frontend/src/features/public-program/index.ts": {
-    "mtime": 1787920283.7072082,
-    "ast_hash": "12612274622b0699f24b0f415803f975",
+    "mtime": 1791792760.0301683,
+    "ast_hash": "8b3ba424d54645630a9398d2fea21b63",
     "semantic_hash": ""
   },
   "frontend/src/pages/program/index.tsx": {
-    "mtime": 1787920886.1517804,
-    "ast_hash": "4c7743c6ed3721351ace58c3c7ade62a",
+    "mtime": 1791794182.1093554,
+    "ast_hash": "3316725e1676b4f0a1fcd19063c94904",
     "semantic_hash": ""
   },
   "frontend/src/features/program-builder/model.test.ts": {
@@ -8300,8 +8300,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/program/index.test.tsx": {
-    "mtime": 1787920402.4055088,
-    "ast_hash": "cbc8c86b31e6995b0fc8b33bffcaaff7",
+    "mtime": 1791792854.0526016,
+    "ast_hash": "e6e50de8d38a5dc56b7fe27f2b3e5b50",
     "semantic_hash": ""
   },
   "backend/apps/programs/infrastructure/migrations/0003_permanent_item_numbers.py": {
@@ -10120,13 +10120,13 @@
     "semantic_hash": ""
   },
   "frontend/src/features/public-program/model.test.ts": {
-    "mtime": 1791660928.8081498,
-    "ast_hash": "af6e83487ddaeffb53ee4dc5d233eba5",
+    "mtime": 1791792854.09577,
+    "ast_hash": "0f1aed150b8e4f92ff91f5b6f66ecf8e",
     "semantic_hash": ""
   },
   "frontend/src/features/public-program/model.ts": {
-    "mtime": 1791660928.8082535,
-    "ast_hash": "45f601425c3c4ab66c5984efc68ff0d6",
+    "mtime": 1791792759.9927268,
+    "ast_hash": "a632c18c2da24b8712a09a28ea1ef434",
     "semantic_hash": ""
   },
   "frontend/src/widgets/move-to-number/index.ts": {
