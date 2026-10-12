@@ -218,9 +218,19 @@ class SubmissionView:
     created_at: datetime
     updated_at: datetime
     version: int
+    #: Whether the *applicant* may still change this number right now — the same
+    #: question :func:`~apps.applications.application.commands._support.ensure_submission_editable`
+    #: asks before it accepts a change, answered once so the screens can stop
+    #: offering what the endpoint would refuse with a 409.
+    #:
+    #: Read it off the detail read, which is the only place that computes it. The
+    #: command results leave it at ``True`` and mean nothing by it: a command that
+    #: was just accepted was, by definition, allowed — and the clients refetch the
+    #: entry after every change rather than believing the echo.
+    editable: bool = True
 
     @classmethod
-    def from_submission(cls, submission: Submission) -> SubmissionView:
+    def from_submission(cls, submission: Submission, *, editable: bool = True) -> SubmissionView:
         """Project the whole :class:`Submission` aggregate into a flat detail view."""
         performance = submission.performance
         price = submission.price_snapshot
@@ -246,6 +256,7 @@ class SubmissionView:
             created_at=submission.created_at,
             updated_at=submission.updated_at,
             version=submission.version,
+            editable=editable,
         )
 
 

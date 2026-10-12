@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from apps.applications.application.commands._support import submission_editable_now
 from apps.applications.application.dto.orders import ApplicationSummaryView, ApplicationView
 from apps.applications.application.dto.queries import (
     GetApplicationQuery,
@@ -21,7 +22,7 @@ from apps.applications.application.interfaces import (
     CompetitionCatalog,
     SubmissionRepository,
 )
-from apps.applications.domain.entities import Submission
+from apps.applications.domain.entities import Application, Submission
 from apps.applications.domain.value_objects import (
     ApplicationStatus,
     SubmissionStatus,
@@ -30,6 +31,7 @@ from apps.applications.domain.value_objects import (
 from ._support import (
     ensure_owner,
     load_application,
+    load_order_submissions,
     parse_application_id,
     parse_user_id,
     refresh_submission_refs,
@@ -85,7 +87,29 @@ class GetApplicationHandler:
                     competition_id=application.competition_id
                 ),
             )
-        return ApplicationView.from_application(application)
+        return ApplicationView.from_application(application, editable=self._editable(application, now=now))
+
+    def _editable(self, application: Application, *, now: datetime) -> bool:
+        """Whether anything in this order may still be changed by its applicant.
+
+        A draft is asked the entry question — is any door into the festival still
+        open, registration or a waitlist — because it has no numbers to ask about
+        yet, and may have none at all.
+
+        A placed order is asked about its own numbers, one by one: «приём открыт»
+        on the festival is the wrong question once the order is in it. A festival
+        whose вокал stopped and whose хореография runs is open and closed at the
+        same time, and an order holding one вокал number is closed — which is
+        exactly the case that had the «Редактировать» button leading to a 409.
+        """
+        if application.status is ApplicationStatus.DRAFT:
+            return self._catalog.accepts_submissions(competition_id=application.competition_id, now=now) or self._catalog.accepts_waitlist(
+                competition_id=application.competition_id, now=now
+            )
+        return any(
+            submission_editable_now(catalog=self._catalog, submission=submission, now=now)
+            for submission in load_order_submissions(application, self._submissions)
+        )
 
     def _try_submit_submission(self, submission: Submission, *, now: datetime) -> None:
         performance = submission.performance

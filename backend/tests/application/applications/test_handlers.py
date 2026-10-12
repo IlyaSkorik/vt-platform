@@ -205,7 +205,7 @@ class Env:
     # -- query handler factories --------------------------------------------
 
     def get_submission(self) -> GetSubmissionHandler:
-        return GetSubmissionHandler(submissions=self.submissions, organization=self.organization)
+        return GetSubmissionHandler(submissions=self.submissions, organization=self.organization, catalog=self.catalog, clock=self.clock)
 
     def get_history(self) -> GetSubmissionHistoryHandler:
         return GetSubmissionHistoryHandler(submissions=self.submissions, organization=self.organization)

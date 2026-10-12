@@ -4,7 +4,6 @@ import { generatePath, Link, Navigate, useParams } from "react-router";
 import {
   applicationStatusPresentation,
   applicationTotalLabel,
-  canApplicantEditApplication,
   REGULATION_PRICE_NOTE,
   useApplication,
   useRegistration,
@@ -115,7 +114,7 @@ export function ApplicationEditPage(): React.JSX.Element {
   // правка живёт, пока идёт приём заявок, а после его конца — только у заявки в
   // очереди и у той, которую организатор вернул на доработку. Остальное доступно на
   // чтение, и читают его на карточке.
-  if (!canApplicantEditApplication(application, registration)) {
+  if (!application.editable) {
     return <Navigate to={detailTo} replace />;
   }
 

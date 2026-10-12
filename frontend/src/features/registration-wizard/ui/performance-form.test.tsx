@@ -130,6 +130,7 @@ function aSubmission(comment: string, ageComposition = ""): SubmissionResource {
     type: "submission",
     competitionId: "01900000-0000-7000-8000-0000000000ff",
     status: "DRAFT",
+    editable: true,
     performance: {
       title: "Танец с лентами",
       durationSeconds: 180,

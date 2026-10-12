@@ -47,6 +47,7 @@ __all__ = [
     "parse_reviewer_id",
     "parse_submission_id",
     "parse_user_id",
+    "submission_editable_now",
     "try_resubmit_after_correction_edit",
 ]
 
@@ -126,6 +127,37 @@ _ENTRY_STILL_BEING_MADE: Final = frozenset({SubmissionStatus.DRAFT, SubmissionSt
 _EDITING_CLOSED: Final = "Приём заявок закрыт — заявку больше нельзя редактировать. Напишите организатору."
 
 
+def submission_editable_now(
+    *,
+    catalog: CompetitionCatalog,
+    submission: Submission,
+    now: datetime,
+    nomination_id: NominationId | None = None,
+) -> bool:
+    """Whether the *applicant* may change this entry at ``now``.
+
+    The rule itself; :func:`ensure_submission_editable` is it with a refusal
+    attached, and the read models answer with it so the screens stop offering
+    what the API would refuse. Keeping the two as one function is the point: the
+    button and the endpoint disagreeing is how an applicant ends up pressing
+    «Сохранить» into a 409.
+    """
+    target = nomination_id
+    if target is None and submission.performance is not None:
+        target = submission.performance.nomination_id
+    # The aggregate's own question first — is there still an entry to change at all.
+    # A performed or cancelled number is closed to everybody, calendar or no.
+    if not submission.is_editable():
+        return False
+    if submission.status is SubmissionStatus.REQUIRES_CORRECTION:
+        return True
+    if submission.status in _ENTRY_STILL_BEING_MADE:
+        return catalog.accepts_submissions(competition_id=submission.competition_id, nomination_id=target, now=now) or catalog.accepts_waitlist(
+            competition_id=submission.competition_id, nomination_id=target, now=now
+        )
+    return catalog.accepts_submissions(competition_id=submission.competition_id, nomination_id=target, now=now)
+
+
 def ensure_submission_editable(
     *,
     catalog: CompetitionCatalog,
@@ -153,15 +185,13 @@ def ensure_submission_editable(
     already on the entry — a performance being moved to another genre is judged by
     where it is going, not by where it has been.
     """
-    target = nomination_id
-    if target is None and submission.performance is not None:
-        target = submission.performance.nomination_id
-    if submission.status is SubmissionStatus.REQUIRES_CORRECTION:
+    # Whether there is still an entry to change at all is the aggregate's question,
+    # and it answers it better: «заявка завершена или отменена» is what happened to a
+    # number that has already been performed — not "приём закрыт", which would send
+    # the applicant to argue about dates with an organizer who cannot help.
+    if not submission.is_editable():
         return
-    if submission.status in _ENTRY_STILL_BEING_MADE:
-        ensure_nomination_reachable(catalog=catalog, competition_id=submission.competition_id, nomination_id=target, now=now)
-        return
-    if catalog.accepts_submissions(competition_id=submission.competition_id, nomination_id=target, now=now):
+    if submission_editable_now(catalog=catalog, submission=submission, now=now, nomination_id=nomination_id):
         return
     raise CompetitionClosedError(_EDITING_CLOSED)
 

@@ -4,11 +4,9 @@ import { createSearchParams, generatePath, Link, useParams } from "react-router"
 import {
   applicationStatusPresentation,
   applicationTotalLabel,
-  canApplicantEditApplication,
   REGULATION_PRICE_NOTE,
   submissionStatusPresentation,
   useApplication,
-  useRegistration,
 } from "@/entities/application";
 import { BenefitDocumentsCard } from "@/features/application-benefit-documents";
 import { PhonogramsCard } from "@/features/application-phonograms";
@@ -34,7 +32,6 @@ import {
 export function ApplicationDetailPage(): React.JSX.Element {
   const { applicationId } = useParams<{ applicationId: string }>();
   const { data: application, isLoading } = useApplication(applicationId);
-  const { data: registration } = useRegistration(application?.competitionId);
 
   if (isLoading || !application) {
     return (
@@ -47,7 +44,11 @@ export function ApplicationDetailPage(): React.JSX.Element {
   }
 
   const status = applicationStatusPresentation(application.status);
-  const canEdit = canApplicantEditApplication(application, registration);
+  // Отвечает сервер — тем же правилом, которым откажет эндпоинту (`editable` на
+  // заявке). Считать его здесь заново значит считать иначе: «приём на фестивале
+  // открыт» — это не то же, что «приём открыт по моей номинации», и у фестиваля
+  // с остановленным вокалом и работающей хореографией ответы разные.
+  const canEdit = application.editable;
   // Черновик — это ещё не заявка: его дозаполняют в мастере подачи. Поданную заявку
   // правят на отдельном экране редактирования, где сказано, что она уже у организатора
   // и что о правках ему сообщат.

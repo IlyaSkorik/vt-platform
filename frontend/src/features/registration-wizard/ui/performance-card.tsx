@@ -2,7 +2,7 @@ import { ChevronDown, ChevronUp, Copy, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import type { Registration } from "@/shared/api/generated/model-public-catalog";
-import { Badge, Button, Card, CardContent } from "@/shared/ui";
+import { Alert, Badge, Button, Card, CardContent } from "@/shared/ui";
 
 import { useSubmission } from "../api/hooks";
 import { isFullyAdmissible, needsAgeComposition } from "../lib/admission";
@@ -59,6 +59,11 @@ export function PerformanceCard({
   const [open, setOpen] = useState(index === 0);
   const { data: submission } = useSubmission(submissionId);
 
+  // Приём по номинации этого номера кончился — сервер его правки больше не примет
+  // (`editable` считается тем же правилом, которым он отказывает). На фестивале
+  // с остановленным вокалом и работающей хореографией это вопрос про каждый номер
+  // отдельно: одна заявка может держать и закрытый, и открытый.
+  const frozen = submission != null && !submission.editable;
   const performance = submission?.performance ?? null;
   const lead = submission?.participants[0];
   // A mixed age category is only finished once the applicant has said what ages the
@@ -118,7 +123,8 @@ export function PerformanceCard({
           <Badge variant={complete ? "success" : "neutral"}>
             {complete ? "Заполнено" : "Черновик"}
           </Badge>
-          {onDuplicate ? (
+          {frozen ? <Badge variant="warning">Приём закрыт</Badge> : null}
+          {onDuplicate && !frozen ? (
             <Button
               variant="ghost"
               size="xs"
@@ -130,7 +136,7 @@ export function PerformanceCard({
               <Copy className="size-4" />
             </Button>
           ) : null}
-          {onRemove ? (
+          {onRemove && !frozen ? (
             <Button
               variant="ghost"
               size="xs"
@@ -146,7 +152,17 @@ export function PerformanceCard({
       </div>
       {open ? (
         <CardContent className="border-t border-border pt-4">
-          <PerformanceForm submissionId={submissionId} registration={registration} />
+          {frozen ? (
+            <Alert variant="warning">
+              <p className="font-medium">Приём заявок по этой номинации закрыт</p>
+              <p className="mt-1 text-sm">
+                Состав, педагогов и данные номера изменить уже нельзя. Если в них ошибка — напишите
+                организатору: правка после закрытия приёма остаётся за ним.
+              </p>
+            </Alert>
+          ) : (
+            <PerformanceForm submissionId={submissionId} registration={registration} />
+          )}
         </CardContent>
       ) : null}
     </Card>

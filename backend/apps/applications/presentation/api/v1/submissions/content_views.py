@@ -60,6 +60,7 @@ def _submission_resource(dto: SubmissionView) -> dict[str, Any]:
         "type": "submission",
         "competitionId": dto.competition_id,
         "status": dto.status,
+        "editable": dto.editable,
         "performance": (
             {
                 "title": performance.title,
