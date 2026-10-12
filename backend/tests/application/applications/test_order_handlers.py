@@ -646,6 +646,55 @@ class TestWaitlistOrders:
             env.request_payment().handle(RequestApplicationPaymentCommand(requested_by=applicant, application_id=app_id))
 
 
+class TestOrderEditingAfterTheClose:
+    """Состав заказа — номера, услуги, плательщик — держится ровно до конца приёма.
+
+    Черновик собирается, пока открыта хоть одна дверь, включая лист ожидания: он ещё
+    не заявка. Поданный заказ — уже заявка фестиваля, и после закрытия приёма его
+    состав правит организатор, а не заявитель.
+    """
+
+    def test_a_placed_order_takes_no_new_performances_after_the_close(self) -> None:
+        env = Env()
+        app_id, applicant, _ = _reach_submitted(env)
+        env.catalog.open_for_submissions = False
+
+        with pytest.raises(CompetitionClosedError):
+            env.add_submission().handle(AddSubmissionToApplicationCommand(requested_by=applicant, application_id=app_id))
+
+    def test_a_placed_order_keeps_its_performances_after_the_close(self) -> None:
+        env = Env()
+        app_id, applicant, submission_id = _reach_submitted(env)
+        env.catalog.open_for_submissions = False
+
+        with pytest.raises(CompetitionClosedError):
+            env.remove_submission().handle(
+                RemoveSubmissionFromApplicationCommand(requested_by=applicant, application_id=app_id, submission_id=submission_id)
+            )
+
+    def test_the_queue_left_for_latecomers_does_not_reopen_a_placed_order(self) -> None:
+        # Очередь открыта для тех, кто ещё не подал; заказ, который уже подан, она
+        # не касается.
+        env = Env()
+        app_id, applicant, _ = _reach_submitted(env)
+        env.catalog.open_for_submissions = False
+        env.catalog.waitlisting_nominations = frozenset({NominationId.from_uuid(SubmissionId.generate().value).json()})
+
+        with pytest.raises(CompetitionClosedError):
+            env.record_consents().handle(
+                RecordConsentsCommand(requested_by=applicant, application_id=app_id, consents=(ConsentInput(code="media", version="v1"),))
+            )
+
+    def test_a_draft_order_is_still_assembled_for_the_queue(self) -> None:
+        nomination = NominationId.from_uuid(SubmissionId.generate().value)
+        env = Env(catalog=FakeCompetitionCatalog(open_for_submissions=False, waitlisting_nominations=frozenset({nomination.json()})))
+        app_id, applicant = _create_app(env)
+
+        result = env.add_submission().handle(AddSubmissionToApplicationCommand(requested_by=applicant, application_id=app_id))
+
+        assert len(result.application.submissions) == 1
+
+
 class TestCancel:
     def test_cancel_cancels_submissions(self) -> None:
         env = Env()

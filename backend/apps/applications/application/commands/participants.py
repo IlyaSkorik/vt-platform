@@ -34,8 +34,8 @@ from apps.applications.domain.value_objects import (
 )
 
 from ._support import (
-    ensure_nomination_reachable,
     ensure_owner,
+    ensure_submission_editable,
     load_submission,
     parse_submission_id,
     parse_user_id,
@@ -99,12 +99,7 @@ class AddParticipantHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
-        ensure_nomination_reachable(
-            catalog=self._catalog,
-            competition_id=submission.competition_id,
-            nomination_id=submission.performance.nomination_id if submission.performance is not None else None,
-            now=now,
-        )
+        ensure_submission_editable(catalog=self._catalog, submission=submission, now=now)
 
         # A solo participant supplies a structured name; a collective supplies only a
         # display name. Birth date and gender are present for a solo, absent for a
@@ -167,12 +162,7 @@ class UpdateParticipantHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
-        ensure_nomination_reachable(
-            catalog=self._catalog,
-            competition_id=submission.competition_id,
-            nomination_id=submission.performance.nomination_id if submission.performance is not None else None,
-            now=now,
-        )
+        ensure_submission_editable(catalog=self._catalog, submission=submission, now=now)
         with translate_domain_errors():
             target_id = ParticipantId.from_string(command.participant_id)
         if not any(p.id == target_id for p in submission.participants):
@@ -226,12 +216,7 @@ class SetParticipantMembersHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
-        ensure_nomination_reachable(
-            catalog=self._catalog,
-            competition_id=submission.competition_id,
-            nomination_id=submission.performance.nomination_id if submission.performance is not None else None,
-            now=now,
-        )
+        ensure_submission_editable(catalog=self._catalog, submission=submission, now=now)
         with translate_domain_errors():
             participant_id = ParticipantId.from_string(command.participant_id)
         if not any(p.id == participant_id for p in submission.participants):
@@ -272,12 +257,7 @@ class SetParticipantMemberCountHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
-        ensure_nomination_reachable(
-            catalog=self._catalog,
-            competition_id=submission.competition_id,
-            nomination_id=submission.performance.nomination_id if submission.performance is not None else None,
-            now=now,
-        )
+        ensure_submission_editable(catalog=self._catalog, submission=submission, now=now)
         with translate_domain_errors():
             participant_id = ParticipantId.from_string(command.participant_id)
         if not any(p.id == participant_id for p in submission.participants):
@@ -313,12 +293,7 @@ class RemoveParticipantHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
-        ensure_nomination_reachable(
-            catalog=self._catalog,
-            competition_id=submission.competition_id,
-            nomination_id=submission.performance.nomination_id if submission.performance is not None else None,
-            now=now,
-        )
+        ensure_submission_editable(catalog=self._catalog, submission=submission, now=now)
         with translate_domain_errors():
             participant_id = ParticipantId.from_string(command.participant_id)
             domain_events = submission.remove_participant(participant_id=participant_id, now=now)

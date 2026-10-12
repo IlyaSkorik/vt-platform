@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from pathlib import PurePosixPath
 from typing import Final
 
-from apps.applications.application.commands._support import ensure_nomination_reachable
+from apps.applications.application.commands._support import ensure_nomination_reachable, ensure_order_editable
 from apps.applications.application.dto.order_commands import (
     AddSubmissionToApplicationCommand,
     CancelApplicationCommand,
@@ -240,7 +240,7 @@ class AddSubmissionToApplicationHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-        ensure_nomination_reachable(catalog=self._catalog, competition_id=application.competition_id, now=now)
+        ensure_order_editable(catalog=self._catalog, application=application, now=now)
         # Checked here rather than on the aggregate: how many performances a festival
         # wants is the Competition's rule, and the order has no way to know it. The
         # count is the order's *current* refs, so removing a performance frees the
@@ -285,7 +285,7 @@ class RemoveSubmissionFromApplicationHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-        ensure_nomination_reachable(catalog=self._catalog, competition_id=application.competition_id, now=now)
+        ensure_order_editable(catalog=self._catalog, application=application, now=now)
         with translate_domain_errors():
             submission_id = SubmissionId.from_string(command.submission_id)
 
@@ -331,7 +331,7 @@ class SelectAdditionalServiceHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-        ensure_nomination_reachable(catalog=self._catalog, competition_id=application.competition_id, now=now)
+        ensure_order_editable(catalog=self._catalog, application=application, now=now)
         with translate_application_domain_errors():
             service_id = ServiceId.from_string(command.service_id)
 
@@ -370,7 +370,7 @@ class RemoveAdditionalServiceHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-        ensure_nomination_reachable(catalog=self._catalog, competition_id=application.competition_id, now=now)
+        ensure_order_editable(catalog=self._catalog, application=application, now=now)
         with translate_application_domain_errors():
             service_id = ServiceId.from_string(command.service_id)
             order_events = application.remove_service(service_id=service_id, now=now)
@@ -390,7 +390,7 @@ class RecordConsentsHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-        ensure_nomination_reachable(catalog=self._catalog, competition_id=application.competition_id, now=now)
+        ensure_order_editable(catalog=self._catalog, application=application, now=now)
         with translate_application_domain_errors():
             consents = [Consent(code=item.code, version=item.version, accepted_at=now) for item in command.consents]
             order_events = application.record_consents(consents=consents, now=now)
@@ -418,7 +418,7 @@ class SelectEducationalOrganizationHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-        ensure_nomination_reachable(catalog=self._catalog, competition_id=application.competition_id, now=now)
+        ensure_order_editable(catalog=self._catalog, application=application, now=now)
         with translate_application_domain_errors():
             organization_id = EducationalOrganizationId.from_string(command.educational_organization_id)
 
@@ -455,7 +455,7 @@ class SetApplicationPayerHandler:
         now = self._clock.utcnow()
         application = load_application(self._applications, parse_application_id(command.application_id))
         ensure_owner(application, parse_user_id(command.requested_by))
-        ensure_nomination_reachable(catalog=self._catalog, competition_id=application.competition_id, now=now)
+        ensure_order_editable(catalog=self._catalog, application=application, now=now)
         # `PersonName` belongs to the value-object tree the Submission translator
         # covers, not the order's - so the two calls need their own context managers.
         with translate_domain_errors():

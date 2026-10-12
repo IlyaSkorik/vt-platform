@@ -29,8 +29,8 @@ from apps.applications.domain.value_objects import (
 )
 
 from ._support import (
-    ensure_nomination_reachable,
     ensure_owner,
+    ensure_submission_editable,
     load_submission,
     parse_submission_id,
     parse_user_id,
@@ -98,11 +98,11 @@ class SetPerformanceHandler:
             comment=command.comment,
             age_composition=command.age_composition,
         )
-        ensure_nomination_reachable(
+        ensure_submission_editable(
             catalog=self._catalog,
-            competition_id=submission.competition_id,
-            nomination_id=performance.nomination_id,
+            submission=submission,
             now=now,
+            nomination_id=performance.nomination_id,
         )
 
         with translate_domain_errors():
@@ -155,11 +155,11 @@ class UpdatePerformanceHandler:
             comment=command.comment,
             age_composition=command.age_composition,
         )
-        ensure_nomination_reachable(
+        ensure_submission_editable(
             catalog=self._catalog,
-            competition_id=submission.competition_id,
-            nomination_id=performance.nomination_id,
+            submission=submission,
             now=now,
+            nomination_id=performance.nomination_id,
         )
 
         with translate_domain_errors():
