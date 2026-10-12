@@ -1353,17 +1353,15 @@ describe("StaffProgramPage — public links", () => {
     expect(screen.getByRole("button", { name: /Создать ссылку/ })).toBeDisabled();
   });
 
-  it("resolves a range of positions into the item ids the API takes", async () => {
+  it("publishes the whole programme, so a link picks up items added later", async () => {
     stub();
     await renderPage();
 
     await userEvent.type(screen.getByLabelText("Название ссылки"), "Программа звукорежиссёра");
-    await userEvent.type(screen.getByLabelText("Пункты с"), "2");
-    await userEvent.type(screen.getByLabelText("Пункты по"), "2");
     await userEvent.click(screen.getByRole("button", { name: /Создать ссылку/ }));
 
     const payload = createShare.mock.calls[0]?.[0] as { itemIds: string[] };
-    expect(payload.itemIds).toEqual(["item-2"]);
+    expect(payload.itemIds).toEqual([]);
   });
 
   it("shows which columns a live link publishes", async () => {

@@ -1917,8 +1917,6 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
   const remove = useRemoveShare(program.id);
   const [name, setName] = useState("");
   const [columns, setColumns] = useState<ColumnKey[]>(DEFAULT_SHARE_COLUMNS);
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
   const [controls, setControls] = useState(false);
 
   const toggle = (key: ColumnKey, checked: boolean) => {
@@ -1930,25 +1928,15 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
   };
 
   const publish = () => {
-    // Numbers are what an organizer talks in ("пункты 25-40") and what the table shows;
-    // ids are what the API takes, so the range is resolved here against the numbers on
-    // screen — not against row indexes, which drift from them after a reorder.
-    const start = Number(from) || 0;
-    const end = Number(to) || 0;
-    const selected =
-      start > 0 && end >= start
-        ? program.items
-            .filter((item) => item.number >= start && item.number <= end)
-            .map((item) => item.id)
-        : [];
+    // An empty list means the whole programme, and the whole programme is what a link is
+    // for: the sound engineer's copy should grow when the day does, rather than go stale
+    // the moment the organizer adds an item past the end of a hand-typed range.
     create.mutate(
-      { name: name.trim(), columns, itemIds: selected, controlsRunningOrder: controls },
+      { name: name.trim(), columns, itemIds: [], controlsRunningOrder: controls },
       {
         onSuccess: () => {
           setName("");
           setColumns(DEFAULT_SHARE_COLUMNS);
-          setFrom("");
-          setTo("");
           setControls(false);
           toast.success("Публичная программа создана");
         },
@@ -1973,24 +1961,6 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
           className="w-56"
           value={name}
           onChange={(event) => setName(event.target.value)}
-        />
-        <Input
-          label="Номера с"
-          aria-label="Пункты с"
-          type="number"
-          min={1}
-          className="w-24"
-          value={from}
-          onChange={(event) => setFrom(event.target.value)}
-        />
-        <Input
-          label="по"
-          aria-label="Пункты по"
-          type="number"
-          min={1}
-          className="w-24"
-          value={to}
-          onChange={(event) => setTo(event.target.value)}
         />
         <Button
           loading={create.isPending}
@@ -2025,8 +1995,7 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
         </p>
       </div>
       <p className="text-muted-foreground text-xs">
-        Оставьте диапазон пунктов пустым, чтобы опубликовать всю программу — такая ссылка сама
-        подхватывает новые пункты.
+        Ссылка публикует всю программу и сама подхватывает новые пункты.
       </p>
 
       {program.shares.length === 0 ? (
