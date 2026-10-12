@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/application/commands/_support.py": {
-    "mtime": 1791439772.700743,
-    "ast_hash": "133d2484f271ffba9ba2751145f24c2a",
+    "mtime": 1791816664.3125405,
+    "ast_hash": "8ab4c30f9b241f97f66f1d0336c86516",
     "semantic_hash": ""
   },
   "backend/apps/applications/application/commands/attachments.py": {
@@ -180,8 +180,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/application/commands/participants.py": {
-    "mtime": 1791439772.7016113,
-    "ast_hash": "941c5809db3672b7bb035839e80e925d",
+    "mtime": 1791816700.8007367,
+    "ast_hash": "2363ee1ff86543acf3fea19feb356627",
     "semantic_hash": ""
   },
   "backend/apps/applications/application/commands/payment.py": {
@@ -190,13 +190,13 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/application/commands/performance.py": {
-    "mtime": 1791439772.7020097,
-    "ast_hash": "5b132150b13caa5f8dc1d2910e4d4717",
+    "mtime": 1791816700.7967365,
+    "ast_hash": "ec853ad8843bd58bae9a58ae2d4e03e4",
     "semantic_hash": ""
   },
   "backend/apps/applications/application/commands/pricing.py": {
-    "mtime": 1791439772.7024539,
-    "ast_hash": "29bd24fd85ac10b68fd69d979b4dfe7a",
+    "mtime": 1791816677.8839147,
+    "ast_hash": "2590f32e0224b1ce986fdafb33733aa8",
     "semantic_hash": ""
   },
   "backend/apps/applications/application/commands/review.py": {
@@ -205,8 +205,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/application/commands/teachers.py": {
-    "mtime": 1791439772.7031372,
-    "ast_hash": "ee6fb488acd548d8ed13df7d50b72820",
+    "mtime": 1791816700.7967365,
+    "ast_hash": "fc35103154ed96e6c6a4e409575b09a5",
     "semantic_hash": ""
   },
   "backend/apps/applications/application/dto/__init__.py": {
@@ -260,8 +260,8 @@
     "semantic_hash": ""
   },
   "backend/apps/applications/application/orders/commands.py": {
-    "mtime": 1791540135.910082,
-    "ast_hash": "21dbaac93885ca0303809ca4defc3f58",
+    "mtime": 1791816692.9367375,
+    "ast_hash": "e4f506946dab2c5f0eecc76928c557af",
     "semantic_hash": ""
   },
   "backend/apps/applications/application/orders/queries.py": {
@@ -3190,13 +3190,13 @@
     "semantic_hash": ""
   },
   "backend/tests/application/applications/test_handlers.py": {
-    "mtime": 1791540135.9536974,
-    "ast_hash": "ef97637455ca2cbe4e84a844362c08c5",
+    "mtime": 1791816836.2947478,
+    "ast_hash": "17a9d51cfc8ae1b9426e56b055f0bfce",
     "semantic_hash": ""
   },
   "backend/tests/application/applications/test_order_handlers.py": {
-    "mtime": 1791540135.9552348,
-    "ast_hash": "a772814908ff84bb4810780de5421f38",
+    "mtime": 1791816861.6280112,
+    "ast_hash": "bca940ec3b4b480f40fe892e019ae23c",
     "semantic_hash": ""
   },
   "backend/tests/application/applications/test_upload_handlers.py": {
@@ -3920,8 +3920,8 @@
     "semantic_hash": "d2640e81d465418b85f3daaa5273cc8a"
   },
   "frontend/src/entities/application/index.ts": {
-    "mtime": 1786990108.9914722,
-    "ast_hash": "755e199cb19014b6ea9e27e5a55a8daa",
+    "mtime": 1791817065.3760061,
+    "ast_hash": "cab587ff1a25829a0430a8b7acb6e3a7",
     "semantic_hash": ""
   },
   "frontend/src/entities/application/lib/status.test.ts": {
@@ -4560,8 +4560,8 @@
     "semantic_hash": "621bb559106784619e68da992ee75246"
   },
   "frontend/src/pages/applications/application-detail-page.tsx": {
-    "mtime": 1791361020.166802,
-    "ast_hash": "822fa7be4ac1d3795cd1f4e8ce3ebe63",
+    "mtime": 1791817065.376702,
+    "ast_hash": "f7cfb539c66dd5de14352d2646144717",
     "semantic_hash": ""
   },
   "frontend/src/pages/applications/festival-apply-page.tsx": {
@@ -9540,8 +9540,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/applications/application-edit-page.tsx": {
-    "mtime": 1791361020.1675422,
-    "ast_hash": "14c690babb146f6d72727f0c847efef9",
+    "mtime": 1791824557.948903,
+    "ast_hash": "9251bffca09c8a7836378fb385cfea6c",
     "semantic_hash": ""
   },
   "frontend/src/pages/legal/cookies-policy.tsx": {
@@ -11767,6 +11767,16 @@
   "frontend/src/applications/staff/pages/program/start-time.integration.test.tsx": {
     "mtime": 1791748966.2238195,
     "ast_hash": "e95e4a666f17ba08d40b0de69ee0509d",
+    "semantic_hash": ""
+  },
+  "frontend/src/entities/application/lib/editability.test.ts": {
+    "mtime": 1791824618.6063619,
+    "ast_hash": "8b5a1fe3f2fd294a8adeddd1509d940d",
+    "semantic_hash": ""
+  },
+  "frontend/src/entities/application/lib/editability.ts": {
+    "mtime": 1791817048.5783823,
+    "ast_hash": "869ae67553c5ae335f92d83fe5e20e72",
     "semantic_hash": ""
   }
 }
