@@ -4,6 +4,7 @@ import { createSearchParams, generatePath, Link, useParams } from "react-router"
 import {
   applicationStatusPresentation,
   applicationTotalLabel,
+  canApplicantEditApplication,
   REGULATION_PRICE_NOTE,
   submissionStatusPresentation,
   useApplication,
@@ -30,15 +31,6 @@ import {
   PageTitle,
 } from "@/shared/ui";
 
-/**
- * Статусы заказа, в которых его ещё правят.
- *
- * Оплата заказ не запечатывает: пока идёт приём заявок, участник правит состав и
- * номер — фамилию с заявки печатают на дипломе, и оплатить пораньше не должно
- * означать потерять право на исправление. Закрыты только завершённый и отменённый.
- */
-const EDITABLE = new Set(["DRAFT", "SUBMITTED", "WAITING_PAYMENT", "PAID"]);
-
 export function ApplicationDetailPage(): React.JSX.Element {
   const { applicationId } = useParams<{ applicationId: string }>();
   const { data: application, isLoading } = useApplication(applicationId);
@@ -55,11 +47,7 @@ export function ApplicationDetailPage(): React.JSX.Element {
   }
 
   const status = applicationStatusPresentation(application.status);
-  const registrationOpen = registration?.registrationOpen === true;
-  // Редактировать можно пока открыта регистрация, а также после её закрытия —
-  // если организатор запросил исправления или недостающие файлы (hasCorrections).
-  const canEdit =
-    (registrationOpen || application.hasCorrections) && EDITABLE.has(application.status);
+  const canEdit = canApplicantEditApplication(application, registration);
   // Черновик — это ещё не заявка: его дозаполняют в мастере подачи. Поданную заявку
   // правят на отдельном экране редактирования, где сказано, что она уже у организатора
   // и что о правках ему сообщат.
