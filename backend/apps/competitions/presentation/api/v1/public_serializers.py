@@ -293,6 +293,7 @@ class RegistrationNominationSerializer(serializers.Serializer[object]):
     registrationClosesAt = serializers.DateTimeField(source="registration_closes_at", allow_null=True)
     waitlistEnabled = serializers.BooleanField(source="waitlist_enabled")
     waitlistOpen = serializers.BooleanField(source="waitlist_open")
+    heldAt = serializers.DateTimeField(source="held_at", allow_null=True)
 
 
 class RegistrationDisciplineSerializer(serializers.Serializer[object]):

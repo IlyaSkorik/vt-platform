@@ -41,6 +41,10 @@ class CategoryModel(BasePersistenceModel):
     registration_stopped = models.BooleanField(default=False)
     # Keep a queue once the above has shut the door; see Category.accepts_waitlist.
     waitlist_enabled = models.BooleanField(default=False)
+    # When this nomination is performed — not when it accepts applications, and
+    # not the competition's own dates. A festival that runs a genre a day has no
+    # other place to say it.
+    held_at = models.DateTimeField(null=True, blank=True, default=None)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "competitions_category"

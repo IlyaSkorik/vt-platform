@@ -12957,6 +12957,11 @@ components:
           - integer
           - 'null'
           minimum: 0
+        heldAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
       required:
       - name
     AddContact:
@@ -19586,8 +19591,14 @@ components:
           type: boolean
         waitlistOpen:
           type: boolean
+        heldAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
       required:
       - description
+      - heldAt
       - id
       - name
       - registrationClosesAt
@@ -19943,6 +19954,11 @@ components:
           - 'null'
           format: date-time
         closesAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        heldAt:
           type:
           - string
           - 'null'

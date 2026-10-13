@@ -363,6 +363,14 @@ class Category:
     _registration: RegistrationWindow = field(default_factory=RegistrationWindow)
     _registration_stopped: bool = False
     _waitlist_enabled: bool = False
+    #: When this nomination is actually performed, if the organizer has said.
+    #:
+    #: Distinct from the competition's own dates and from the registration
+    #: window, and that is the whole reason it exists: a festival runs over
+    #: several days and judges one genre per day, so «когда мне выступать» has
+    #: no answer at the competition level. Optional, because a small festival
+    #: that runs everything in an afternoon has nothing to add here.
+    _held_at: datetime | None = None
 
     @classmethod
     def create(
@@ -375,6 +383,7 @@ class Category:
         registration: RegistrationWindow | None = None,
         registration_stopped: bool = False,
         waitlist_enabled: bool = False,
+        held_at: datetime | None = None,
     ) -> Category:
         return cls(
             _id=category_id,
@@ -384,6 +393,7 @@ class Category:
             _registration=registration if registration is not None else RegistrationWindow(),
             _registration_stopped=registration_stopped,
             _waitlist_enabled=waitlist_enabled,
+            _held_at=held_at,
         )
 
     @classmethod
@@ -397,6 +407,7 @@ class Category:
         registration: RegistrationWindow | None = None,
         registration_stopped: bool = False,
         waitlist_enabled: bool = False,
+        held_at: datetime | None = None,
     ) -> Category:
         return cls(
             _id=category_id,
@@ -406,6 +417,7 @@ class Category:
             _registration=registration if registration is not None else RegistrationWindow(),
             _registration_stopped=registration_stopped,
             _waitlist_enabled=waitlist_enabled,
+            _held_at=held_at,
         )
 
     @property
@@ -435,6 +447,10 @@ class Category:
     @property
     def is_waitlist_enabled(self) -> bool:
         return self._waitlist_enabled
+
+    @property
+    def held_at(self) -> datetime | None:
+        return self._held_at
 
     def schedule_registration(self, window: RegistrationWindow) -> None:
         """Set (or replace) this nomination's registration window."""
@@ -484,6 +500,7 @@ class Category:
         name: CategoryName | None = None,
         description: CategoryDescription | None | _Unset = _SENTINEL,
         sort_order: int | None = None,
+        held_at: datetime | None | _Unset = _SENTINEL,
     ) -> None:
         if name is not None:
             self._name = name
@@ -491,6 +508,11 @@ class Category:
             self._description = description
         if sort_order is not None:
             self._sort_order = _validate_sort_order(sort_order)
+        # Sentinel, like `description`: `None` is a value here — it is how an
+        # organizer takes a date back off a nomination — so "not given" and
+        # "cleared" cannot both be `None`.
+        if held_at is not _SENTINEL:
+            self._held_at = held_at
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Category) and other._id == self._id
@@ -2026,6 +2048,7 @@ class Competition:
         now: datetime,
         description: CategoryDescription | None = None,
         sort_order: int | None = None,
+        held_at: datetime | None = None,
     ) -> Category:
         """Add a category. Names are unique within the competition."""
         self._ensure_configurable()
@@ -2033,7 +2056,13 @@ class Competition:
             raise DuplicateCategoryError(f"Жанр «{name.value}» уже есть.")
         if sort_order is None:
             sort_order = self._next_category_sort_order()
-        category = Category.create(category_id=category_id, name=name, description=description, sort_order=sort_order)
+        category = Category.create(
+            category_id=category_id,
+            name=name,
+            description=description,
+            sort_order=sort_order,
+            held_at=held_at,
+        )
         self._categories[category_id] = category
         self._touch(now)
         return category
@@ -2963,11 +2992,23 @@ class Competition:
         now: datetime,
         opens_at: datetime | None = None,
         closes_at: datetime | None = None,
+        held_at: datetime | None = None,
     ) -> list[DomainEvent]:
-        """Set (or replace) a nomination's registration window (open/close instants)."""
+        """Set (or replace) a nomination's schedule: its intake window and the date it runs.
+
+        All three are replaced wholesale, which is what makes this the schedule
+        rather than a patch of it — omitting a value clears it.
+
+        «Дата проведения» belongs here and not with the taxonomy edits: a
+        festival moves a genre to another day well after it is published, and
+        the taxonomy is frozen from the moment it is. It is the same kind of
+        fact as the window — a date the organizer announces and later changes —
+        rather than part of what the genre *is*.
+        """
         self._ensure_not_completed()
         category = self._require_category(category_id)
         category.schedule_registration(RegistrationWindow(opens_at=opens_at, closes_at=closes_at))
+        category.update(held_at=held_at)
         self._touch(now)
         return [
             NominationRegistrationScheduled(

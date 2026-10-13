@@ -278,3 +278,110 @@ def test_upload_requirements_carry_the_media_limits() -> None:
         # Whether the video is a condition of entry travels too: the wizard labels the
         # control and blocks submission on it, and it must not guess.
         assert isinstance(requirement["mediaRequired"], bool)
+
+
+def test_a_nomination_carries_the_date_it_is_performed() -> None:
+    """«Дата проведения» is the nomination's own, not the competition's.
+
+    A festival that runs over several days judges one genre a day, so the
+    question an applicant actually asks — when do *I* perform — has no answer at
+    the competition level. Optional: a festival that runs everything in an
+    afternoon leaves it empty, and the card then shows only the intake window.
+    """
+    from datetime import UTC, datetime
+
+    from apps.competitions.infrastructure.models import CategoryModel, CompetitionModel
+
+    competition = CompetitionModel.objects.create(
+        organizer_id=uuid7(),
+        status="PUBLISHED",
+        title="Spring Festival",
+        season="2025/2026",
+    )
+    CategoryModel.objects.create(
+        competition=competition,
+        name="Vocal",
+        registration_opens_at=datetime(2000, 1, 1, tzinfo=UTC),
+        registration_closes_at=datetime(2100, 1, 1, tzinfo=UTC),
+        held_at=datetime(2026, 10, 22, 15, 40, tzinfo=UTC),
+    )
+    CategoryModel.objects.create(competition=competition, name="Choreography")
+
+    response = APIClient().get(_url(str(competition.id)))
+
+    assert response.status_code == 200, response.data
+    by_name = {row["name"]: row for row in response.data["data"]["nominations"]}
+    assert by_name["Vocal"]["heldAt"] is not None
+    assert by_name["Vocal"]["heldAt"].startswith("2026-10-22")
+    # Unset stays unset rather than falling back to the competition's own dates:
+    # one number repeated down the column is not a per-nomination fact.
+    assert by_name["Choreography"]["heldAt"] is None
+
+
+def test_the_nomination_date_can_be_changed_after_publication() -> None:
+    """Moving a genre to another day is an ordinary thing to do once published.
+
+    The date rides the registration-window endpoint for exactly this reason:
+    taxonomy edits are frozen from the moment a festival is published, and this
+    is not a taxonomy edit — it is the same kind of fact as the intake window,
+    a date the organizer announces and later changes.
+    """
+    from datetime import UTC, datetime
+
+    from apps.competitions.application.dto.commands import ScheduleNominationRegistrationCommand
+    from apps.competitions.application.handlers.taxonomy import ScheduleNominationRegistrationHandler
+    from apps.competitions.composition import build_command_handler
+    from apps.competitions.infrastructure.models import CategoryModel, CompetitionModel
+
+    competition = CompetitionModel.objects.create(
+        organizer_id=uuid7(),
+        status="PUBLISHED",
+        title="Spring Festival",
+        season="2025/2026",
+    )
+    category = CategoryModel.objects.create(competition=competition, name="Vocal")
+
+    build_command_handler(ScheduleNominationRegistrationHandler).handle(
+        ScheduleNominationRegistrationCommand(
+            competition_id=str(competition.id),
+            category_id=str(category.id),
+            opens_at=datetime(2026, 9, 3, 18, 0, tzinfo=UTC),
+            closes_at=datetime(2026, 10, 15, 0, 0, tzinfo=UTC),
+            held_at=datetime(2026, 10, 22, 15, 40, tzinfo=UTC),
+        )
+    )
+
+    category.refresh_from_db()
+    assert category.held_at == datetime(2026, 10, 22, 15, 40, tzinfo=UTC)
+
+
+def test_the_nomination_date_can_be_taken_back_off() -> None:
+    """The schedule is replaced wholesale, so an omitted date clears it."""
+    from datetime import UTC, datetime
+
+    from apps.competitions.application.dto.commands import ScheduleNominationRegistrationCommand
+    from apps.competitions.application.handlers.taxonomy import ScheduleNominationRegistrationHandler
+    from apps.competitions.composition import build_command_handler
+    from apps.competitions.infrastructure.models import CategoryModel, CompetitionModel
+
+    competition = CompetitionModel.objects.create(
+        organizer_id=uuid7(),
+        status="PUBLISHED",
+        title="Spring Festival",
+        season="2025/2026",
+    )
+    category = CategoryModel.objects.create(
+        competition=competition,
+        name="Vocal",
+        held_at=datetime(2026, 10, 22, 15, 40, tzinfo=UTC),
+    )
+
+    build_command_handler(ScheduleNominationRegistrationHandler).handle(
+        ScheduleNominationRegistrationCommand(
+            competition_id=str(competition.id),
+            category_id=str(category.id),
+        )
+    )
+
+    category.refresh_from_db()
+    assert category.held_at is None

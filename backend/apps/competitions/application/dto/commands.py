@@ -201,6 +201,7 @@ class AddCategoryCommand:
     name: str
     description: str | None = None
     sort_order: int | None = None
+    held_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -224,6 +225,7 @@ class ScheduleNominationRegistrationCommand:
     category_id: str
     opens_at: datetime | None = None
     closes_at: datetime | None = None
+    held_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)

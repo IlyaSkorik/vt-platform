@@ -78,6 +78,7 @@ class AddCategoryHandler(CompetitionCommandHandler):
             now=self._clock.utcnow(),
             description=CategoryDescription(command.description) if command.description is not None else None,
             sort_order=command.sort_order,
+            held_at=command.held_at,
         )
 
         return self._persist(competition)
@@ -133,6 +134,7 @@ class ScheduleNominationRegistrationHandler(CompetitionCommandHandler):
             category_id=CategoryId.from_string(command.category_id),
             opens_at=command.opens_at,
             closes_at=command.closes_at,
+            held_at=command.held_at,
             now=self._clock.utcnow(),
         )
 

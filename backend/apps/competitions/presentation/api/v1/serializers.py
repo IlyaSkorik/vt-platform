@@ -306,6 +306,7 @@ class AddCategorySerializer(serializers.Serializer[dict[str, object]]):
     name = serializers.CharField(max_length=120)
     description = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=2000)
     sortOrder = serializers.IntegerField(source="sort_order", required=False, allow_null=True, min_value=0)
+    heldAt = serializers.DateTimeField(source="held_at", required=False, allow_null=True)
 
 
 class RenameCategorySerializer(serializers.Serializer[dict[str, object]]):
@@ -322,6 +323,11 @@ class RenameCategorySerializer(serializers.Serializer[dict[str, object]]):
 class ScheduleNominationRegistrationSerializer(serializers.Serializer[dict[str, object]]):
     opensAt = serializers.DateTimeField(source="opens_at", required=False, allow_null=True, default=None)
     closesAt = serializers.DateTimeField(source="closes_at", required=False, allow_null=True, default=None)
+    # The nomination's own date, saved with its window because the two are one
+    # schedule and are edited together. A PUT replaces the schedule wholesale,
+    # so omitting this clears the date exactly as omitting the others clears
+    # the window.
+    heldAt = serializers.DateTimeField(source="held_at", required=False, allow_null=True, default=None)
 
 
 class AddDisciplineSerializer(serializers.Serializer[dict[str, object]]):

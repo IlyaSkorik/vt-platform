@@ -75,6 +75,10 @@ class RegistrationNominationView:
     #: decides whether the genre is selectable at all once ``registration_open`` is off.
     waitlist_enabled: bool = False
     waitlist_open: bool = False
+    #: When this genre is performed, if the organizer said. The landing prints it
+    #: on the nomination's card — it is the one date an applicant looks for that
+    #: the festival's own start and end cannot answer.
+    held_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -246,6 +250,7 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
             registration_closes_at=category.registration.closes_at,
             waitlist_enabled=category.is_waitlist_enabled,
             waitlist_open=competition.accepts_waitlist_for(category.id, now),
+            held_at=category.held_at,
         )
         for category in competition.categories
     ]
