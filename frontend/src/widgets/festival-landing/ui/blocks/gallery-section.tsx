@@ -1,8 +1,9 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { resolveMediaUrl } from "@/features/festival-catalog";
 import type { LandingBlock } from "@/features/festival-landing";
 import { Dialog, DialogContent, DialogTitle, IconButton } from "@/shared/ui";
+import { LandingCarousel } from "../landing-carousel";
 import { LandingSection } from "../landing-section";
 
 interface GalleryImageView {
@@ -95,117 +96,32 @@ function GalleryLightbox({
 }
 
 /**
- * A horizontal, snap-scrolling gallery carousel.
- *
- * One rowful of images is a "page": the prev/next controls advance by exactly
- * the visible width, and CSS scroll-snap keeps each page aligned. Swipe / drag
- * works natively on touch; the arrows are hidden entirely when everything
- * already fits. Clicking a thumbnail opens it full-size in a lightbox.
+ * One tile: the photograph on the frame's 4:3 plate, and a click opens it
+ * full-size. The caption is not printed on the tile — the frame draws a clean
+ * row of pictures — but it is still the button's accessible name and the
+ * lightbox's heading, so it is carried rather than dropped.
  */
-function GalleryCarousel({ images }: { images: GalleryImageView[] }): React.JSX.Element {
-  const trackRef = useRef<HTMLUListElement>(null);
-  const [atStart, setAtStart] = useState(true);
-  const [atEnd, setAtEnd] = useState(false);
-  const [scrollable, setScrollable] = useState(false);
-  const [active, setActive] = useState<number | null>(null);
-
-  const sync = useCallback(() => {
-    const el = trackRef.current;
-    if (!el) {
-      return;
-    }
-    const max = el.scrollWidth - el.clientWidth;
-    setScrollable(max > 1);
-    setAtStart(el.scrollLeft <= 1);
-    setAtEnd(el.scrollLeft >= max - 1);
-  }, []);
-
-  useEffect(() => {
-    sync();
-    const el = trackRef.current;
-    if (!el) {
-      return;
-    }
-    el.addEventListener("scroll", sync, { passive: true });
-    window.addEventListener("resize", sync);
-    return () => {
-      el.removeEventListener("scroll", sync);
-      window.removeEventListener("resize", sync);
-    };
-  }, [sync]);
-
-  const page = (direction: 1 | -1): void => {
-    const el = trackRef.current;
-    if (el) {
-      el.scrollBy({ left: direction * el.clientWidth, behavior: "smooth" });
-    }
-  };
-
+function GalleryTile({
+  image,
+  onOpen,
+}: {
+  image: GalleryImageView;
+  onOpen: () => void;
+}): React.JSX.Element {
   return (
-    <div className="relative">
-      <ul
-        ref={trackRef}
-        className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {images.map((image, imageIndex) => (
-          <li
-            key={image.id}
-            className="shrink-0 basis-[78%] snap-start sm:basis-[46%] lg:basis-[31%] xl:basis-[23%]"
-          >
-            <figure className="overflow-hidden rounded-lg border bg-muted">
-              <button
-                type="button"
-                onClick={() => setActive(imageIndex)}
-                className="group block w-full cursor-zoom-in outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={image.caption ? `Открыть фото: ${image.caption}` : "Открыть фото"}
-              >
-                <img
-                  src={image.src}
-                  alt={image.caption ?? ""}
-                  loading="lazy"
-                  className="aspect-[4/3] size-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-              </button>
-              {image.caption ? (
-                <figcaption className="truncate px-2 py-1.5 text-xs text-muted-foreground">
-                  {image.caption}
-                </figcaption>
-              ) : null}
-            </figure>
-          </li>
-        ))}
-      </ul>
-
-      {scrollable ? (
-        <>
-          <IconButton
-            aria-label="Предыдущие фото"
-            icon={<ChevronLeft />}
-            variant="outline"
-            size="sm"
-            onClick={() => page(-1)}
-            disabled={atStart}
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/90 shadow-elevation-2 backdrop-blur disabled:opacity-0"
-          />
-          <IconButton
-            aria-label="Следующие фото"
-            icon={<ChevronRight />}
-            variant="outline"
-            size="sm"
-            onClick={() => page(1)}
-            disabled={atEnd}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/90 shadow-elevation-2 backdrop-blur disabled:opacity-0"
-          />
-        </>
-      ) : null}
-
-      <GalleryLightbox
-        images={images}
-        index={active}
-        onClose={() => setActive(null)}
-        onNavigate={setActive}
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={image.caption ? `Открыть фото: ${image.caption}` : "Открыть фото"}
+      className="group block aspect-[291/221] w-full cursor-zoom-in overflow-hidden rounded-brand bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <img
+        src={image.src}
+        alt={image.caption ?? ""}
+        loading="lazy"
+        className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
       />
-    </div>
+    </button>
   );
 }
 
@@ -213,8 +129,10 @@ interface GallerySectionProps {
   block: LandingBlock;
 }
 
-/** The GALLERY block: images shown as a paged carousel with a lightbox. */
+/** The GALLERY block: a paged carousel of photographs, four to a screen, with
+ * a lightbox behind every tile. */
 export function GallerySection({ block }: GallerySectionProps): React.JSX.Element | null {
+  const [active, setActive] = useState<number | null>(null);
   const images = block.images
     .map((image) => ({ id: image.id, src: resolveMediaUrl(image.url), caption: image.caption }))
     .filter((image): image is GalleryImageView => image.src != null);
@@ -222,8 +140,34 @@ export function GallerySection({ block }: GallerySectionProps): React.JSX.Elemen
     return null;
   }
   return (
-    <LandingSection id={`block-${block.id}`} title="Галерея">
-      <GalleryCarousel images={images} />
+    <LandingSection id={`block-${block.id}`} title="Галерея" align="center">
+      <LandingCarousel
+        label="Галерея"
+        items={images.map((image, index) => ({
+          id: image.id,
+          content: (
+            <GalleryTile
+              image={image}
+              onOpen={() => {
+                setActive(index);
+              }}
+            />
+          ),
+        }))}
+        // 8px between tiles, so four of them plus three gaps fill the track —
+        // the basis below has to stay in step with this gap.
+        gapClassName="gap-2"
+        sideGapClassName="gap-4 md:gap-3.5"
+        itemClassName="basis-full sm:basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-1rem)/3)] xl:basis-[calc((100%-1.5rem)/4)]"
+      />
+      <GalleryLightbox
+        images={images}
+        index={active}
+        onClose={() => {
+          setActive(null);
+        }}
+        onNavigate={setActive}
+      />
     </LandingSection>
   );
 }
