@@ -1,8 +1,8 @@
-import { Download, ExternalLink, FileText } from "lucide-react";
+import { Download, FileText } from "lucide-react";
 import { formatDate, resolveMediaUrl } from "@/features/festival-catalog";
 import type { Regulation } from "@/features/festival-landing";
 import { isExternalDocLink } from "@/shared/lib";
-import { Button } from "@/shared/ui";
+import { Button, OpenInNewIcon } from "@/shared/ui";
 import { LandingSection } from "../landing-section";
 
 interface RegulationSectionProps {
@@ -46,7 +46,7 @@ export function RegulationSection({ regulation }: RegulationSectionProps): React
           >
             <a href={href} target="_blank" rel="noopener noreferrer">
               {isLink ? (
-                <ExternalLink className="size-4 md:size-5" aria-hidden="true" />
+                <OpenInNewIcon className="size-[14.25px] md:size-[19px]" aria-hidden="true" />
               ) : (
                 <Download className="size-4 md:size-5" aria-hidden="true" />
               )}

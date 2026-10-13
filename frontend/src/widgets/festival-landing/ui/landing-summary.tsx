@@ -1,13 +1,11 @@
-import { Banknote, ExternalLink, Map as MapIcon, Users } from "lucide-react";
 import { formatPeriod } from "@/features/festival-catalog";
 import {
   type FestivalDetail,
   type FestivalVenue,
-  formatFromPrice,
   heroBlock,
   landingCta,
 } from "@/features/festival-landing";
-import { Button, CalendarIcon, MapPinIcon } from "@/shared/ui";
+import { Button, CalendarIcon, MapIcon, MapPinIcon, OpenInNewIcon } from "@/shared/ui";
 import { LandingCtaButton } from "./landing-cta";
 
 interface SummaryRowProps {
@@ -52,21 +50,29 @@ interface MapLinkProps {
 }
 
 /**
- * One of the two map links. An outlined 197×39 plate on a 10px corner — the one
- * place on the page that is *not* the brand's 15, which is why the radius is
- * written out rather than taken from `rounded-brand`.
+ * One of the two map links: an outlined 197×39 plate on a 10px corner — the one
+ * radius on the page that is *not* the brand's 15, which is why it is written
+ * out rather than taken from `rounded-brand`.
+ *
+ * `justify-between`, so the map mark sits against the left edge and the
+ * open-in-new mark against the right with the label between them, whichever of
+ * the two services it names: «Google Карты» and «Яндекс Карты» differ by a
+ * character and the pair would otherwise be visibly off from each other.
  */
 function MapLink({ href, children }: MapLinkProps): React.JSX.Element {
   return (
     <Button
       asChild
       variant="outline"
-      className="h-[34px] w-full rounded-[10px] border-brand-line bg-background font-heading font-normal text-foreground text-sm leading-[19px] shadow-none md:h-[39px] md:w-[197px] md:text-base md:leading-[22px]"
+      className="h-[34px] w-full justify-between rounded-[10px] border-brand-line bg-background px-2.5 font-heading font-normal text-foreground text-sm leading-[19px] shadow-none md:h-[39px] md:w-[197px] md:text-base md:leading-[22px]"
     >
       <a href={href} target="_blank" rel="noopener noreferrer">
-        <MapIcon className="size-5 md:size-6" aria-hidden="true" />
+        {/* 18 and 14.25 — the glyphs' own sizes in the export, not the frames
+            they were cropped from, and the same on a phone: shrinking them with
+            the plate left the map mark illegible at 15px. */}
+        <MapIcon className="size-[18px]" aria-hidden="true" />
         {children}
-        <ExternalLink className="size-4" aria-hidden="true" />
+        <OpenInNewIcon className="size-[14.25px]" aria-hidden="true" />
       </a>
     </Button>
   );
@@ -86,10 +92,11 @@ interface LandingSummaryProps {
  * scrolls past the banner keeps the festival's name, its dates, its venue and
  * the way in all in one frame.
  *
- * **Price and formats are kept, though the frame does not draw them.** They are
- * the two facts a visitor needs *before* opening the wizard, and they have
- * nowhere else to go on the page — so they continue the same labelled list
- * under the address rather than being dropped to match the mock exactly.
+ * **Two rows and no more: the dates and the place.** The price and the
+ * participation formats were tried here and taken out again — the card is the
+ * page's one glance, and a list that keeps growing stops being one. Both are
+ * still asked and answered inside the application wizard, which is where a
+ * visitor meets them at the moment they matter.
  *
  * The title prefers what the organiser wrote on the HERO block and falls back
  * to the festival's own — the same precedence the hero used, so nobody's
@@ -100,8 +107,6 @@ export function LandingSummary({ festival, applyPath }: LandingSummaryProps): Re
   const title = hero?.title?.trim() || festival.title;
   const cta = landingCta(festival.status);
   const period = formatPeriod(festival.competitionStart, festival.competitionEnd);
-  const price = formatFromPrice(festival.pricing);
-  const formatNames = festival.formats.map((format) => format.name);
   const { venue } = festival.contacts;
   const lines = venueLines(venue, festival.city);
   const maps = venue.googleMapsUrl || venue.yandexMapsUrl;
@@ -132,16 +137,6 @@ export function LandingSummary({ festival, applyPath }: LandingSummaryProps): Re
                   {line}
                 </span>
               ))}
-            </SummaryRow>
-          ) : null}
-          {formatNames.length > 0 ? (
-            <SummaryRow icon={Users} label="Форматы участия">
-              {formatNames.join(", ")}
-            </SummaryRow>
-          ) : null}
-          {price ? (
-            <SummaryRow icon={Banknote} label="Стоимость участия">
-              {price}
             </SummaryRow>
           ) : null}
         </dl>

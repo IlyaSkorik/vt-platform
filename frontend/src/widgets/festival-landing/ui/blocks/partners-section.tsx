@@ -1,7 +1,6 @@
-import { ExternalLink } from "lucide-react";
 import { resolveMediaUrl } from "@/features/festival-catalog";
 import type { LandingBlock, PartnerCard } from "@/features/festival-landing";
-import { Button } from "@/shared/ui";
+import { Button, OpenInNewIcon } from "@/shared/ui";
 import { LandingSection } from "../landing-section";
 
 /**
@@ -37,7 +36,7 @@ function PartnerTile({ partner }: { partner: PartnerCard }): React.JSX.Element {
         >
           <a href={partner.website} target="_blank" rel="noopener noreferrer">
             Сайт
-            <ExternalLink className="size-4" aria-hidden="true" />
+            <OpenInNewIcon className="size-[14.25px]" aria-hidden="true" />
           </a>
         </Button>
       ) : null}

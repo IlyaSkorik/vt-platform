@@ -128,7 +128,7 @@ describe("FestivalLanding", () => {
     expect(heading).toHaveTextContent("Весенний вокальный фестиваль");
   });
 
-  it("keeps the dates, the place, the price and the CTA in the summary card", () => {
+  it("keeps the dates, the place and the CTA in the summary card", () => {
     mockQuery({ data: makeFestivalDetail() });
     renderLanding();
 
@@ -139,11 +139,12 @@ describe("FestivalLanding", () => {
     // the currency come out of Intl and are not this test's subject.
     expect(inCard.getByText("Даты проведения")).toBeInTheDocument();
     expect(inCard.getByText("Место проведения")).toBeInTheDocument();
-    expect(inCard.getByText("Форматы участия")).toBeInTheDocument();
-    expect(inCard.getByText("Стоимость участия")).toBeInTheDocument();
-    // The deadline is not here: the registration block carries the per-nomination
-    // windows, which is the more precise answer to "до когда".
+    // Two rows and no more. The deadline is not here — the registration block
+    // carries the per-nomination windows, which answers "до когда" precisely —
+    // and neither are the price or the formats, which the wizard asks for.
     expect(inCard.queryByText(/Заявки до/)).not.toBeInTheDocument();
+    expect(inCard.queryByText("Форматы участия")).not.toBeInTheDocument();
+    expect(inCard.queryByText("Стоимость участия")).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: /подать заявку/i })[0]).toBeInTheDocument();
   });
 
