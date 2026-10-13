@@ -39,7 +39,7 @@ export function LandingSection({
   id,
   title,
   align = "start",
-  headingGap = "mb-5",
+  headingGap = "mb-1.5 md:mb-5",
   children,
 }: LandingSectionProps): React.JSX.Element {
   return (

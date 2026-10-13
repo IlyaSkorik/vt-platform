@@ -101,11 +101,13 @@ interface RegistrationBlockProps {
  * the state of that window right now, so a visitor sees at a glance where they
  * can still apply. Renders nothing until at least one nomination exists.
  *
- * The frame prints a «Дата проведения» line on each card. It is not here,
- * because nothing in the public projection carries one: a nomination has an
- * intake window and nothing else dated. Showing the festival's own start date
- * on every card instead would be the same number repeated down the column,
- * dressed as a per-nomination fact.
+ * Three lines when the organizer has filled them in: the name with its state,
+ * the intake window, and the date the nomination is actually performed. That
+ * last one is the nomination's own — a festival running over several days
+ * judges one genre a day, so "when do I perform" has no answer at the
+ * competition level — and it is absent from the card when nobody set it,
+ * rather than falling back to the festival's start date. One number repeated
+ * down the column is not a per-nomination fact.
  */
 export function RegistrationBlock({
   nominations,
@@ -120,11 +122,12 @@ export function RegistrationBlock({
     <LandingSection id="registration" title="Регистрация">
       {/* 4px between cards, as the frame measures it: the list is one block of
           nominations rather than a set of separate panels. */}
-      <ul className="space-y-1">
+      <ul className="space-y-1.5 md:space-y-1">
         {sorted.map((nomination) => {
           const state = deriveState(nomination);
           const opens = formatInstant(nomination.registrationOpensAt);
           const closes = formatInstant(nomination.registrationClosesAt);
+          const held = formatInstant(nomination.heldAt);
           return (
             // 19px, the one corner on the page that is not the brand's 15 — the
             // frame rounds these cards a notch softer than everything else.
@@ -150,18 +153,30 @@ export function RegistrationBlock({
                   the dates stopped being readable, and the frame prints them in
                   «свет» there. A `dark:` class rather than a token — this is one
                   value at two opacities, not two colours from two ramps. */}
-              <div className="mt-2 text-foreground/70 text-sm leading-[19px] md:mt-3 md:text-lg md:leading-[25px] dark:text-foreground">
-                {opens || closes ? (
-                  <>
-                    <p>Приём заявок</p>
-                    <p className="flex flex-wrap gap-x-12 gap-y-0.5">
-                      {opens ? <span>с {opens}</span> : null}
-                      {closes ? <span>по {closes}</span> : null}
-                    </p>
-                  </>
-                ) : (
-                  <p>Даты приёма заявок пока не назначены</p>
-                )}
+              {/* The two facts swap places between the layouts, and the DOM
+                  follows the desktop: the date sits right under the name there,
+                  dropped to 40% — a quiet caption on the heading — while the
+                  phone moves it to the last line and gives it full strength.
+                  `order-last` rather than two copies of the markup. */}
+              <div className="flex flex-col">
+                {held ? (
+                  <p className="order-last mt-3 text-foreground text-sm leading-[19px] md:order-none md:mt-0.5 md:text-foreground/40 dark:text-foreground/70 md:dark:text-foreground/70">
+                    Дата проведения: {held}
+                  </p>
+                ) : null}
+                <div className="mt-2 text-foreground/70 text-sm leading-[19px] md:text-lg md:leading-[25px] dark:text-foreground">
+                  {opens || closes ? (
+                    <>
+                      <p>Приём заявок</p>
+                      <p className="flex flex-wrap gap-x-4 gap-y-0.5 md:gap-x-12">
+                        {opens ? <span>с {opens}</span> : null}
+                        {closes ? <span>по {closes}</span> : null}
+                      </p>
+                    </>
+                  ) : (
+                    <p>Даты приёма заявок пока не назначены</p>
+                  )}
+                </div>
               </div>
             </li>
           );

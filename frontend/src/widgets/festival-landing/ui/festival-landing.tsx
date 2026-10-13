@@ -77,10 +77,10 @@ function LandingContent({
       {/* The two columns the frame builds the page's top half from: a fixed
           506px card on the left, the registration column taking the rest. They
           stack below `lg`, where 506 + 773 stops fitting. */}
-      <div className="mt-6 grid items-start gap-6 md:mt-9 lg:grid-cols-[506px_minmax(0,1fr)] lg:gap-[27px]">
+      <div className="mt-6 grid items-start gap-[41px] md:mt-9 lg:grid-cols-[506px_minmax(0,1fr)] lg:gap-[27px]">
         <LandingSummary festival={festival} applyPath={applyPath} />
 
-        <div className="min-w-0 space-y-8 md:space-y-[30px]">
+        <div className="min-w-0 space-y-6 md:space-y-[30px]">
           <RegistrationBlock nominations={nominations} />
           {/* Positional markers in the builder, fixed positions here: the frame
               puts the regulation under the nominations and the organiser's own
@@ -102,39 +102,43 @@ function LandingContent({
         </div>
       </div>
 
-      {/* The rule the frame draws across the page: everything above it is about
-          this festival's dates and how to enter, everything below is about who
-          runs it and what it looked like. */}
-      {/* Half-strength «тёмный акцент» by day, «светлый база ночная» at full by
+      {/* The rule divides two halves of a wide page — dates and how to enter
+          above, people and pictures below. A phone has no two halves to divide:
+          there the sections already arrive one after another, and a line across
+          the screen reads as a cut rather than as a seam. `hidden` rather than
+          a transparent border, so it takes its margin with it.
+
+          Half-strength «тёмный акцент» by day, «светлый база ночная» at full by
           night: the daytime rule is a violet softened against a pale page, and
           the same colour over `#110B12` is a line you cannot find. */}
-      <hr className="mt-10 border-brand-line/50 border-t-2 md:mt-[49px] dark:border-brand-control" />
+      <hr className="hidden border-brand-line/50 border-t-2 md:mt-[49px] md:block dark:border-brand-control" />
 
-      {/* 30px under the rule before the first full-width section — the same
-          margin the page opens with under the header bar. */}
       {/* Each section carries its own margin rather than the column carrying one
           rhythm: the frame does not space these evenly — 62 under the jury's
           dashes, 84 under the gallery's — and a single `space-y` cannot say
           that. `first:mt-0` keeps the top of the column flush whichever section
-          turns out to be first, since every one of them is optional. */}
-      <div className="mt-[30px]">
+          turns out to be first, since every one of them is optional.
+
+          30px under the rule, and on a phone — where there is no rule — the
+          whole distance from the prose above it: 24. */}
+      <div className="mt-6 md:mt-[30px]">
         {jury ? (
           <div className="first:mt-0">
             <JurySection block={jury} />
           </div>
         ) : null}
         {gallery ? (
-          <div className="mt-[62px] first:mt-0">
+          <div className="mt-10 first:mt-0 md:mt-[62px]">
             <GallerySection block={gallery} />
           </div>
         ) : null}
         {faq ? (
-          <div className="mt-[84px] first:mt-0">
+          <div className="mt-[52px] first:mt-0 md:mt-[84px]">
             <FaqSection block={faq} />
           </div>
         ) : null}
         {partners ? (
-          <div className="mt-[49px] first:mt-0">
+          <div className="mt-[9px] first:mt-0 md:mt-[49px]">
             <PartnersSection block={partners} />
           </div>
         ) : null}

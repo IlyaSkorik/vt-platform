@@ -117,7 +117,7 @@ export function PublicFestivalLandingPage(): React.JSX.Element {
     // width. The catalogue opens with a filters panel and a search band, which
     // are chrome and can sit closer; this page opens with artwork, and the
     // frame gives it the same margin on a phone as on a desktop.
-    <PageContainer size="wide" className="max-w-336 px-3.5 pt-[30px] pb-[55px] md:px-8 md:pb-8">
+    <PageContainer size="wide" className="max-w-336 px-4 pt-[30px] pb-[55px] md:px-8 md:pb-8">
       {festival ? (
         <>
           <JsonLd id="festival-event" data={festivalEventSchema(festival, { path })} />

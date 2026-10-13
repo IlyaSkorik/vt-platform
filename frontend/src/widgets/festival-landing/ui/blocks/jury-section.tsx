@@ -34,12 +34,17 @@ function JuryMemberCard({ card }: { card: JuryCard }): React.JSX.Element {
     // description grows past the floor instead of being cut.
     // The outline drops to 70% at night: at full strength three of these
     // three-pixel frames over a near-black page read as a cage.
-    <article className="flex h-full min-h-[318px] flex-col gap-1 rounded-brand border-[3px] border-brand-line px-3.5 pt-[18px] pb-3.5 md:min-h-[481px] md:gap-0 md:px-[25px] md:pt-[21px] md:pb-[25px] dark:border-brand-line/70">
+    // 269 wide and centred on a phone, against the page's own 343: the frame
+    // insets the card further than the gutter it sits in, the way the catalogue
+    // insets its tiles. At the full width it stops reading as a card.
+    <article className="mx-auto flex h-full min-h-[382px] w-full max-w-[269px] flex-col gap-1 rounded-brand border-[3px] border-brand-line px-3.5 pt-[18px] pb-3.5 md:min-h-[481px] md:max-w-none md:gap-0 md:px-[25px] md:pt-[21px] md:pb-[25px] dark:border-brand-line/70">
       {/* 287×276 — near-square, because these are head-and-shoulders portraits;
           the 4:3 landscape the grid used before cropped most of them at the
           chin. Its own one-pixel outline, inset from the card's three: that
           inset is what makes the card read as a mounted portrait. */}
-      <div className="aspect-[287/276] overflow-hidden rounded-brand border border-brand-line bg-background">
+      {/* 250×220 on a phone and 287×276 from `md` up — not the same ratio, so
+          it is two aspect boxes rather than one scaled down. */}
+      <div className="aspect-[250/220] overflow-hidden rounded-brand border border-brand-line bg-background md:aspect-[287/276]">
         {photo ? (
           // Eager, and decoded off the main thread. `loading="lazy"` looks
           // right here and is the reason the first click of the arrow felt

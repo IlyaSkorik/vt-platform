@@ -47,7 +47,7 @@ export function RegulationSection({ regulation }: RegulationSectionProps): React
           // not the page's full-width CTA.
           <Button
             asChild
-            className="h-[30px] w-full shrink-0 rounded-brand font-heading font-bold text-sm leading-[19px] hover:bg-brand-press md:h-[33px] md:w-auto md:px-5 md:text-lg md:leading-[25px] dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-press"
+            className="h-[30px] w-[194px] shrink-0 justify-between rounded-brand px-3 font-heading font-bold text-sm leading-[19px] hover:bg-brand-press md:h-[33px] md:w-auto md:justify-center md:px-5 md:text-lg md:leading-[25px] dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-press"
           >
             <a href={href} target="_blank" rel="noopener noreferrer">
               {/* 14.25, the same mark at the same size as on the map links —

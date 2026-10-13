@@ -27,11 +27,17 @@ export function ContentSection({ block }: ContentSectionProps): React.JSX.Elemen
     return null;
   }
   return (
-    <LandingSection id={`block-${block.id}`} title={title || "О фестивале"}>
+    <LandingSection
+      id={`block-${block.id}`}
+      title={title || "О фестивале"}
+      headingGap="mb-[18px] md:mb-5"
+    >
       {body ? (
         // `break-words`: organiser text routinely carries a bare URL, and one
         // unbreakable token is enough to stretch the column past the screen.
-        <div className="whitespace-pre-line break-words text-pretty text-foreground text-sm leading-[19px] md:text-lg md:leading-[25px] dark:text-foreground/80">
+        /* 18/25 at both widths. This is the page's one piece of prose, and the
+           frame does not shrink it on a phone the way it shrinks the chrome. */
+        <div className="whitespace-pre-line break-words text-pretty text-foreground text-lg leading-[25px] dark:text-foreground/80">
           {body}
         </div>
       ) : null}

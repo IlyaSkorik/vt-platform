@@ -66,7 +66,7 @@ function MapLink({ href, children }: MapLinkProps): React.JSX.Element {
     <Button
       asChild
       variant="outline"
-      className="h-[34px] w-full justify-between rounded-[10px] border-brand-line bg-background px-2.5 font-heading font-normal text-foreground text-sm leading-[19px] shadow-none md:h-[39px] md:w-[197px] md:text-base md:leading-[22px]"
+      className="h-[34px] w-[165px] justify-between rounded-[10px] border-brand-line bg-background px-2.5 font-heading font-normal text-foreground text-sm leading-[19px] shadow-none md:h-[39px] md:w-[197px] md:text-base md:leading-[22px]"
     >
       <a href={href} target="_blank" rel="noopener noreferrer">
         {/* 18 and 14.25 — the glyphs' own sizes in the export, not the frames
@@ -114,11 +114,14 @@ export function LandingSummary({ festival, applyPath }: LandingSummaryProps): Re
   const maps = venue.googleMapsUrl || venue.yandexMapsUrl;
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-6 md:gap-2.5">
       {/* `bg-background`, not `bg-card`: the frame fills the panel with `свет`
           — the page's own colour — and lets the two-pixel «тёмный акцент»
           outline be the whole of what separates it from the page. */}
-      <div className="rounded-brand border-2 border-brand-line bg-background px-4 pt-3 pb-6 md:px-5">
+      {/* One pixel of outline on a phone and two on a desktop: the card is
+          nearly the whole screen there, and a two-pixel frame around it reads
+          as a box drawn round the page rather than as a panel on it. */}
+      <div className="rounded-brand border border-brand-line bg-background px-4 pt-3 pb-5 md:border-2 md:px-5 md:pb-6">
         <h1 className="text-balance text-center font-bold text-lg leading-[25px] md:text-[28px] md:leading-[38px]">
           {title}
         </h1>
@@ -144,7 +147,10 @@ export function LandingSummary({ festival, applyPath }: LandingSummaryProps): Re
         </dl>
 
         {maps ? (
-          <div className="mt-5 flex flex-col gap-2.5 md:mt-6 md:flex-row md:justify-center md:gap-8">
+          /* Stacked and 165 wide on a phone — the frame keeps them left of the
+             card's own text column rather than stretching them across it —
+             and side by side at 197 from `md` up. */
+          <div className="mt-5 flex flex-col gap-[18px] md:mt-6 md:flex-row md:justify-center md:gap-8">
             {venue.googleMapsUrl ? (
               <MapLink href={venue.googleMapsUrl}>Google Карты</MapLink>
             ) : null}

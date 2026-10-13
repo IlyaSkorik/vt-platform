@@ -18,11 +18,17 @@ export function FaqSection({ block }: FaqSectionProps): React.JSX.Element | null
     return null;
   }
   return (
-    <LandingSection id={`block-${block.id}`} title="Часто задаваемые вопросы">
+    <LandingSection
+      id={`block-${block.id}`}
+      title="Часто задаваемые вопросы"
+      headingGap="mb-4 md:mb-5"
+    >
       <ul className="space-y-2">
         {block.faq.map((item) => (
           <li key={item.id}>
-            <details className="group rounded-brand border border-brand-line px-4 py-4 md:px-6 md:py-6">
+            {/* Two pixels on a phone, one on a desktop: a hairline across a
+                375px screen stops reading as an edge at all. */}
+            <details className="group rounded-brand border-2 border-brand-line px-4 py-4 md:border md:px-6 md:py-6">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-base leading-[22px] outline-none focus-visible:ring-2 focus-visible:ring-ring md:text-lg md:leading-[25px]">
                 <span className="min-w-0 break-words">{item.question}</span>
                 {/* 25×14 — the frame's own wedge, wide and shallow, not a

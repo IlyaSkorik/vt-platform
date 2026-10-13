@@ -30,8 +30,11 @@ export function LandingCtaButton({
   // keeps «Акцентище» `#9400D3` on both plates — the same pairing every primary
   // button on the public surfaces uses. `hover:bg-brand-press` rather than the
   // variant's own fade of the primary.
+  // 189×37 and centred on a phone, a full-width 61px bar from `md` up. The bar
+  // is the desktop card's closing edge and wants its whole width; on a phone
+  // the card is the screen, and a plate across it reads as a second header.
   const plate = cn(
-    "h-[37px] w-full rounded-brand font-heading font-bold text-base leading-[22px] hover:bg-brand-press md:h-[61px] md:text-[28px] md:leading-[38px] dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-press",
+    "mx-auto h-[37px] w-[189px] rounded-brand font-heading font-bold text-base leading-[22px] hover:bg-brand-press md:mx-0 md:h-[61px] md:w-full md:text-[28px] md:leading-[38px] dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-press",
     className,
   );
 
