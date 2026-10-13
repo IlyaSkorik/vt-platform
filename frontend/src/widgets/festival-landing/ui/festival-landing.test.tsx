@@ -75,13 +75,16 @@ describe("FestivalLanding", () => {
     expect(screen.getByRole("button", { name: /повторить/i })).toBeInTheDocument();
   });
 
-  it("renders the hero, blocks, venue and footer on success", () => {
+  it("renders the cover, the summary card, the blocks and the footer on success", () => {
     mockQuery({ data: makeFestivalDetail() });
     renderLanding("01900000-0000-7000-8000-000000000001");
 
     expect(screen.getByRole("heading", { level: 1, name: /взлёт талантов/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "О фестивале" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Место проведения" })).toBeInTheDocument();
+    // The place is a row in the summary card now, not a section of its own.
+    expect(screen.getByText("Место проведения")).toBeInTheDocument();
+    expect(screen.getByText("Дворец культуры")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /google карты/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Положение фестиваля" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /скачать положение/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Документы" })).toBeInTheDocument();
@@ -108,9 +111,11 @@ describe("FestivalLanding", () => {
     expect(screen.getAllByText("Оргкомитет фестиваля")).toHaveLength(1);
   });
 
-  it("writes no hero title when the organizer authored none", () => {
-    // The fallback to the competition's own title made an untouched hero look
-    // authored. The heading stays for screen readers; nothing is drawn.
+  it("titles the card with the festival's own name when the organizer authored none", () => {
+    // The overlay hero deliberately drew nothing when the HERO block carried no
+    // title, so an untouched hero never looked authored. The card is different:
+    // it is the page's heading, it is always visible, and a card with no title
+    // is simply broken — so here the festival's own name is the fallback.
     mockQuery({
       data: makeFestivalDetail({
         landing: { blocks: [makeBlock({ id: "hero", type: "HERO", sortOrder: 0 })] },
@@ -119,27 +124,27 @@ describe("FestivalLanding", () => {
     renderLanding();
 
     const heading = screen.getByRole("heading", { level: 1 });
-    expect(heading).toHaveClass("sr-only");
+    expect(heading).not.toHaveClass("sr-only");
     expect(heading).toHaveTextContent("Весенний вокальный фестиваль");
   });
 
-  it("keeps the dates, the CTA and the pinned status in the hero", () => {
+  it("keeps the dates, the place, the price and the CTA in the summary card", () => {
     mockQuery({ data: makeFestivalDetail() });
     renderLanding();
 
-    const hero = screen.getByRole("heading", { level: 1 }).closest("section");
-    expect(hero).not.toBeNull();
-    const within_hero = within(hero as HTMLElement);
-    expect(within_hero.getByText(/Сезон 2025\/2026/)).toBeInTheDocument();
-    expect(within_hero.getByRole("link", { name: /подать заявку/i })).toBeInTheDocument();
-    // The dates stayed; the deadline did not — the registration block carries the
-    // per-nomination windows, which is the more precise answer to "до когда".
-    // By the row's own (screen-reader) label rather than the formatted string: the
-    // month name comes out of Intl and is not this test's subject.
-    expect(within_hero.getByText("Даты проведения")).toBeInTheDocument();
-    expect(within_hero.queryByText(/Заявки до/)).not.toBeInTheDocument();
-    // The formats moved out of the hero; the summary rail still lists them.
-    expect(within_hero.queryByText("Очно")).not.toBeInTheDocument();
+    const card = screen.getByRole("heading", { level: 1 }).closest("div");
+    expect(card).not.toBeNull();
+    const inCard = within(card as HTMLElement);
+    // By each row's label rather than by the formatted value: the month name and
+    // the currency come out of Intl and are not this test's subject.
+    expect(inCard.getByText("Даты проведения")).toBeInTheDocument();
+    expect(inCard.getByText("Место проведения")).toBeInTheDocument();
+    expect(inCard.getByText("Форматы участия")).toBeInTheDocument();
+    expect(inCard.getByText("Стоимость участия")).toBeInTheDocument();
+    // The deadline is not here: the registration block carries the per-nomination
+    // windows, which is the more precise answer to "до когда".
+    expect(inCard.queryByText(/Заявки до/)).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /подать заявку/i })[0]).toBeInTheDocument();
   });
 
   it("shows a non-actionable CTA for a completed competition", () => {
@@ -193,7 +198,7 @@ describe("FestivalLanding", () => {
     expect(screen.getByText("Анна Петрова")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Галерея" })).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Гала-концерт" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Частые вопросы" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Часто задаваемые вопросы" })).toBeInTheDocument();
     expect(screen.getByText("Как принять участие?")).toBeInTheDocument();
   });
 

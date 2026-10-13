@@ -2,18 +2,28 @@ import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router";
 import { useAuth } from "@/app/providers";
 import {
+  bodyBlocks,
   type FestivalDetail,
+  LANDING_BLOCK_TYPES,
+  type LandingBlock,
   type RegistrationNominationView,
   usePublicFestival,
   usePublicRegistration,
 } from "@/features/festival-landing";
 import { ROUTES } from "@/shared/config";
 import { Button } from "@/shared/ui";
+import { ContentSection } from "./blocks/content-section";
+import { DocumentsSection } from "./blocks/documents-section";
+import { FaqSection } from "./blocks/faq-section";
+import { GallerySection } from "./blocks/gallery-section";
+import { JurySection } from "./blocks/jury-section";
+import { PartnersSection } from "./blocks/partners-section";
 import { RegistrationBlock } from "./blocks/registration-block";
+import { RegulationSection } from "./blocks/regulation-section";
 import { ResultsSection } from "./blocks/results-section";
+import { VenueSection } from "./blocks/venue-section";
+import { LandingCover } from "./landing-cover";
 import { LandingFooter } from "./landing-footer";
-import { LandingHero } from "./landing-hero";
-import { LandingSections } from "./landing-sections";
 import { LandingSkeleton } from "./landing-skeleton";
 import { LandingError, LandingNotFound } from "./landing-states";
 import { LandingSummary } from "./landing-summary";
@@ -31,6 +41,11 @@ function BackLink({ to }: { to: string }): React.JSX.Element {
   );
 }
 
+/** The first enabled block of a kind, or `null`. One of each is all the builder allows. */
+function blockOf(blocks: LandingBlock[], type: string): LandingBlock | null {
+  return blocks.find((block) => block.type === type) ?? null;
+}
+
 function LandingContent({
   festival,
   applyPath,
@@ -40,30 +55,65 @@ function LandingContent({
   applyPath: string;
   nominations: RegistrationNominationView[];
 }): React.JSX.Element {
+  const blocks = bodyBlocks(festival.landing.blocks);
+  // CONTENT is the one kind an organiser can add more than once, so it stays a
+  // list and keeps its own `sortOrder`; everything else is at most one block.
+  const content = blocks.filter((block) => block.type === LANDING_BLOCK_TYPES.CONTENT);
+  const venue = blockOf(blocks, LANDING_BLOCK_TYPES.VENUE);
+  const regulation = blockOf(blocks, LANDING_BLOCK_TYPES.REGULATION);
+  const documents = blockOf(blocks, LANDING_BLOCK_TYPES.DOCUMENTS);
+  const jury = blockOf(blocks, LANDING_BLOCK_TYPES.JURY);
+  const gallery = blockOf(blocks, LANDING_BLOCK_TYPES.GALLERY);
+  const faq = blockOf(blocks, LANDING_BLOCK_TYPES.FAQ);
+  const partners = blockOf(blocks, LANDING_BLOCK_TYPES.PARTNERS);
+
   return (
-    /* `pb-10`: the contacts card is the page's last element, and on the public route
-       the site footer's own border starts immediately under it — two footers with no
-       air between them read as one. The padding belongs here rather than on the card:
-       it is the gap after the landing, not part of the footer's own styling. */
-    <div className="space-y-10 pb-10">
-      <LandingHero festival={festival} applyPath={applyPath} />
-      <RegistrationBlock nominations={nominations} />
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        {/* Summary sits after the hero on mobile/tablet and becomes the sticky
-            right rail on desktop (order swap keeps a single DOM source). */}
-        <aside className="lg:sticky lg:top-18 lg:order-2 lg:self-start">
-          <LandingSummary festival={festival} applyPath={applyPath} />
-        </aside>
-        <main className="min-w-0 lg:order-1 space-y-14">
-          <LandingSections festival={festival} />
-          {/* Not one of the organizer's blocks: results appear by themselves once a protocol
-              is published, because publishing is already the deliberate act. Addressed by
-              the competition's uuid rather than the slug in the URL: the Results context
-              keys protocols by id alone and answers a slug with an empty list. */}
+    /* `pb-10`: the contacts card is the page's last element and the site
+       footer's own border starts immediately under it — two footers with no air
+       between them read as one. */
+    <div className="pb-10">
+      <LandingCover festival={festival} />
+
+      {/* The two columns the frame builds the page's top half from: a fixed
+          506px card on the left, the registration column taking the rest. They
+          stack below `lg`, where 506 + 773 stops fitting. */}
+      <div className="mt-6 grid items-start gap-6 md:mt-9 lg:grid-cols-[506px_minmax(0,1fr)] lg:gap-[27px]">
+        <LandingSummary festival={festival} applyPath={applyPath} />
+
+        <div className="min-w-0 space-y-8 md:space-y-[30px]">
+          <RegistrationBlock nominations={nominations} />
+          {/* Positional markers in the builder, fixed positions here: the frame
+              puts the regulation under the nominations and the organiser's own
+              prose under that, whatever order the blocks carry. The block's
+              presence is still what decides whether a section appears at all. */}
+          {regulation && festival.regulation ? (
+            <RegulationSection regulation={festival.regulation} />
+          ) : null}
+          {documents ? <DocumentsSection documents={festival.documents} /> : null}
+          {content.map((block) => (
+            <ContentSection key={block.id} block={block} />
+          ))}
+          {venue ? <VenueSection id={`block-${venue.id}`} venue={festival.contacts.venue} /> : null}
+          {/* Not one of the organiser's blocks: results appear by themselves
+              once a protocol is published, because publishing is already the
+              deliberate act. Keyed by the competition's uuid rather than by the
+              slug in the URL — the Results context answers a slug with nothing. */}
           <ResultsSection festivalId={festival.id} />
-        </main>
+        </div>
       </div>
-      <LandingFooter contacts={festival.contacts} />
+
+      {/* The rule the frame draws across the page: everything above it is about
+          this festival's dates and how to enter, everything below is about who
+          runs it and what it looked like. */}
+      <hr className="mt-12 border-brand-line/50 border-t-2 md:mt-16" />
+
+      <div className="mt-10 space-y-12 md:mt-16 md:space-y-16">
+        {jury ? <JurySection block={jury} /> : null}
+        {gallery ? <GallerySection block={gallery} /> : null}
+        {faq ? <FaqSection block={faq} /> : null}
+        {partners ? <PartnersSection block={partners} /> : null}
+        <LandingFooter contacts={festival.contacts} />
+      </div>
     </div>
   );
 }
@@ -72,10 +122,18 @@ function LandingContent({
  * The public Competition Landing Page.
  *
  * Owns data (a single cached read of the public detail projection) and every UI
- * state: skeleton while loading, a dedicated not-found for a missing/unpublished
- * competition (404), a retryable error otherwise, and the full landing on
- * success. It composes the hero, the organizer's Landing Builder blocks, the
- * sticky summary and the reused Competition Contacts footer.
+ * state: skeleton while loading, a dedicated not-found for a missing or
+ * unpublished competition (404), a retryable error otherwise, and the full
+ * landing on success.
+ *
+ * **The page's order is the frame's, not the builder's.** Blocks used to render
+ * in the organiser's `sortOrder`, one after another down a single column. The
+ * design fixes where each kind lives — the registration column on the right,
+ * the jury, gallery, FAQ and partners full-width below the rule — so order is
+ * now a property of the page and the builder's ordering no longer reaches the
+ * public side. What the organiser still decides is *whether* a block appears:
+ * a disabled block is absent from the projection, and an absent block renders
+ * nothing here.
  */
 export function FestivalLanding({
   festivalId,
@@ -83,8 +141,8 @@ export function FestivalLanding({
 }: FestivalLandingProps): React.JSX.Element {
   const { isAuthenticated } = useAuth();
   const query = usePublicFestival(festivalId);
-  // Non-blocking: the registration schedule is a secondary read; the page renders
-  // without it and the block simply stays empty until it arrives.
+  // Non-blocking: the registration schedule is a secondary read; the page
+  // renders without it and the block stays empty until it arrives.
   const registrationQuery = usePublicRegistration(festivalId);
   const applyPath = festivalId
     ? `${ROUTES.cabinetCompetitions}/${festivalId}/apply`
@@ -124,8 +182,15 @@ export function FestivalLanding({
   }
 
   return (
-    <div className="space-y-6">
-      <BackLink to={catalogPath} />
+    // `font-heading` on the page's root: the public surfaces are set in Noto
+    // Serif throughout — headings and body alike — and the application chrome
+    // never is, so the opt-in belongs here rather than in each section.
+    //
+    // No «К каталогу» above the banner. The frame starts the page with the
+    // poster, and a back link is the one thing on it the browser already
+    // provides. It survives in the error and not-found states below, where
+    // there is no page to be on and it is the only way out.
+    <div className="font-heading">
       <LandingContent
         festival={query.data}
         applyPath={ctaPath}

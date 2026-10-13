@@ -1,31 +1,47 @@
+import { cn } from "@/shared/lib";
+
 interface LandingSectionProps {
-  /** Anchor id, so the sticky sidebar / hero can deep-link to a section. */
+  /** Anchor id, so a deep link can land on the section. */
   id?: string;
   title: string;
-  subtitle?: string | null;
+  /**
+   * Where the heading sits. The frame centres the three full-width sections it
+   * puts below the fold — jury, gallery, partners — and keeps the ones inside
+   * the right-hand column left-aligned with their content. It is a property of
+   * the slot rather than of the section, so the page passes it in.
+   */
+  align?: "start" | "center";
   children: React.ReactNode;
 }
 
 /**
- * Shared wrapper for every main-content landing section.
+ * Shared wrapper for every landing section: the heading, the gap under it, and
+ * the scroll margin that keeps an anchored section clear of the sticky header.
  *
- * Standardizes the section heading, spacing and scroll-margin so the blocks the
- * organizer enabled read as one coherent page regardless of order.
+ * The heading is «Загаловки» at 32/44 — the one size the frame sets every
+ * section title in, stepping down to 24/33 on a phone. It is `font-heading`
+ * because the whole public surface is: Noto Serif, headings and body alike.
+ *
+ * No `subtitle`. Nothing in the frame carries one, and the prop was only ever
+ * passed `null` — a section that needs a lead paragraph can render it as its
+ * own first child, where it belongs to the content rather than to the chrome.
  */
 export function LandingSection({
   id,
   title,
-  subtitle,
+  align = "start",
   children,
 }: LandingSectionProps): React.JSX.Element {
   return (
-    <section id={id} className="scroll-mt-8">
-      <div className="mb-6 space-y-1.5">
-        <h2 className="text-pretty break-words text-2xl font-semibold tracking-tight sm:text-3xl">
-          {title}
-        </h2>
-        {subtitle ? <p className="max-w-2xl text-muted-foreground">{subtitle}</p> : null}
-      </div>
+    <section id={id} className="scroll-mt-24">
+      <h2
+        className={cn(
+          "mb-5 text-pretty break-words font-heading font-bold text-2xl text-foreground leading-[33px] md:mb-[26px] md:text-[32px] md:leading-[44px]",
+          align === "center" && "text-center",
+        )}
+      >
+        {title}
+      </h2>
       {children}
     </section>
   );

@@ -1,41 +1,47 @@
-import { ArrowRight } from "lucide-react";
 import { Link } from "react-router";
 import type { LandingCta } from "@/features/festival-landing";
-import { Button, type ButtonProps } from "@/shared/ui";
+import { cn } from "@/shared/lib";
+import { Button } from "@/shared/ui";
 
 interface LandingCtaButtonProps {
   cta: LandingCta;
   /** Registration-wizard route the actionable "Apply" CTA links to. */
   applyPath: string;
-  size?: ButtonProps["size"];
   className?: string;
 }
 
 /**
- * The primary call-to-action, driven entirely by the public status.
+ * The page's one call to action, driven entirely by the public status: only an
+ * open registration renders a link to the wizard, every other status renders
+ * the same plate disabled with a status label. The CTA can therefore never
+ * invite an action the festival does not allow.
  *
- * Only an open registration renders an actionable link to the registration
- * wizard; every other status renders the same button disabled with a status
- * label, so the CTA can never invite an action the competition does not allow.
+ * The frame draws it as a full-width «Акцентище» plate under the summary card,
+ * 61px tall with its label at 28/38 — a bar rather than a button, which is why
+ * it carries its own geometry instead of a `size`. No trailing arrow: the frame
+ * has none, and on a plate this wide the label is already unmissable.
  */
 export function LandingCtaButton({
   cta,
   applyPath,
-  size = "lg",
   className,
 }: LandingCtaButtonProps): React.JSX.Element {
+  // `hover:bg-brand-press` rather than the variant's own fade of the primary —
+  // the gesture every brand plate on the public surfaces answers with.
+  const plate = cn(
+    "h-[37px] w-full rounded-brand font-heading font-bold text-base leading-[22px] hover:bg-brand-press md:h-[61px] md:text-[28px] md:leading-[38px]",
+    className,
+  );
+
   if (cta.canApply) {
     return (
-      <Button asChild size={size} className={className}>
-        <Link to={applyPath}>
-          {cta.ctaLabel}
-          <ArrowRight className="size-4" aria-hidden="true" />
-        </Link>
+      <Button asChild size="lg" className={plate}>
+        <Link to={applyPath}>{cta.ctaLabel}</Link>
       </Button>
     );
   }
   return (
-    <Button size={size} disabled className={className}>
+    <Button size="lg" disabled className={plate}>
       {cta.ctaLabel}
     </Button>
   );

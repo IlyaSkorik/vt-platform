@@ -1,20 +1,6 @@
-import { ExternalLink, Map as MapIcon, MapPin, Navigation } from "lucide-react";
+import { Navigation } from "lucide-react";
 import type { FestivalVenue } from "@/features/festival-landing";
-import { Button, Card, CardContent } from "@/shared/ui";
 import { LandingSection } from "../landing-section";
-
-/** True when the venue carries anything worth rendering. */
-export function hasVenueContent(venue: FestivalVenue): boolean {
-  return Boolean(
-    venue.name ||
-      venue.address ||
-      venue.city ||
-      venue.country ||
-      venue.directions ||
-      venue.googleMapsUrl ||
-      venue.yandexMapsUrl,
-  );
-}
 
 interface VenueSectionProps {
   id: string;
@@ -22,67 +8,29 @@ interface VenueSectionProps {
 }
 
 /**
- * The VENUE block: place, address and directions.
+ * The VENUE block — now only «Как добраться», the organiser's directions.
  *
- * Reuses Competition Contacts verbatim — the organizer configures the venue once
- * and it is the single source of truth; this section never duplicates it.
+ * The place itself moved into the summary card at the top of the page, where
+ * the frame puts it: the name, the locality and the two map links are the
+ * first things a visitor looks for, and they were a scroll away down the
+ * column. What the card has no room for is a paragraph of directions, so that
+ * is what this block kept — rendered only when the organiser wrote one, which
+ * also means enabling the block no longer prints an address the page has
+ * already given above.
  */
 export function VenueSection({ id, venue }: VenueSectionProps): React.JSX.Element | null {
-  if (!hasVenueContent(venue)) {
+  const directions = venue.directions?.trim();
+  if (!directions) {
     return null;
   }
-  const locality = [venue.city, venue.country].filter(Boolean).join(", ");
   return (
-    <LandingSection id={id} title="Место проведения">
-      <Card>
-        <CardContent className="space-y-4 pt-6">
-          <div className="flex items-start gap-3">
-            <MapPin className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
-            <div className="min-w-0 space-y-0.5">
-              {venue.name ? <p className="break-words font-semibold">{venue.name}</p> : null}
-              {venue.address ? (
-                <p className="break-words text-muted-foreground">{venue.address}</p>
-              ) : null}
-              {locality ? <p className="text-sm text-muted-foreground">{locality}</p> : null}
-            </div>
-          </div>
-
-          {venue.directions ? (
-            <div className="flex items-start gap-3">
-              <Navigation
-                className="mt-0.5 size-5 shrink-0 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <p className="min-w-0 whitespace-pre-line break-words text-pretty text-sm leading-relaxed text-muted-foreground">
-                {venue.directions}
-              </p>
-            </div>
-          ) : null}
-
-          {venue.googleMapsUrl || venue.yandexMapsUrl ? (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {venue.googleMapsUrl ? (
-                <Button asChild variant="outline" size="sm">
-                  <a href={venue.googleMapsUrl} target="_blank" rel="noopener noreferrer">
-                    <MapIcon className="size-4" aria-hidden="true" />
-                    Google Карты
-                    <ExternalLink className="size-3" aria-hidden="true" />
-                  </a>
-                </Button>
-              ) : null}
-              {venue.yandexMapsUrl ? (
-                <Button asChild variant="outline" size="sm">
-                  <a href={venue.yandexMapsUrl} target="_blank" rel="noopener noreferrer">
-                    <MapIcon className="size-4" aria-hidden="true" />
-                    Яндекс Карты
-                    <ExternalLink className="size-3" aria-hidden="true" />
-                  </a>
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+    <LandingSection id={id} title="Как добраться">
+      <div className="flex items-start gap-3 rounded-[19px] border border-brand-line px-3 py-3 md:px-3.5">
+        <Navigation className="mt-1 size-5 shrink-0 md:size-6" aria-hidden="true" />
+        <p className="min-w-0 whitespace-pre-line break-words text-pretty text-sm leading-[19px] md:text-lg md:leading-[25px]">
+          {directions}
+        </p>
+      </div>
     </LandingSection>
   );
 }
