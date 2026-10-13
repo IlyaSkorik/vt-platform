@@ -47,10 +47,21 @@ export function LandingCarousel({
   sideGapClassName,
 }: LandingCarouselProps): React.JSX.Element {
   const trackRef = useRef<HTMLUListElement>(null);
-  // Read on every scroll event, so they live in refs: re-measuring in the
-  // handler would force a layout per frame, and state would arrive stale.
+  // Everything the scroll handler needs lives in a ref, because reading any of
+  // it off the DOM there would force a layout on every frame of a scroll.
   const strideRef = useRef(0);
   const pageCountRef = useRef(1);
+  // The scrollable distance, measured once per layout instead of per event.
+  // `scrollWidth` is the expensive read — asking for it mid-scroll made the
+  // browser re-lay-out the whole track, every frame, while it was animating.
+  const maxScrollRef = useRef(0);
+  // The page the dots are already showing. Compared against before touching
+  // state, so a scroll across one screen schedules one render rather than the
+  // sixty React would otherwise bail out of one at a time.
+  const pageRef = useRef(0);
+  // Set while a measurement is queued, so a burst of scroll events collapses
+  // into a single read at the next frame.
+  const frameRef = useRef<number | null>(null);
   const [page, setPage] = useState(0);
   const [pageCount, setPageCount] = useState(1);
 
@@ -68,26 +79,41 @@ export function LandingCarousel({
     const pages = Math.max(1, Math.ceil(items.length / perView));
     strideRef.current = slot * perView;
     pageCountRef.current = pages;
+    maxScrollRef.current = track.scrollWidth - track.clientWidth;
     setPageCount(pages);
   }, [items.length]);
 
-  const sync = useCallback(() => {
+  /** Which page the track is on right now. Reads `scrollLeft` and nothing else. */
+  const read = useCallback(() => {
     const track = trackRef.current;
     const stride = strideRef.current;
     if (track == null || stride <= 0) {
       return;
     }
     const last = pageCountRef.current - 1;
-    const maxScroll = track.scrollWidth - track.clientWidth;
     // The end of the track is the last page by definition: on a short final
     // screen the arithmetic reports the page before it, which would leave the
     // last dot unlit and «next» enabled with nowhere left to go.
-    setPage(
-      maxScroll - track.scrollLeft <= 1
+    const next =
+      maxScrollRef.current - track.scrollLeft <= 1
         ? last
-        : Math.min(last, Math.round(track.scrollLeft / stride)),
-    );
+        : Math.min(last, Math.round(track.scrollLeft / stride));
+    if (next !== pageRef.current) {
+      pageRef.current = next;
+      setPage(next);
+    }
   }, []);
+
+  // One read per animation frame, however many scroll events arrive in it.
+  const sync = useCallback(() => {
+    if (frameRef.current != null) {
+      return;
+    }
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = null;
+      read();
+    });
+  }, [read]);
 
   // Re-measured on resize as well: a breakpoint change alters how many slides
   // fit, and therefore how many pages exist, with no scrolling involved.
@@ -98,15 +124,19 @@ export function LandingCarousel({
     }
     const remeasure = (): void => {
       measure();
-      sync();
+      read();
     };
     remeasure();
     const observer = new ResizeObserver(remeasure);
     observer.observe(track);
     return () => {
       observer.disconnect();
+      if (frameRef.current != null) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
     };
-  }, [measure, sync]);
+  }, [measure, read]);
 
   const goTo = useCallback((target: number) => {
     const track = trackRef.current;
@@ -115,8 +145,7 @@ export function LandingCarousel({
       return;
     }
     const wanted = Math.max(0, Math.min(target, pageCountRef.current - 1));
-    const maxScroll = track.scrollWidth - track.clientWidth;
-    track.scrollTo({ left: Math.min(wanted * stride, maxScroll), behavior: "smooth" });
+    track.scrollTo({ left: Math.min(wanted * stride, maxScrollRef.current), behavior: "smooth" });
   }, []);
 
   // Clamped rather than trusted: a resize can shrink the page count under a
@@ -166,7 +195,7 @@ export function LandingCarousel({
         // On a phone the paddles come down here and flank the dots — the frame
         // has no room for them beside a full-width slide. Because the two are
         // the same width, `justify-between` also centres the dots exactly.
-        <div className="mt-6 flex items-center justify-between gap-6 md:mt-9 md:justify-center md:gap-0">
+        <div className="mt-[11px] flex items-center justify-between gap-6 md:mt-[37px] md:justify-center md:gap-0">
           <CarouselPaddle
             direction="prev"
             label={label}
@@ -218,7 +247,7 @@ interface CarouselPaddleProps {
 }
 
 /**
- * One of the two paddles: 69×69 beside the track on a desktop, 54×54 under it
+ * One of the two paddles: 69×69 beside the track on a desktop, 58×58 under it
  * on a phone. Rendered twice and shown once, because the two positions sit in
  * different parents and faking that with `order` costs more than a second
  * button that is `display: none` half the time.
@@ -243,11 +272,15 @@ function CarouselPaddle({
       disabled={disabled}
       aria-label={`${direction === "prev" ? "Назад" : "Вперёд"}: ${label}`}
       className={cn(
-        "size-[54px] shrink-0 cursor-pointer select-none items-center justify-center self-center rounded-brand bg-brand-control text-brand-mark outline-none transition-[opacity,background-color] duration-[var(--duration-fast)] hover:bg-brand-press focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-control md:size-[69px]",
+        "size-[58px] shrink-0 cursor-pointer select-none items-center justify-center self-center rounded-brand bg-brand-control text-brand-mark outline-none transition-[opacity,background-color] duration-[var(--duration-fast)] hover:bg-brand-press focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-control md:size-[69px]",
         className,
       )}
     >
-      <Icon className="h-8 w-5.5 md:h-[27px] md:w-[22px]" aria-hidden="true" />
+      {/* 28×42, taller than it is wide — the frame draws the wedge lying down
+          and rotates it, so the export's 41×28 is its *pre-rotation* box. Sized
+          on both axes for that reason: a square `size-*` would squash it.
+          22×30 on a phone, with the paddle itself down to 58. */}
+      <Icon className="h-[30px] w-[22px] md:h-[42px] md:w-[28px]" aria-hidden="true" />
     </button>
   );
 }
