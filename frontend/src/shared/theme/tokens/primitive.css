@@ -99,6 +99,11 @@
    * about the thing it marks, not as brand decoration — a success green that
    * drifts towards the brand stops being unambiguously green. */
   --green-100: #d6f5e4;
+  /* The mint plate the frame marks an open intake with. Brighter and yellower
+   * than the `-100` step above, which is the badge fill the application chrome
+   * uses: the landing prints its state chips over a near-white panel, where the
+   * paler one stopped reading as a colour at all. */
+  --green-200: #cbffc8;
   --green-400: #34c07d;
   --green-500: #1f9d63;
 
@@ -107,6 +112,9 @@
   --amber-500: #d98a0b;
 
   --red-100: #fadcdc;
+  /* The rose plate of a closed intake — the mint one's opposite number, and
+   * pitched to the same weight so the pair reads as one scale. */
+  --red-200: #ffbfc0;
   --red-400: #ec6a6a;
   --red-500: #d64545;
 

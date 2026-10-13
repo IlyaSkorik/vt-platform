@@ -112,6 +112,15 @@
   --info-surface: color-mix(in oklab, var(--info) 20%, transparent);
   --info-foreground: oklch(0.98 0 0);
 
+  /* --- Intake state (the nomination chips on a festival's public page) ------
+   * The same plates as the light theme, deliberately: they are light panels in
+   * both, so a night-specific pair would mean inventing a dark mint and a dark
+   * rose that the frame never drew. See the note in `vt-light.css`. */
+  --intake-open: var(--green-200);
+  --intake-closed: var(--red-200);
+  --intake-soon: var(--neutral-200);
+  --intake-foreground: var(--neutral-900);
+
   /* Shadows */
   --shadow-color: oklch(0 0 0 / 0.32);
   --shadow-color-strong: oklch(0 0 0 / 0.55);

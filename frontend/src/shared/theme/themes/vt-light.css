@@ -95,6 +95,19 @@
   --info-surface: var(--sky-100);
   --info-foreground: var(--neutral-0);
 
+  /* --- Intake state (the nomination chips on a festival's public page) ------
+   * Three pastel plates with dark text, not the `*-surface` status family: those
+   * colour the *text* with the status and leave the fill a tint, which is the
+   * application chrome's language. The landing says it the other way round — the
+   * plate carries the colour and the label stays «Темный текст» — so the chips
+   * read as labels on a panel rather than as warnings. The foreground is a token
+   * of its own and stays dark in both themes, because the plate is light in both:
+   * the night theme does not get to flip the text to white over mint. */
+  --intake-open: var(--green-200);
+  --intake-closed: var(--red-200);
+  --intake-soon: var(--neutral-200);
+  --intake-foreground: var(--neutral-900);
+
   /* Elevation colour consumed by the shadow scale. */
   --shadow-color: color-mix(in oklab, var(--violet-900) 12%, transparent);
   --shadow-color-strong: color-mix(in oklab, var(--violet-900) 18%, transparent);
