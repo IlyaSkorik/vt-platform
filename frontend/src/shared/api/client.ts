@@ -3,6 +3,7 @@ import { env } from "@/shared/config";
 import { API_TIMEOUT_MS, RETRY_LIMIT, RETRYABLE_METHODS, RETRYABLE_STATUS_CODES } from "./config";
 import { toApiError } from "./error";
 import {
+  attachActingOrganization,
   attachAuth,
   attachRequestContext,
   captureProblemDetails,
@@ -38,7 +39,7 @@ export const apiClient: KyInstance = ky.create({
     Accept: "application/json",
   },
   hooks: {
-    beforeRequest: [attachAuth, attachRequestContext],
+    beforeRequest: [attachAuth, attachRequestContext, attachActingOrganization],
     afterResponse: [captureProblemDetails, refreshOnUnauthorized],
     beforeError: [
       // Passthrough seam. Full Problem Details parsing (async) happens in

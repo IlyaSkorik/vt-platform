@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -15,6 +15,7 @@ import {
   useAddBlock,
   useAddColumn,
   useAddPerformance,
+  useAnnounceShare,
   useArrangeProgram,
   useCreateProgram,
   useCreateShare,
@@ -33,6 +34,7 @@ import {
   useUpdateProgram,
 } from "@/features/program-builder";
 
+import { festivalInputToIso } from "@/shared/lib";
 import { toast } from "@/shared/ui";
 
 import { StaffProgramPage } from "./index";
@@ -53,6 +55,7 @@ vi.mock("@/features/program-builder", async (importOriginal) => ({
   useReorderItems: vi.fn(),
   useRenumberItems: vi.fn(),
   useCreateShare: vi.fn(),
+  useAnnounceShare: vi.fn(),
   useRemoveShare: vi.fn(),
   useAddColumn: vi.fn(),
   useRenameColumn: vi.fn(),
@@ -66,7 +69,12 @@ vi.mock("@/features/program-builder", async (importOriginal) => ({
 // The export panel reports failures through the toaster, which is worth asserting.
 vi.mock("@/shared/ui", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/shared/ui")>();
-  return { ...actual, toast: { ...actual.toast, error: vi.fn(), success: vi.fn() } };
+  // `loading` returns the id the later success/error toast replaces, so it has to answer
+  // something stable rather than undefined.
+  return {
+    ...actual,
+    toast: { ...actual.toast, error: vi.fn(), success: vi.fn(), loading: vi.fn(() => "waiting") },
+  };
 });
 
 vi.mock("@/features/competitions", async (importOriginal) => ({
@@ -109,6 +117,7 @@ const fillProgram = vi.fn();
 const arrangeProgram = vi.fn();
 const removeItem = vi.fn();
 const removeShare = vi.fn();
+const announceShare = vi.fn();
 const editItem = vi.fn();
 const createProgram = vi.fn();
 const addColumn = vi.fn();
@@ -137,7 +146,9 @@ function anItem(overrides: Partial<ProgramItem> & { id: string; position: number
     submissionId: "01900000-0000-7000-8000-0000000000b1",
     leadParticipant: "Иванов Иван",
     participants: ["Иванов Иван"],
+    participantCount: 1,
     teachers: [],
+    contacts: [],
     nomination: "Вокал",
     discipline: "Эстрадный вокал",
     ageCategory: "10-12 лет",
@@ -248,6 +259,7 @@ function stub(
   vi.mocked(useRenumberItems).mockReturnValue(mutation(renumber));
   vi.mocked(useCreateShare).mockReturnValue(mutation(createShare));
   vi.mocked(useRemoveShare).mockReturnValue(mutation(removeShare));
+  vi.mocked(useAnnounceShare).mockReturnValue(mutation(announceShare));
   vi.mocked(useAddColumn).mockReturnValue(mutation(addColumn));
   vi.mocked(useRenameColumn).mockReturnValue(mutation(renameColumn));
   vi.mocked(useRemoveColumn).mockReturnValue(mutation(removeColumn));
@@ -290,6 +302,7 @@ beforeEach(() => {
   downloadProgramPdf.mockReset();
   downloadProgramPdf.mockResolvedValue(undefined);
   vi.mocked(toast.error).mockReset();
+  vi.mocked(toast.loading).mockClear();
 });
 
 afterEach(() => {
@@ -306,12 +319,44 @@ describe("StaffProgramPage — the programme table", () => {
     }
   });
 
+  it("прячет колонку с экрана, не трогая то, что печатается и публикуется", async () => {
+    // Thirteen columns at once is a table that only reads sideways; what a PDF prints and
+    // what a link publishes are separate decisions, made in their own panels.
+    stub();
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Колонки на экране/ }));
+    // Scoped to the popover: the PDF panel offers a checkbox of the same name, and that
+    // is the point of the test.
+    const picker = await screen.findByRole("group", { name: "Колонки на экране" });
+    await userEvent.click(within(picker).getByRole("checkbox", { name: "Организация" }));
+
+    expect(screen.queryByRole("columnheader", { name: "Организация" })).not.toBeInTheDocument();
+    // The PDF panel still offers it, because it was never asked about.
+    const pdf = screen.getByRole("group", { name: "Колонки в PDF" });
+    expect(within(pdf).getByRole("checkbox", { name: "Организация" })).toBeInTheDocument();
+  });
+
+  it("сворачивает список программ, чтобы таблица заняла всю ширину", async () => {
+    stub();
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Свернуть список программ" }));
+
+    expect(screen.queryByRole("button", { name: /Новая программа/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /^Программы$/ }));
+    expect(screen.getByRole("button", { name: /Создать программу/ })).toBeInTheDocument();
+  });
+
   it("puts each value in its own column", async () => {
     stub();
     await renderPage();
 
     const rows = screen.getAllByTestId("program-item");
-    const cells = within(rows[0] as HTMLElement).getAllByRole("cell");
+    // `slice(1)`: the first cell of every row is the drag handle, not a column.
+    const cells = within(rows[0] as HTMLElement)
+      .getAllByRole("cell")
+      .slice(1);
     // Aligned with ALL_COLUMNS: №, Время, Участник, Номер, Длительность, …
     expect(cells[0]).toHaveTextContent("1");
     expect(cells[2]).toHaveTextContent("Иванов Иван");
@@ -348,7 +393,8 @@ describe("StaffProgramPage — the programme table", () => {
 
     const numbers = screen
       .getAllByTestId("program-item")
-      .map((row) => within(row).getAllByRole("cell")[0]?.textContent);
+      // `[1]`, not `[0]`: the drag handle leads every row.
+      .map((row) => within(row).getAllByRole("cell")[1]?.textContent);
     expect(numbers).toEqual(["2", "3", "5"]);
   });
 
@@ -399,6 +445,152 @@ describe("StaffProgramPage — the programme table", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /Пересчитать номера/ }));
     expect(renumber).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * Grouping and the group move — what "возьми весь эстрадный вокал и подними наверх"
+   * actually costs. It is one action here and forty arrow clicks without it, and the
+   * endpoint takes the whole order, so an off-by-one is a running order nobody asked for.
+   */
+  describe("группы", () => {
+    /**
+     * Drag a run over `row` at a given height.
+     *
+     * A plain `fireEvent.dragOver(el, { clientY })` will not do: jsdom's `DragEvent` drops
+     * the pointer coordinates, and which half of the row the pointer is in is the whole
+     * of "перед ней" versus "после неё". A `MouseEvent` named `dragover` carries them and
+     * React routes it to the same handler.
+     */
+    function hoverAt(row: HTMLElement, clientY: number): void {
+      fireEvent(row, new MouseEvent("dragover", { bubbles: true, cancelable: true, clientY }));
+    }
+
+    /** Two disciplines, three acts, in the order эстрада / эстрада / народный. */
+    function aGroupedProgram(): Program {
+      return aProgram({
+        items: [
+          anItem({ id: "item-1", position: 1, title: "Катюша", discipline: "Эстрадный вокал" }),
+          anItem({ id: "item-2", position: 2, title: "Калинка", discipline: "Эстрадный вокал" }),
+          anItem({ id: "item-3", position: 3, title: "Барыня", discipline: "Народный вокал" }),
+        ],
+      });
+    }
+
+    async function groupByDiscipline(): Promise<void> {
+      await userEvent.click(screen.getByRole("combobox", { name: "Группировать" }));
+      await userEvent.click(await screen.findByRole("option", { name: "Номинация" }));
+    }
+
+    it("собирает подряд идущие строки одной номинации в одну группу", async () => {
+      stub(aGroupedProgram());
+      await renderPage();
+      await groupByDiscipline();
+
+      const groups = screen.getAllByTestId("program-group");
+      expect(groups).toHaveLength(2);
+      expect(groups[0]).toHaveTextContent("Эстрадный вокал");
+      expect(groups[0]).toHaveTextContent("2 номера");
+      expect(groups[1]).toHaveTextContent("Народный вокал");
+    });
+
+    it("переносит всю группу целиком одним действием", async () => {
+      stub(aGroupedProgram());
+      await renderPage();
+      await groupByDiscipline();
+
+      await userEvent.click(screen.getByRole("button", { name: "Группу выше: Народный вокал" }));
+
+      // Both эстрада acts move together, in their own order, and nothing else changes.
+      expect(reorder.mock.calls[0]?.[0]).toEqual(["item-3", "item-1", "item-2"]);
+    });
+
+    it("перетаскивает всю группу на место, куда её бросили", async () => {
+      stub(aGroupedProgram());
+      await renderPage();
+      await groupByDiscipline();
+
+      const target = screen.getAllByTestId("program-item")[0] as HTMLElement;
+      // jsdom measures every element as a zero-sized box at the origin, and the drop
+      // side is decided by which half of the row the pointer is in — so the row has to
+      // be given a size before "верхняя половина" means anything.
+      vi.spyOn(target, "getBoundingClientRect").mockReturnValue({
+        top: 100,
+        height: 40,
+      } as DOMRect);
+
+      fireEvent.dragStart(screen.getByLabelText("Перетащить группу: Народный вокал"));
+      // The upper half of the first row: "перед ней".
+      hoverAt(target, 105);
+      fireEvent.drop(target);
+
+      expect(reorder.mock.calls[0]?.[0]).toEqual(["item-3", "item-1", "item-2"]);
+    });
+
+    it("перетаскивает одну строку, когда тянут её саму", async () => {
+      stub(aGroupedProgram());
+      await renderPage();
+
+      const target = screen.getAllByTestId("program-item")[0] as HTMLElement;
+      vi.spyOn(target, "getBoundingClientRect").mockReturnValue({
+        top: 100,
+        height: 40,
+      } as DOMRect);
+
+      fireEvent.dragStart(screen.getByLabelText("Перетащить: Барыня"));
+      // The lower half of the first row: "после неё", not "перед ней".
+      hoverAt(target, 130);
+      fireEvent.drop(target);
+
+      expect(reorder.mock.calls[0]?.[0]).toEqual(["item-1", "item-3", "item-2"]);
+    });
+
+    it("возвращает плоский порядок, когда группировку выключают", async () => {
+      stub(aGroupedProgram());
+      await renderPage();
+      await groupByDiscipline();
+      expect(screen.getAllByTestId("program-group")).toHaveLength(2);
+
+      await userEvent.click(screen.getByRole("combobox", { name: "Группировать" }));
+      await userEvent.click(await screen.findByRole("option", { name: "Без группировки" }));
+
+      expect(screen.queryAllByTestId("program-group")).toHaveLength(0);
+      expect(screen.getAllByTestId("program-item")).toHaveLength(3);
+    });
+
+    it("не даёт поднять первую группу и опустить последнюю", async () => {
+      stub(aGroupedProgram());
+      await renderPage();
+      await groupByDiscipline();
+
+      expect(screen.getByRole("button", { name: "Группу выше: Эстрадный вокал" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Группу ниже: Народный вокал" })).toBeDisabled();
+    });
+
+    it("оставляет перерыв отдельной строкой, а не частью группы", async () => {
+      // Otherwise moving вокал somewhere would take lunch along with it.
+      stub(
+        aProgram({
+          items: [
+            anItem({ id: "item-1", position: 1, title: "Катюша", discipline: "Эстрадный вокал" }),
+            anItem({
+              id: "item-pause",
+              position: 2,
+              kind: "BREAK",
+              title: "Обед",
+              submissionId: null,
+              discipline: null,
+            }),
+            anItem({ id: "item-2", position: 3, title: "Калинка", discipline: "Эстрадный вокал" }),
+          ],
+        }),
+      );
+      await renderPage();
+      await groupByDiscipline();
+
+      const groups = screen.getAllByTestId("program-group");
+      expect(groups.map((group) => group.textContent)).toHaveLength(2);
+      expect(screen.queryByRole("button", { name: "Группу выше: Обед" })).not.toBeInTheDocument();
+    });
   });
 
   it("sends the whole new order when an item is moved down", async () => {
@@ -671,9 +863,9 @@ describe("StaffProgramPage — printing the programme", () => {
 
   /**
    * Which columns *and in what order*: a page printed for the sound desk wants the number
-   * and the act first, the one taken to the register wants the organization there. Only
-   * the export is ordered this way — a published edition keeps the canonical order so a
-   * column sits in the same place on every screen.
+   * and the act first, the one taken to the register wants the organization there. A
+   * published link is arranged the same way, by the same strip — see the public links
+   * below.
    */
   it("prints the columns in the order the organizer arranged them", async () => {
     stub();
@@ -699,10 +891,11 @@ describe("StaffProgramPage — printing the programme", () => {
     stub();
     await renderPage();
 
-    expect(screen.getByRole("button", { name: "Левее: №" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Правее: Организация" })).toBeDisabled();
+    const strip = screen.getByRole("group", { name: /Порядок колонок в PDF/ });
+    expect(within(strip).getByRole("button", { name: "Левее: №" })).toBeDisabled();
+    expect(within(strip).getByRole("button", { name: "Правее: Организация" })).toBeDisabled();
 
-    await userEvent.click(screen.getByRole("button", { name: "Правее: №" }));
+    await userEvent.click(within(strip).getByRole("button", { name: "Правее: №" }));
     await userEvent.click(screen.getByRole("button", { name: /Скачать PDF/ }));
 
     await waitFor(() => expect(downloadProgramPdf).toHaveBeenCalled());
@@ -737,7 +930,7 @@ describe("StaffProgramPage — printing the programme", () => {
       await userEvent.click(within(panel).getByRole("checkbox", { name: label }));
     }
 
-    expect(screen.queryByText("Порядок слева направо:")).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: /Порядок колонок в PDF/ })).not.toBeInTheDocument();
   });
 
   it("cannot export nothing at all", async () => {
@@ -794,8 +987,13 @@ describe("StaffProgramPage — collecting the backing tracks", () => {
     await userEvent.click(screen.getByRole("button", { name: /Скачать фонограммы/ }));
 
     await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith("Не удалось собрать архив фонограмм"),
+      expect(toast.error).toHaveBeenCalledWith("Не удалось собрать архив фонограмм", {
+        id: "waiting",
+      }),
     );
+    // The failure replaces the "собираем" toast rather than stacking under it: a
+    // multi-minute wait has to be announced, and then closed out either way.
+    expect(toast.loading).toHaveBeenCalled();
   });
 });
 
@@ -912,7 +1110,9 @@ describe("StaffProgramPage — breaks", () => {
     );
     await renderPage();
 
-    expect(screen.getByText("Перерыв")).toBeInTheDocument();
+    // A block's name lives in a field, not in static text: it is the organizer's own
+    // words and is rewritten here.
+    expect(screen.getByLabelText("Название: Перерыв")).toHaveValue("Перерыв");
     const minutes = screen.getByLabelText("Минуты: Перерыв");
     await userEvent.clear(minutes);
     await userEvent.type(minutes, "20");
@@ -928,7 +1128,9 @@ describe("StaffProgramPage — the buffer", () => {
     stub();
     await renderPage();
 
-    expect(screen.getByText("0:30")).toBeInTheDocument();
+    // Named in minutes and seconds, not as a stopwatch reading: «1:30» was read as an
+    // hour and a half often enough to be worth the extra characters.
+    expect(screen.getByText("30 сек")).toBeInTheDocument();
   });
 
   it("sends a new buffer when another preset is chosen", async () => {
@@ -936,7 +1138,7 @@ describe("StaffProgramPage — the buffer", () => {
     await renderPage();
 
     await userEvent.click(screen.getByRole("combobox", { name: /Буфер между выступлениями/ }));
-    await userEvent.click(await screen.findByRole("option", { name: "1:00" }));
+    await userEvent.click(await screen.findByRole("option", { name: "1 мин" }));
 
     expect(updateProgram).toHaveBeenCalledTimes(1);
     expect(updateProgram.mock.calls[0]?.[0]).toEqual({ bufferSeconds: 60 });
@@ -947,6 +1149,98 @@ describe("StaffProgramPage — the buffer", () => {
     await renderPage();
 
     expect(screen.getByText(/не меняет длительность номера/)).toBeInTheDocument();
+  });
+
+  it("offers the twenty seconds a tight changeover actually takes", async () => {
+    stub();
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("combobox", { name: /Буфер между выступлениями/ }));
+    await userEvent.click(await screen.findByRole("option", { name: "20 сек" }));
+
+    expect(updateProgram.mock.calls[0]?.[0]).toEqual({ bufferSeconds: 20 });
+  });
+});
+
+/**
+ * The start time, which is typed rather than chosen — and therefore passes through
+ * states that are not answers.
+ *
+ * Both of these were reported from real festivals. A field wired straight into the
+ * mutation sent one PATCH per keystroke that happened to make a valid time, and the
+ * whole programme comes back on every reply — so the buffer set a moment earlier was
+ * put back to its old value by a reply to an older write. The fix is upstream of the
+ * race: do not write until the organizer has finished saying what they mean.
+ */
+describe("StaffProgramPage — the start time", () => {
+  it("saves once the typing stops, not once per keystroke", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      stub();
+      await renderPage();
+
+      const time = screen.getByLabelText("Время начала");
+      await userEvent.clear(time);
+      // «1047» passes through «10:4», which is a perfectly valid 10:04 — the state the
+      // old field saved on its way to the time the organizer was actually typing.
+      await userEvent.type(time, "1047");
+      expect(updateProgram).not.toHaveBeenCalled();
+
+      await act(async () => {
+        vi.advanceTimersByTime(1500);
+      });
+      expect(updateProgram).toHaveBeenCalledTimes(1);
+      expect(updateProgram.mock.calls[0]?.[0]).toEqual({
+        startsAt: festivalInputToIso("2026-08-01T10:47"),
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("moves a programme to another day the moment it is picked", async () => {
+    stub();
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Начало программы/ }));
+    await userEvent.click(within(await screen.findByRole("grid")).getByText("7"));
+
+    // No timers advanced: the hour is unchanged, so the click is the whole answer and
+    // there is no second keystroke coming to wait for.
+    expect(updateProgram).toHaveBeenCalledTimes(1);
+  });
+
+  it("saves a day picked on an untimed programme at once, at midnight", async () => {
+    stub(aProgram({ startsAt: null }));
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Начало программы/ }));
+    await userEvent.click(within(await screen.findByRole("grid")).getByText("7"));
+
+    // Midnight is not the answer, but it is saved immediately and visibly provisional,
+    // and it is one keystroke from right. Holding the day back until an hour arrives
+    // reads as «выбрал — пропало» to anybody who reloads to check that it took.
+    expect(updateProgram).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText("Время начала")).toHaveValue("00:00");
+  });
+
+  it("waits for the hour rather than saving a day at midnight", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      stub();
+      await renderPage();
+
+      // Emptying the time to retype it is not «эта программа начинается в полночь», and
+      // the old field saved exactly that on the way past.
+      await userEvent.clear(screen.getByLabelText("Время начала"));
+      await act(async () => {
+        vi.advanceTimersByTime(1500);
+      });
+
+      expect(updateProgram).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -1060,17 +1354,30 @@ describe("StaffProgramPage — public links", () => {
     expect(screen.getByRole("button", { name: /Создать ссылку/ })).toBeDisabled();
   });
 
-  it("resolves a range of positions into the item ids the API takes", async () => {
+  it("publishes the columns in the order the organizer arranged them", async () => {
+    // The reader of a public link should not scroll to reach the column their job
+    // depends on, so the strip is the order the screen draws.
+    stub();
+    await renderPage();
+
+    await userEvent.type(screen.getByLabelText("Название ссылки"), "Экран у сцены");
+    const strip = screen.getByRole("group", { name: /Порядок колонок по ссылке/ });
+    await userEvent.click(within(strip).getByRole("button", { name: "Левее: Участник" }));
+    await userEvent.click(screen.getByRole("button", { name: /Создать ссылку/ }));
+
+    const payload = createShare.mock.calls[0]?.[0] as { columns: string[] };
+    expect(payload.columns).toEqual(["POSITION", "PARTICIPANT", "TIME", "TITLE"]);
+  });
+
+  it("publishes the whole programme, so a link picks up items added later", async () => {
     stub();
     await renderPage();
 
     await userEvent.type(screen.getByLabelText("Название ссылки"), "Программа звукорежиссёра");
-    await userEvent.type(screen.getByLabelText("Пункты с"), "2");
-    await userEvent.type(screen.getByLabelText("Пункты по"), "2");
     await userEvent.click(screen.getByRole("button", { name: /Создать ссылку/ }));
 
     const payload = createShare.mock.calls[0]?.[0] as { itemIds: string[] };
-    expect(payload.itemIds).toEqual(["item-2"]);
+    expect(payload.itemIds).toEqual([]);
   });
 
   it("shows which columns a live link publishes", async () => {
@@ -1138,6 +1445,45 @@ describe("StaffProgramPage — public links", () => {
     expect(removeShare).toHaveBeenCalledWith("share-1", expect.anything());
   });
 
+  it("announces one chosen link to the people it covers, not the whole programme", async () => {
+    stub(
+      aProgram({
+        shares: [
+          {
+            id: "share-1",
+            name: "Для участников",
+            slug: "AbX82Kmn",
+            path: "/program/AbX82Kmn",
+            columns: [{ key: "TIME", label: "Время", custom: false }],
+            itemCount: 2,
+            coversWholeProgram: true,
+            controlsRunningOrder: false,
+            createdAt: "2026-08-01T09:00:00Z",
+          },
+        ],
+      }),
+    );
+    await renderPage();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Разослать участникам: Для участников" }),
+    );
+    await userEvent.type(
+      await screen.findByLabelText("Что добавить от себя"),
+      "Сбор за час до начала.",
+    );
+    // Two buttons say «Разослать» by now — the row's and the dialog's. The dialog is
+    // the one that sends, and saying so here is the point of the confirmation step.
+    const dialog = screen.getByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: /Разослать/ }));
+
+    expect(announceShare).toHaveBeenCalledTimes(1);
+    expect(announceShare.mock.calls[0]?.[0]).toEqual({
+      shareId: "share-1",
+      note: "Сбор за час до начала.",
+    });
+  });
+
   it("warns before publishing when an act behind a slot was withdrawn", async () => {
     stub(
       aProgram({
@@ -1182,7 +1528,9 @@ describe("StaffProgramPage — collecting the video material", () => {
     await userEvent.click(screen.getByRole("button", { name: /Скачать видеоматериалы/ }));
 
     await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith("Не удалось собрать архив медиафайлов"),
+      expect(toast.error).toHaveBeenCalledWith("Не удалось собрать архив медиафайлов", {
+        id: "waiting",
+      }),
     );
   });
 });
@@ -1207,6 +1555,21 @@ describe("StaffProgramPage — автосоставление", () => {
       orderWithinGroup: "AGE_ASC",
       breakRule: "NONE",
     });
+  });
+
+  it("называет признаки теми же словами, что и колонки программы", async () => {
+    // Платформа переименовала NOMINATION в «Жанр», а DISCIPLINE в «Номинацию»; подписи
+    // диалога отстали, и он предлагал собрать «по номинации», а собирал по жанрам.
+    stub(draft());
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Собрать программу/ }));
+    const dialog = await screen.findByRole("dialog");
+
+    const column = (key: string) => ALL_COLUMNS.find((item) => item.key === key)?.label ?? "";
+    for (const key of ["NOMINATION", "DISCIPLINE", "AGE_CATEGORY", "PARTICIPANT_GROUP"]) {
+      expect(within(dialog).getByRole("checkbox", { name: column(key) })).toBeInTheDocument();
+    }
   });
 
   it("порядок признаков группировки — это и есть форма дня, и его можно менять", async () => {

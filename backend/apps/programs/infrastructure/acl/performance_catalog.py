@@ -30,8 +30,10 @@ from apps.competitions.infrastructure.models.taxonomy import (
     ParticipantGroupModel,
     ParticipationFormatModel,
 )
+from apps.identity.infrastructure.models.user import UserModel
 from apps.participants.infrastructure.models import ParticipantOrganizationMembershipModel
-from apps.programs.application.interfaces import CatalogPerformance
+from apps.programs.application.interfaces import CatalogApplicant, CatalogPerformance
+from apps.teachers.infrastructure.models import TeacherModel
 
 __all__ = ["COMPETING_SUBMISSION_STATUSES", "DjangoPerformanceCatalog"]
 
@@ -63,6 +65,24 @@ def _person(entry: dict[str, Any]) -> str | None:
     parts = [_clean(entry.get("last_name")), _clean(entry.get("first_name"))]
     joined = " ".join(part for part in parts if part)
     return joined or None
+
+
+def _headcount(entries: list[dict[str, Any]] | None) -> int:
+    """How many people this entry puts on stage.
+
+    The sum of each performer row's ``member_count``: a solo row is one person, and a
+    collective row carries the headcount the applicant typed on the form. Falls back to
+    one per row for entries filled in before the field existed, which is the honest
+    reading - a row that never stated a number is one performer.
+    """
+    total = 0
+    for entry in entries or []:
+        try:
+            count = int((entry or {}).get("member_count") or 1)
+        except (TypeError, ValueError):
+            count = 1
+        total += max(1, count)
+    return total
 
 
 def _teacher(entry: dict[str, Any]) -> str | None:
@@ -141,6 +161,34 @@ class DjangoPerformanceCatalog:
                 references[submission_id] = files
         return references
 
+    @staticmethod
+    def applicants_for(submission_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, CatalogApplicant]:
+        """Who entered each act: their account id, their address and their name.
+
+        Two queries whatever the size of the programme — the submissions, then the users
+        behind them. An account with no address on it is left out rather than returned
+        with a blank: there is nobody to write to, and saying so by absence keeps the
+        caller from counting a letter it never sent.
+        """
+        if not submission_ids:
+            return {}
+        rows = list(SubmissionModel.objects.filter(id__in=list(submission_ids), deleted_at__isnull=True).values_list("id", "applicant_id"))
+        if not rows:
+            return {}
+        users = UserModel.objects.filter(id__in={applicant_id for _, applicant_id in rows}, deleted_at__isnull=True).values_list(
+            "id", "email", "first_name", "last_name"
+        )
+        by_user = {
+            str(user_id): CatalogApplicant(
+                user_id=user_id,
+                email=address,
+                name=" ".join(part for part in (_clean(first_name), _clean(last_name)) if part) or None,
+            )
+            for user_id, email, first_name, last_name in users
+            if (address := _clean(email))
+        }
+        return {submission_id: applicant for submission_id, applicant_id in rows if (applicant := by_user.get(str(applicant_id))) is not None}
+
     def competition_title(self, competition_id: uuid.UUID) -> str | None:
         title = CompetitionModel.objects.filter(id=competition_id, deleted_at__isnull=True).values_list("title", flat=True).first()
         return _clean(title)
@@ -160,6 +208,7 @@ class DjangoPerformanceCatalog:
         taxonomy = self._taxonomy(models)
         age_orders = self._age_orders(models)
         organizations = self._organizations(models)
+        contacts = self._contacts(models)
         performances: list[CatalogPerformance] = []
         for model in models:
             performance = model.performance or {}
@@ -187,7 +236,9 @@ class DjangoPerformanceCatalog:
                     participant_group=taxonomy["participant_group"].get(_clean(performance.get("participant_group_id")) or ""),
                     participation_format=taxonomy["format"].get(_clean(performance.get("participation_format_id")) or ""),
                     participants=participants,
+                    participant_count=_headcount(model.participants),
                     teachers=teachers,
+                    contacts=contacts.get(str(model.id), ()),
                     organization=organizations.get(str(model.id)),
                     comment=_clean(performance.get("comment")),
                     status=model.status,
@@ -248,6 +299,52 @@ class DjangoPerformanceCatalog:
         rows = AgeCategoryModel.objects.filter(id__in=list(wanted), deleted_at__isnull=True).values_list("id", "sort_order", "min_age", "max_age")
         ranked = sorted(rows, key=lambda row: (int(row[1]), int(row[2]), int(row[3])))
         return {str(row[0]): rank for rank, row in enumerate(ranked)}
+
+    @staticmethod
+    def _contacts(models: list[SubmissionModel]) -> dict[str, tuple[str, ...]]:
+        """Submission id → the phones to ring about this act, in the order to try them.
+
+        The teachers first: they are the people standing in the wings, and the entry
+        carries only their names and a reference into the cabinet's directory - the phone
+        itself lives there. The applicant's own number is the fallback for an act with no
+        teacher, or whose teachers were typed in by hand and so have nowhere to ring.
+
+        A fallback rather than an addition: a programme cell is read at a glance on the
+        day, and "позвонить педагогу, а если его нет - тому, кто подал заявку" is one
+        decision, not two numbers for the organizer to choose between mid-performance.
+
+        Two queries for the whole batch, however many rows it holds.
+        """
+        directory_ids: set[str] = set()
+        teachers_by_submission: dict[str, list[str]] = {}
+        for model in models:
+            ids = [value for entry in model.teachers or [] if (value := _clean((entry or {}).get("directory_teacher_id")))]
+            teachers_by_submission[str(model.id)] = ids
+            directory_ids.update(ids)
+        teacher_phones: dict[str, str] = {}
+        if directory_ids:
+            teacher_rows = TeacherModel.objects.filter(id__in=list(directory_ids), deleted_at__isnull=True).values_list("id", "phone")
+            teacher_phones = {str(teacher_id): cleaned for teacher_id, phone in teacher_rows if (cleaned := _clean(phone))}
+        applicant_phones: dict[str, str] = {}
+        wanted_applicants = {str(model.applicant_id) for model in models}
+        if wanted_applicants:
+            user_rows = UserModel.objects.filter(id__in=list(wanted_applicants), deleted_at__isnull=True).values_list("id", "phone")
+            applicant_phones = {str(user_id): cleaned for user_id, phone in user_rows if (cleaned := _clean(phone))}
+        contacts: dict[str, tuple[str, ...]] = {}
+        for model in models:
+            submission_id = str(model.id)
+            # De-duplicated with a dict rather than a set: two teachers sharing a number
+            # is one number, and the order they were named in is the order to try them.
+            found = dict.fromkeys(
+                phone for teacher_id in teachers_by_submission[submission_id] if (phone := teacher_phones.get(teacher_id)) is not None
+            )
+            if not found:
+                fallback = applicant_phones.get(str(model.applicant_id))
+                if fallback is not None:
+                    found = {fallback: None}
+            if found:
+                contacts[submission_id] = tuple(found)
+        return contacts
 
     @staticmethod
     def _organizations(models: list[SubmissionModel]) -> dict[str, str]:

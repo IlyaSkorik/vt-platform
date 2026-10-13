@@ -46,6 +46,8 @@ from apps.organization.composition import (
     build_enabled_modules_read_service,
     build_staff_membership_read_service,
 )
+from apps.organization.domain.value_objects import MembershipStatus, StaffRole
+from apps.organization.presentation.scope import acting_organization_id
 from apps.platform.composition import build_platform_access_read_service
 
 _TAG = "Identity"
@@ -76,6 +78,29 @@ def _enabled_modules(membership: StaffMembershipView | None) -> list[str]:
     except (ValueError, TypeError):  # pragma: no cover - defensive
         return []
     return sorted(build_enabled_modules_read_service().for_organization(organization_id))
+
+
+def _acting_membership(request: Request) -> StaffMembershipView | None:
+    """The membership a platform operator holds *while inside* an organization.
+
+    Synthesised, not stored: nothing grants the operator a seat in somebody else's
+    organization, and a real row would outlive the visit and show up in their staff
+    roster. It is an OWNER because that is what the request can actually do — the
+    panel gates on this, and a membership that understated it would hide screens the
+    operator is about to be asked about.
+
+    It lives only as long as the header does, so it is also how the panel knows to
+    render itself at all: without it ``/users/me`` says "not staff" and the client
+    sends the operator back to their console.
+    """
+    organization_id = acting_organization_id(request)
+    if organization_id is None:
+        return None
+    return StaffMembershipView(
+        role=StaffRole.OWNER.value,
+        status=MembershipStatus.ACTIVE.value,
+        organization_id=str(organization_id),
+    )
 
 
 class CurrentUserView(APIView):
@@ -111,7 +136,11 @@ class CurrentUserView(APIView):
 
         # The staff read model keys off the raw user UUID. A malformed subject can
         # never reach here (the JWT auth already validated it), so parsing is safe.
-        membership = build_staff_membership_read_service().active_for_user(uuid.UUID(user_id))
+        # An operator who has stepped into an organization is answered *as* that
+        # organization's staff: the panel renders from this payload, so saying what
+        # is true of the account rather than of the request would show them their
+        # own empty cabinet while every call they make lands in someone else's.
+        membership = _acting_membership(request) or build_staff_membership_read_service().active_for_user(uuid.UUID(user_id))
         platform_admin = build_platform_access_read_service().is_platform_administrator(uuid.UUID(user_id))
         enabled_modules = _enabled_modules(membership)
 

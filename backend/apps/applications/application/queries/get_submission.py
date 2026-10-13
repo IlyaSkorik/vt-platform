@@ -7,6 +7,7 @@ from apps.applications.application.commands._support import (
     parse_reviewer_id,
     parse_submission_id,
     parse_user_id,
+    submission_editable_now,
 )
 from apps.applications.application.dto import SubmissionHistoryDto, SubmissionView
 from apps.applications.application.dto.queries import (
@@ -15,6 +16,8 @@ from apps.applications.application.dto.queries import (
 )
 from apps.applications.application.exceptions import PermissionDeniedError
 from apps.applications.application.interfaces import (
+    Clock,
+    CompetitionCatalog,
     OrganizationReadModel,
     SubmissionRepository,
 )
@@ -40,14 +43,24 @@ class GetSubmissionHandler:
         *,
         submissions: SubmissionRepository,
         organization: OrganizationReadModel,
+        catalog: CompetitionCatalog,
+        clock: Clock,
     ) -> None:
         self._submissions = submissions
         self._organization = organization
+        self._catalog = catalog
+        self._clock = clock
 
     def handle(self, query: GetSubmissionQuery) -> SubmissionView:
         submission = load_submission(self._submissions, parse_submission_id(query.submission_id))
         _ensure_can_view(submission, query.requested_by, self._organization)
-        return SubmissionView.from_submission(submission)
+        # Whether the applicant may still change it travels with the entry: the card
+        # that renders this view is the card with the editing controls on it, and it
+        # must not offer what the endpoints behind those controls would refuse.
+        return SubmissionView.from_submission(
+            submission,
+            editable=submission_editable_now(catalog=self._catalog, submission=submission, now=self._clock.utcnow()),
+        )
 
 
 class GetSubmissionHistoryHandler:

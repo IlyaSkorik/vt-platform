@@ -7,14 +7,18 @@ import {
   Columns3,
   Copy,
   FileDown,
+  GripVertical,
   Link2,
   ListOrdered,
   Music,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
+  Send,
   Trash2,
   Wand2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useCompetitionDetail, useCompetitionsList } from "@/features/competitions";
 import {
@@ -25,18 +29,27 @@ import {
   downloadProgramMedia,
   downloadProgramMusic,
   downloadProgramPdf,
+  GROUPING_AXES,
+  GROUPING_AXIS_LABELS,
+  type GroupingAxis,
+  groupRuns,
   ITEM_KIND_LABELS,
   itemCell,
   itemNumber,
+  moveBlock,
   moveItem,
   moveItemNextTo,
   PROGRESS_LABELS,
   type Program,
   type ProgramColumn,
+  type ProgramColumnKey,
+  type ProgramGroup,
   type ProgramItem,
+  type ProgramShare,
   useAddBlock,
   useAddColumn,
   useAddPerformance,
+  useAnnounceShare,
   useArrangeProgram,
   useCreateProgram,
   useCreateShare,
@@ -55,7 +68,13 @@ import {
   useUpdateProgram,
 } from "@/features/program-builder";
 import { ArrangeProgramDialog } from "@/features/program-builder/ui/arrange-dialog";
-import { formatClock, formatDuration, formatSpan } from "@/shared/lib";
+import {
+  festivalInputToIso,
+  formatClock,
+  formatDuration,
+  formatSpan,
+  isoToFestivalInput,
+} from "@/shared/lib";
 import {
   Alert,
   Badge,
@@ -64,6 +83,12 @@ import {
   CardContent,
   Checkbox,
   DateTimePicker,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Divider,
   EmptyState,
   Input,
@@ -73,7 +98,11 @@ import {
   PageDescription,
   PageHeader,
   PageTitle,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Select,
+  Textarea,
   toast,
 } from "@/shared/ui";
 import { type MovePlacement, MoveToNumber } from "@/widgets/move-to-number";
@@ -93,6 +122,8 @@ export function StaffProgramPage(): React.JSX.Element {
   const competitions = useCompetitionsList();
   const [competitionId, setCompetitionId] = useState<string>("");
   const [programId, setProgramId] = useState<string | null>(null);
+  //: Whether the festival/programme column is shown. Closed, the table has the page.
+  const [asideOpen, setAsideOpen] = useState(true);
 
   // Default to the first competition once the list arrives, so the page is never
   // an empty shell for an organizer who has exactly one festival.
@@ -122,7 +153,11 @@ export function StaffProgramPage(): React.JSX.Element {
   );
 
   return (
-    <PageContainer>
+    // `full`, not the usual `max-w-5xl`: the programme is a thirteen-column table and the
+    // default container left it permanently sideways-scrolling on a screen that had room
+    // for it. Every descendant down to the scroll container still carries `min-w-0`, so a
+    // table wider than even this scrolls inside itself rather than moving the page.
+    <PageContainer size="full">
       <PageHeader>
         <PageTitle>Программа фестиваля</PageTitle>
         <PageDescription>
@@ -154,29 +189,60 @@ export function StaffProgramPage(): React.JSX.Element {
             or flex track sizes to its content, and the wide programme table would push the
             whole page sideways instead of scrolling inside itself. */}
         {competitionId ? (
-          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="flex min-w-0 flex-col gap-4">
-              <ProgramList
-                programs={programs.data ?? []}
-                isLoading={programs.isLoading}
-                selectedId={programId}
-                onSelect={setProgramId}
-              />
-              <CreateProgramCard
-                competitionId={competitionId}
-                nominations={nominations}
-                onCreated={setProgramId}
-              />
-            </div>
+          <div
+            className={
+              asideOpen
+                ? "grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[320px_minmax(0,1fr)]"
+                : "grid grid-cols-[minmax(0,1fr)] gap-4"
+            }
+          >
+            {asideOpen ? (
+              <div className="flex min-w-0 flex-col gap-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-medium text-sm">Программы</p>
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    aria-label="Свернуть список программ"
+                    onClick={() => setAsideOpen(false)}
+                  >
+                    <PanelLeftClose className="size-4" />
+                  </Button>
+                </div>
+                <ProgramList
+                  programs={programs.data ?? []}
+                  isLoading={programs.isLoading}
+                  selectedId={programId}
+                  onSelect={setProgramId}
+                />
+                <CreateProgramCard
+                  competitionId={competitionId}
+                  nominations={nominations}
+                  onCreated={setProgramId}
+                />
+              </div>
+            ) : null}
 
-            {programId ? (
-              <ProgramWorkspace programId={programId} />
-            ) : (
-              <EmptyState
-                title="Программа не выбрана"
-                description="Выберите программу слева или создайте новую — например, отдельный на каждый жанр."
-              />
-            )}
+            <div className="flex min-w-0 flex-col gap-3">
+              {/* Collapsing the list is the cheap way to give the table the whole page —
+                  on a forty-row programme with ten columns the 320px of festival admin
+                  beside it is the difference between reading the day and scrolling it. */}
+              {asideOpen ? null : (
+                <div>
+                  <Button variant="outline" size="sm" onClick={() => setAsideOpen(true)}>
+                    <PanelLeftOpen className="size-4" /> Программы
+                  </Button>
+                </div>
+              )}
+              {programId ? (
+                <ProgramWorkspace programId={programId} />
+              ) : (
+                <EmptyState
+                  title="Программа не выбрана"
+                  description="Выберите программу слева или создайте новую — например, отдельный на каждый жанр."
+                />
+              )}
+            </div>
           </div>
         ) : null}
       </PageContent>
@@ -214,7 +280,6 @@ function ProgramList({
   }
   return (
     <div className="flex flex-col gap-2">
-      <p className="font-medium text-sm">Программы</p>
       {programs.map((program) => (
         <button
           key={program.id}
@@ -258,9 +323,10 @@ function CreateProgramCard({
         competitionId,
         name: name.trim(),
         nominationId: nominationId || null,
-        // A local "2026-08-01T10:00" is what the organizer typed in their own zone;
-        // the Date round-trip is what turns it into the instant the backend stores.
-        startsAt: startsAt ? new Date(startsAt).toISOString() : null,
+        // "2026-08-01T10:00" is the time on the wall in the hall, not on this laptop:
+        // it is read in the festival's zone, which is the zone every copy of the
+        // programme is rendered back in.
+        startsAt: festivalInputToIso(startsAt),
       },
       {
         onSuccess: (program) => {
@@ -326,7 +392,9 @@ function ProgramWorkspaceInner({ program }: { program: Program }): React.JSX.Ele
 }
 
 function ProgramSettings({ program }: { program: Program }): React.JSX.Element {
-  const update = useUpdateProgramSettings(program.id);
+  const update = useUpdateProgram(program.id);
+  const setBuffer = (bufferSeconds: number) =>
+    update.mutate({ bufferSeconds }, { onError: () => toast.error("Не удалось изменить буфер") });
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -341,40 +409,190 @@ function ProgramSettings({ program }: { program: Program }): React.JSX.Element {
           label="Буфер между выступлениями"
           options={BUFFER_PRESETS.map((seconds) => ({
             value: String(seconds),
-            label: seconds === 0 ? "Без буфера" : formatDuration(seconds),
+            label: bufferLabel(seconds),
           }))}
           value={String(program.bufferSeconds)}
-          onValueChange={(value: string) => update.setBuffer(Number(value))}
+          onValueChange={(value: string) => setBuffer(Number(value))}
           description="Добавляется к каждому выступлению при расчёте расписания и не меняет длительность номера."
         />
-        <DateTimePicker
-          label="Начало программы"
-          value={toLocalInput(program.startsAt)}
-          onChange={update.setStart}
-        />
+        <ProgramStart program={program} />
       </div>
     </div>
   );
 }
 
-/** The two program-level settings, as one small hook so the form stays declarative. */
-function useUpdateProgramSettings(programId: string) {
-  const update = useUpdateProgram(programId);
-  return {
-    setBuffer: (bufferSeconds: number) =>
-      update.mutate({ bufferSeconds }, { onError: () => toast.error("Не удалось изменить буфер") }),
-    setStart: (localValue: string) =>
-      update.mutate(
-        { startsAt: localValue ? new Date(localValue).toISOString() : null },
-        { onError: () => toast.error("Не удалось изменить время начала") },
-      ),
-  };
+/**
+ * «Буфер» in words, not on a stopwatch.
+ *
+ * {@link formatDuration} renders `m:ss`, which is right in the «Хронометраж» column of a
+ * three-minute act and ambiguous here: a buffer shown as «1:30» was read as an hour and
+ * a half at least as often as the minute and a half it is. The unit is spelled out
+ * because this control is answered once per programme — there is nothing to keep compact.
+ */
+function bufferLabel(seconds: number): string {
+  if (seconds === 0) {
+    return "Без буфера";
+  }
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  if (minutes === 0) {
+    return `${rest} сек`;
+  }
+  return rest === 0 ? `${minutes} мин` : `${minutes} мин ${rest} сек`;
 }
 
+/**
+ * «Начало программы» — the one field here that is typed into rather than chosen from.
+ *
+ * Which is why it keeps a draft instead of saving every change the picker reports. The
+ * picker reports one on nearly every keystroke: typing «1047» passes through `10:4`,
+ * which *is* a valid time (10:04), so a field edited straight into the mutation sent two
+ * PATCHes for one correction and left whichever reply happened to land second on screen.
+ * That is the «дата ставится неправильно» organizers reported — and clearing the time to
+ * retype it reported midnight on the way past, which is the «потом она пропадает».
+ *
+ * So: a local draft, and the two halves committed the way each is answered. The day is
+ * pointed at, so it saves on the click; the hour is typed, so it waits for the typing to
+ * stop. An emptied date *is* an answer («у этой программы пока нет времени») and clears
+ * the start, which is the only way back to an untimed running order.
+ *
+ * **A day on its own saves, at midnight.** Leaving it unsaved until an hour arrives is
+ * more truthful — a festival does not start «7 октября» — and it is the wrong trade
+ * here: the organizer who picks a day and reloads to check finds nothing, which is the
+ * very thing this field keeps being reported for. Midnight is visible, obviously
+ * provisional and one keystroke from right.
+ *
+ * And the draft is never overwritten by the programme while an edit is in progress. The
+ * reply to the day lands mid-way through typing the hour, and adopting it there is what
+ * made the field snap back to midnight and the organizer start over.
+ */
+function ProgramStart({ program }: { program: Program }): React.JSX.Element {
+  const update = useUpdateProgram(program.id);
+  const saved = isoToFestivalInput(program.startsAt);
+  const [draft, setDraft] = useState(saved);
+
+  /**
+   * Whether the field holds something the programme has not agreed to yet.
+   *
+   * This is the whole of the fix for «поставил — пропало». Picking a day sends it at
+   * once, and the reply comes back while the hour is still being typed — so following
+   * the programme unconditionally put the field back to midnight *under the organizer's
+   * hands*, swallowing the digits they were in the middle of. Then the next attempt
+   * worked, because by then there was no reply in flight, and the one after that failed
+   * again. The programme is followed only when there is nothing in progress to lose.
+   */
+  const unsaved = useRef(false);
+  /** `draft` readable from inside a callback that was created before it changed. */
+  const current = useRef(draft);
+  current.current = draft;
+  /** The last value dispatched — what "has the day changed?" is asked against. */
+  const sent = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!unsaved.current) {
+      setDraft(saved);
+      current.current = saved;
+    }
+  }, [saved]);
+
+  const edit = (next: string) => {
+    unsaved.current = true;
+    setDraft(next);
+  };
+
+  // `update` is deliberately not a dependency: it is a fresh object on every render, so
+  // depending on it would restart the timer forever and nothing would ever be saved.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see above.
+  useEffect(() => {
+    if (draft === saved) {
+      unsaved.current = false;
+      return;
+    }
+    const [date = "", time = ""] = draft.split("T");
+    // Half an answer: the day is chosen and the hour is still being typed. Waiting costs
+    // nothing — the next keystroke restarts this timer anyway.
+    if (date !== "" && time.length < 5) {
+      return;
+    }
+    const send = () => {
+      const dispatched = draft;
+      sent.current = dispatched;
+      update.mutate(
+        { startsAt: festivalInputToIso(dispatched) },
+        {
+          // Settled only if the field still says what was sent. Anything typed since is
+          // a later answer, still owed a write of its own.
+          onSuccess: () => {
+            if (current.current === dispatched) {
+              unsaved.current = false;
+            }
+          },
+          onError: () => toast.error("Не удалось изменить время начала"),
+        },
+      );
+    };
+    // A day is *pointed at*, not typed: the click that chose it is the whole of the
+    // answer, so it goes at once. Never after a pause — an organizer who picks a date
+    // and reloads to check that it took must find that it did, and «выбрал — пропало»
+    // is precisely what a second of silent waiting looks like from the other side.
+    //
+    // Measured against what was last **sent** rather than against the programme, which
+    // lags a round trip behind: compared against the programme, every keystroke of the
+    // hour would still look like a change of day while the first reply was in flight.
+    const sentDate = (sent.current ?? saved).split("T")[0];
+    if (date !== sentDate) {
+      send();
+      return;
+    }
+    const timer = setTimeout(send, START_SAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [draft, saved]);
+
+  // `timeLabel` is overridden because the table below has a «Время» column: two things
+  // called «Время» on one screen is one too many for anybody reading it out loud.
+  return (
+    <DateTimePicker
+      label="Начало программы"
+      timeLabel="Время начала"
+      value={draft}
+      onChange={edit}
+    />
+  );
+}
+
+/**
+ * How long the *typed* half of the start time waits after the last keystroke.
+ *
+ * Long enough to cover the pause between the hour and the minutes, short enough that
+ * nobody navigates away from a change they thought they had made. The day does not use
+ * it at all — see above.
+ */
+const START_SAVE_DELAY_MS = 900;
+
+/**
+ * The running order: the table the whole constructor exists to arrange.
+ *
+ * Three ways to move something, because they answer three different questions. The arrows
+ * are a correction ("этот номер на строку выше"). {@link MoveToNumber} is a jump ("этот
+ * номер — сразу после №12"), which the arrows cannot make across forty rows. And dragging
+ * is the one the day is actually planned with: a whole genre picked up by its header and
+ * dropped above another one, which is forty moves done as one.
+ *
+ * The reorder endpoint takes the complete new order rather than a move instruction, so
+ * every one of them ends in the same place — the order the organizer is looking at.
+ */
 function RunningOrder({ program }: { program: Program }): React.JSX.Element {
   const reorder = useReorderItems(program.id);
   const remove = useRemoveItem(program.id);
   const items = program.items;
+
+  /** Which axis the rows are grouped under on screen, or {@link UNGROUPED}. */
+  const [groupBy, setGroupBy] = useState<GroupingAxis | typeof UNGROUPED>(UNGROUPED);
+  /** Columns the organizer has hidden from *this screen* — exports choose their own. */
+  const [hidden, setHidden] = useState<readonly ColumnKey[]>([]);
+  /** The run being dragged, and where it would land — both indexes into `items`. */
+  const [drag, setDrag] = useState<{ start: number; count: number } | null>(null);
+  const [dropAt, setDropAt] = useState<number | null>(null);
 
   const send = (next: ProgramItem[]) => {
     reorder.mutate(
@@ -401,10 +619,101 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
   };
 
   const busy = reorder.isPending || remove.isPending;
+  const columns = program.availableColumns.filter((column) => !hidden.includes(column.key));
+  const groups = groupBy === UNGROUPED ? null : groupRuns(items, groupBy);
+
+  /** Finish a drag: the run goes where the indicator was, and the state is cleared. */
+  const drop = () => {
+    if (drag !== null && dropAt !== null) {
+      send(moveBlock(items, drag.start, drag.count, dropAt));
+    }
+    setDrag(null);
+    setDropAt(null);
+  };
+
+  /**
+   * Where a pointer over a row means the run should land.
+   *
+   * The top half of a row means "before it", the bottom half "after it" — which is how
+   * every list with a drop line behaves, and the only way to express "в самый конец"
+   * without a separate target under the last row.
+   */
+  const hoverRow = (event: React.DragEvent, index: number) => {
+    if (drag === null) {
+      return;
+    }
+    event.preventDefault();
+    const box = event.currentTarget.getBoundingClientRect();
+    setDropAt(event.clientY > box.top + box.height / 2 ? index + 1 : index);
+  };
+
+  /** Move a whole group past its neighbour — the keyboard's way to do what a drag does. */
+  const moveGroup = (position: number, by: -1 | 1) => {
+    if (groups === null) {
+      return;
+    }
+    const group = groups[position];
+    const neighbour = groups[position + by];
+    if (group === undefined || neighbour === undefined) {
+      return;
+    }
+    send(
+      moveBlock(
+        items,
+        group.start,
+        group.items.length,
+        by === -1 ? neighbour.start : neighbour.start + neighbour.items.length,
+      ),
+    );
+  };
+
   // Once published, numbers stay with their participants, so a rearranged programme reads
   // 2, 3, 5, 4. Saying so out loud beats letting an organizer wonder whether it is a bug.
+  // Counted over the numbered slots only — the breaks between them carry no number and
+  // would otherwise make every programme with a lunch in it look rearranged.
   const outOfSequence =
-    program.numbersFrozen && items.some((item, index) => item.number !== index + 1);
+    program.numbersFrozen &&
+    items
+      .filter((item) => itemNumber(item) !== null)
+      .some((item, index) => itemNumber(item) !== index + 1);
+
+  const rowProps = (index: number) => ({
+    dragging: drag !== null && index >= drag.start && index < drag.start + drag.count,
+    dropBefore: dropAt === index,
+    dropAfter: dropAt === index + 1 && index === items.length - 1,
+    onDragStart: () => setDrag({ start: index, count: 1 }),
+    onDragEnd: () => {
+      setDrag(null);
+      setDropAt(null);
+    },
+    onDragOver: (event: React.DragEvent) => hoverRow(event, index),
+    onDrop: (event: React.DragEvent) => {
+      event.preventDefault();
+      drop();
+    },
+  });
+
+  const row = (item: ProgramItem, index: number) => (
+    <ProgramItemRow
+      key={item.id}
+      item={item}
+      columns={columns}
+      index={index}
+      total={items.length}
+      busy={busy}
+      onUp={() => move(index, index - 1)}
+      onDown={() => move(index, index + 1)}
+      onMoveTo={(to) => move(index, to)}
+      onMoveNextTo={(number, placement) => moveNextTo(index, number, placement)}
+      onRemove={() =>
+        remove.mutate(item.id, {
+          onError: () => toast.error("Не удалось удалить пункт"),
+        })
+      }
+      programId={program.id}
+      {...rowProps(index)}
+    />
+  );
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -435,63 +744,400 @@ function RunningOrder({ program }: { program: Program }): React.JSX.Element {
           description="Соберите её автоматически по правилам, добавьте выступления из списка ниже или вставьте служебный блок."
         />
       ) : (
-        // The programme is a table, and the table is wide: it scrolls inside its own
-        // container so the page never scrolls sideways. `relative` is part of that - it
-        // makes this the containing block for absolutely positioned descendants, `sr-only`
-        // labels above all, so a 1px span at the right edge of a wide table is clipped here
-        // instead of setting the whole document's scroll width. See the public page.
-        <div className="scrollbar-custom relative w-full max-w-full overflow-x-auto rounded-md border border-border">
-          {/* `w-max min-w-full`: the table may exceed the container (that is what makes it
-              scroll) but never leaves it narrower than the space available. */}
-          <table className="w-max min-w-full border-collapse text-left">
-            <caption className="sr-only">Программа: {program.name}</caption>
-            <thead>
-              <tr className="border-border border-b bg-muted/50">
-                {program.availableColumns.map((column) => (
-                  <th
-                    key={column.key}
-                    scope="col"
-                    className="whitespace-nowrap px-2 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
-                  >
-                    {column.custom ? (
-                      <CustomColumnHeader programId={program.id} column={column} />
-                    ) : (
-                      column.label
-                    )}
-                  </th>
+        <>
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <GroupByControl
+              columns={program.availableColumns}
+              value={groupBy}
+              onChange={setGroupBy}
+            />
+            <VisibleColumnsControl
+              columns={program.availableColumns}
+              hidden={hidden}
+              onChange={setHidden}
+            />
+          </div>
+
+          {/* The programme is a table, and it fits — however many columns are on. `relative`
+              is load-bearing for a different reason: it makes this the containing block for
+              absolutely positioned descendants, `sr-only` labels above all, so a 1px span at
+              the right edge cannot set the whole document's scroll width. `overflow-x-auto`
+              stays as the net under a table too narrow even for this. See the public page. */}
+          <div className="scrollbar-custom relative w-full max-w-full overflow-x-auto rounded-md border border-border">
+            {/* `table-fixed w-full`: the columns are laid out from the widths below rather
+                than from their contents, which is the whole of "it always fits". */}
+            <table className="w-full table-fixed border-collapse text-left">
+              <caption className="sr-only">Программа: {program.name}</caption>
+              <colgroup>
+                <col style={{ width: HANDLE_WIDTH }} />
+                {columnWidths(columns).map((width, index) => (
+                  // The key is the column's own, not the index: `columns` is reordered and
+                  // filtered by the visibility control above.
+                  <col key={columns[index]?.key ?? index} style={{ width }} />
                 ))}
-                <th scope="col" className="px-2 py-2 text-right">
-                  <span className="sr-only">Действия</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, index) => (
-                <ProgramItemRow
-                  key={item.id}
-                  item={item}
-                  columns={program.availableColumns}
-                  index={index}
-                  total={items.length}
-                  busy={busy}
-                  onUp={() => move(index, index - 1)}
-                  onDown={() => move(index, index + 1)}
-                  onMoveTo={(to) => move(index, to)}
-                  onMoveNextTo={(number, placement) => moveNextTo(index, number, placement)}
-                  onRemove={() =>
-                    remove.mutate(item.id, {
-                      onError: () => toast.error("Не удалось удалить пункт"),
-                    })
-                  }
-                  programId={program.id}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
+                <col style={{ width: ACTIONS_WIDTH }} />
+              </colgroup>
+              <thead>
+                <tr className="border-border border-b bg-muted/50">
+                  <th scope="col" className="px-1 py-2">
+                    <span className="sr-only">Перетащить</span>
+                  </th>
+                  {columns.map((column) => (
+                    <th
+                      key={column.key}
+                      scope="col"
+                      className="break-words px-2 py-2 align-bottom font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                    >
+                      {column.custom ? (
+                        <CustomColumnHeader programId={program.id} column={column} />
+                      ) : (
+                        column.label
+                      )}
+                    </th>
+                  ))}
+                  <th scope="col" className="px-2 py-2 text-right">
+                    <span className="sr-only">Действия</span>
+                  </th>
+                </tr>
+              </thead>
+              {groups === null ? (
+                <tbody>{items.map((item, index) => row(item, index))}</tbody>
+              ) : (
+                groups.map((group: ProgramGroup, position: number) => (
+                  // One `tbody` per group: it is the grouping, as far as a screen reader
+                  // and the browser's own table model are concerned.
+                  <tbody key={group.key}>
+                    {group.standalone ? null : (
+                      <GroupHeaderRow
+                        group={group}
+                        span={columns.length + 2}
+                        busy={busy}
+                        atStart={position === 0}
+                        atEnd={position === groups.length - 1}
+                        dragging={
+                          drag !== null &&
+                          drag.start === group.start &&
+                          drag.count === group.items.length
+                        }
+                        onDragStart={() =>
+                          setDrag({ start: group.start, count: group.items.length })
+                        }
+                        onDragEnd={() => {
+                          setDrag(null);
+                          setDropAt(null);
+                        }}
+                        onDragOver={(event) => hoverRow(event, group.start)}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          drop();
+                        }}
+                        dropBefore={dropAt === group.start}
+                        onUp={() => moveGroup(position, -1)}
+                        onDown={() => moveGroup(position, 1)}
+                      />
+                    )}
+                    {group.items.map((item: ProgramItem, offset: number) =>
+                      row(item, group.start + offset),
+                    )}
+                  </tbody>
+                ))
+              )}
+            </table>
+          </div>
+        </>
       )}
     </div>
   );
+}
+
+/**
+ * How wide each column of the running order is.
+ *
+ * **The table fits the screen, always.** Thirteen built-in columns plus whatever the
+ * organizer added is far more than any laptop has room for, and the old answer — let the
+ * table be as wide as its contents and scroll it sideways — meant the organizer dragged a
+ * row while the «№» it was going to was off-screen. Turning columns off helped and was
+ * the wrong thing to have to do: the columns are on because they are being read.
+ *
+ * So the widths are stated rather than measured ({@link ProgramColumn} layout is `fixed`),
+ * and they are stated in two kinds:
+ *
+ * * **{@link FIXED_COLUMN_WIDTHS}** — columns whose content has one known size. «10:04» is
+ *   five characters whether the table shows four columns or twenty, and giving it a share
+ *   of the width would make it grow for no reason and then shrink below legibility.
+ * * **{@link FLEXIBLE_COLUMN_WEIGHTS}** — columns of prose, which share whatever is left
+ *   in proportion to how much they typically need. A name needs more room than an age
+ *   band; a note needs more than either.
+ *
+ * Everything the columns cannot use is reserved first: the drag handle and the row's
+ * buttons. Those are controls, not data — they have a size and keeping it is the point.
+ */
+const FIXED_COLUMN_WIDTHS: Partial<Record<ProgramColumnKey, string>> = {
+  POSITION: "2.5rem",
+  TIME: "3.5rem",
+  DURATION: "4.75rem",
+  PARTICIPANT_COUNT: "3.5rem",
+};
+
+const FLEXIBLE_COLUMN_WEIGHTS: Partial<Record<ProgramColumnKey, number>> = {
+  PARTICIPANT: 1.6,
+  TITLE: 2,
+  NOMINATION: 1.2,
+  DISCIPLINE: 1.2,
+  PARTICIPANT_GROUP: 1,
+  AGE_CATEGORY: 1,
+  PARTICIPATION_FORMAT: 1,
+  TEACHERS: 1.4,
+  ORGANIZATION: 1.4,
+  CONTACTS: 1.1,
+  COMMENT: 1.6,
+};
+
+/** What a column the organizer added gets: a plain share, same as an age band. */
+const DEFAULT_COLUMN_WEIGHT = 1;
+
+/** The drag handle: one icon, and never anything else. */
+const HANDLE_WIDTH = "2rem";
+
+/**
+ * The row's buttons: up, down, «после №», delete, and a block's own minutes field.
+ *
+ * Sized for the four icon buttons on one line — 4 × 1.75rem, three gaps and the cell's
+ * own padding — and barely more: everything left over is width the programme wants.
+ * Capped as a *share* as well, because on a phone a fixed 8.75rem is a third of the
+ * screen handed to four icons; there they wrap onto a second line inside the cell and
+ * give way to the running order, which is what `flex-wrap` on the row is for.
+ */
+const ACTIONS_WIDTH = "min(8.75rem, 26%)";
+
+/**
+ * The widths of the data columns, in the order they are shown.
+ *
+ * Returned as CSS rather than numbers so the arithmetic happens in the browser, at the
+ * width the table actually has: no measuring, no resize observer, and a column that is
+ * right the moment the sidebar is collapsed rather than one frame later.
+ */
+function columnWidths(columns: ProgramColumn[]): string[] {
+  const fixed = columns.map((column) =>
+    column.custom ? undefined : FIXED_COLUMN_WIDTHS[column.key as ProgramColumnKey],
+  );
+  const weights = columns.map((column, index) =>
+    fixed[index] !== undefined
+      ? 0
+      : ((column.custom ? undefined : FLEXIBLE_COLUMN_WEIGHTS[column.key as ProgramColumnKey]) ??
+        DEFAULT_COLUMN_WEIGHT),
+  );
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  const reserved = [HANDLE_WIDTH, ACTIONS_WIDTH, ...fixed.filter((width) => width !== undefined)];
+  const free = `calc(100% - ${reserved.join(" - ")})`;
+  return columns.map((_, index) => {
+    const own = fixed[index];
+    if (own !== undefined) {
+      return own;
+    }
+    // Six places, not four: eleven columns rounded to four would sum to 100.02% of the
+    // free space, and a fixed-layout table whose widths overshoot is one the container
+    // can scroll after all. `total` cannot be 0 here — this branch only runs for a
+    // column that carries a weight.
+    return `calc(${free} * ${((weights[index] ?? 0) / total).toFixed(6)})`;
+  });
+}
+
+/**
+ * «Группировать» — a reading of the running order, not a rearrangement of it.
+ *
+ * The labels come from the programme's own columns rather than a second list of words:
+ * the platform renamed what it calls these things once already (NOMINATION is «Жанр» on
+ * screen), and a dropdown with its own copy of the vocabulary is how the two drift apart.
+ *
+ * «Без группировки» is an option rather than a placeholder because a placeholder cannot be
+ * chosen: there would be no way back to the plain running order once an axis was picked.
+ */
+function GroupByControl({
+  columns,
+  value,
+  onChange,
+}: {
+  columns: ProgramColumn[];
+  value: GroupingAxis | typeof UNGROUPED;
+  onChange: (next: GroupingAxis | typeof UNGROUPED) => void;
+}): React.JSX.Element {
+  const labels = new Map(columns.map((column) => [column.key, column.label]));
+  const options = [
+    { value: UNGROUPED, label: "Без группировки" },
+    ...GROUPING_AXES.filter((axis) => labels.has(axis)).map((axis) => ({
+      value: axis,
+      label: labels.get(axis) ?? GROUPING_AXIS_LABELS[axis],
+    })),
+  ];
+  return (
+    <div className="w-56">
+      <Select
+        label="Группировать"
+        options={options}
+        value={value}
+        onValueChange={(next: string) => onChange(next as GroupingAxis | typeof UNGROUPED)}
+      />
+    </div>
+  );
+}
+
+/** The "no grouping" choice. A real value, because a Radix option cannot carry an empty one. */
+const UNGROUPED = "NONE";
+
+/**
+ * Which columns this screen shows.
+ *
+ * A programme can carry thirteen columns plus whatever the organizer added, and all of
+ * them at once is a table nobody can read without scrolling sideways past the thing they
+ * were looking at. Hiding one here changes *this screen only* — what a link publishes and
+ * what a PDF prints are separate decisions, made in their own panels.
+ */
+function VisibleColumnsControl({
+  columns,
+  hidden,
+  onChange,
+}: {
+  columns: ProgramColumn[];
+  hidden: readonly ColumnKey[];
+  onChange: (next: readonly ColumnKey[]) => void;
+}): React.JSX.Element {
+  const shown = columns.length - hidden.length;
+  const toggle = (key: ColumnKey, visible: boolean) =>
+    onChange(visible ? hidden.filter((item) => item !== key) : [...hidden, key]);
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Columns3 className="size-4" /> Колонки на экране: {shown}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="flex w-64 flex-col gap-2">
+        {/* `min-w-0`: a `fieldset` has a built-in `min-width: min-content` that ignores
+            its container, so a long column name would widen the popover. */}
+        <fieldset className="flex max-h-80 min-w-0 flex-col gap-2 overflow-y-auto">
+          <legend className="sr-only">Колонки на экране</legend>
+          {columns.map((column) => (
+            <Checkbox
+              key={column.key}
+              label={column.label}
+              checked={!hidden.includes(column.key)}
+              onCheckedChange={(checked: boolean) => toggle(column.key, checked)}
+            />
+          ))}
+        </fieldset>
+        <Divider />
+        <Button variant="ghost" size="sm" onClick={() => onChange([])}>
+          Показать все
+        </Button>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/**
+ * The header of one group, and the handle the whole group is dragged by.
+ *
+ * This row is the feature: picking up «Эстрадный вокал» and dropping it above «Народный»
+ * is one gesture for what the arrows would take forty of. The buttons beside it do the
+ * same move from the keyboard, because a drag is not reachable without a pointer.
+ */
+function GroupHeaderRow({
+  group,
+  span,
+  busy,
+  atStart,
+  atEnd,
+  dragging,
+  dropBefore,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
+  onUp,
+  onDown,
+}: {
+  group: ProgramGroup;
+  span: number;
+  busy: boolean;
+  atStart: boolean;
+  atEnd: boolean;
+  dragging: boolean;
+  dropBefore: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  onDragOver: (event: React.DragEvent) => void;
+  onDrop: (event: React.DragEvent) => void;
+  onUp: () => void;
+  onDown: () => void;
+}): React.JSX.Element {
+  return (
+    <tr
+      data-testid="program-group"
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      className={[
+        "border-border border-b bg-muted/70",
+        dragging ? "opacity-50" : "",
+        dropBefore ? "border-primary border-t-2" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <td
+        draggable={!busy}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        aria-label={`Перетащить группу: ${group.label}`}
+        className="cursor-grab px-1 py-1.5 align-middle active:cursor-grabbing"
+      >
+        <GripVertical className="size-4 text-muted-foreground" />
+      </td>
+      <td colSpan={span - 2} className="px-2 py-1.5">
+        <span className="flex flex-wrap items-baseline gap-2">
+          <span className="font-semibold text-sm">{group.label}</span>
+          <span className="text-muted-foreground text-xs">
+            {group.items.length} {plural(group.items.length, "номер", "номера", "номеров")}
+          </span>
+        </span>
+      </td>
+      <td className="px-2 py-1.5">
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="xs"
+            aria-label={`Группу выше: ${group.label}`}
+            disabled={atStart || busy}
+            onClick={onUp}
+          >
+            <ArrowUp className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="xs"
+            aria-label={`Группу ниже: ${group.label}`}
+            disabled={atEnd || busy}
+            onClick={onDown}
+          >
+            <ArrowDown className="size-4" />
+          </Button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+/** `2 → "номера"`. Russian needs three forms, and a count beside a noun needs the right one. */
+function plural(count: number, one: string, few: string, many: string): string {
+  const mod100 = count % 100;
+  if (mod100 >= 11 && mod100 <= 14) {
+    return many;
+  }
+  const mod10 = count % 10;
+  if (mod10 === 1) {
+    return one;
+  }
+  return mod10 >= 2 && mod10 <= 4 ? few : many;
 }
 
 function ProgramItemRow({
@@ -506,6 +1152,13 @@ function ProgramItemRow({
   onMoveNextTo,
   onRemove,
   programId,
+  dragging,
+  dropBefore,
+  dropAfter,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
 }: {
   item: ProgramItem;
   columns: ProgramColumn[];
@@ -518,6 +1171,15 @@ function ProgramItemRow({
   onMoveNextTo: (number: number, placement: MovePlacement) => boolean;
   onRemove: () => void;
   programId: string;
+  /** This row is part of the run currently being dragged. */
+  dragging: boolean;
+  /** The drop indicator sits above / below this row. */
+  dropBefore: boolean;
+  dropAfter: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  onDragOver: (event: React.DragEvent) => void;
+  onDrop: (event: React.DragEvent) => void;
 }): React.JSX.Element {
   const isPerformance = item.kind === "PERFORMANCE";
   const format = { clock: formatClock, duration: formatDuration };
@@ -527,30 +1189,53 @@ function ProgramItemRow({
     <tr
       data-testid="program-item"
       data-progress={item.progress}
-      className={
-        onStage
-          ? "border-border border-b bg-primary/10 last:border-0"
-          : behindUs
-            ? "border-border border-b text-muted-foreground last:border-0"
-            : isPerformance
-              ? "border-border border-b last:border-0"
-              : "border-border border-b bg-muted/40 last:border-0"
-      }
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      className={[
+        "border-border border-b last:border-0",
+        onStage ? "bg-primary/10" : behindUs ? "text-muted-foreground" : "",
+        isPerformance ? "" : "bg-muted/40",
+        dragging ? "opacity-50" : "",
+        dropBefore ? "border-primary border-t-2" : "",
+        dropAfter ? "border-primary border-b-2 last:border-b-2" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
+      {/* The handle is its own cell rather than `draggable` on the row: a draggable row
+          swallows text selection and makes the hand-filled cells inside it unusable. */}
+      <td
+        draggable={!busy}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        aria-label={`Перетащить: ${item.title}`}
+        className="cursor-grab px-1 py-2 align-middle active:cursor-grabbing"
+      >
+        <GripVertical className="size-4 text-muted-foreground" />
+      </td>
       {columns.map((column) => (
         <td
           key={column.key}
+          // `break-words` and `align-top` are what make a fixed-width table readable: a
+          // name longer than its column wraps inside it instead of pushing the column
+          // wider, and every cell of a row that wrapped starts at the same line.
           className={
             column.key === "TIME" || column.key === "POSITION"
-              ? "whitespace-nowrap px-2 py-2 font-semibold text-sm tabular-nums"
-              : "px-2 py-2 text-sm"
+              ? "whitespace-nowrap px-2 py-2 align-top font-semibold text-sm tabular-nums"
+              : "break-words px-2 py-2 align-top text-sm"
           }
         >
           {column.custom ? (
             <CustomCell programId={programId} item={item} columnKey={column.key} />
           ) : column.key === "TITLE" ? (
             <span className="flex flex-wrap items-baseline gap-1.5">
-              <span>{itemCell(item, column.key, format)}</span>
+              {/* A block's title is the organizer's own words and is edited where it is
+                  read; an act's comes from its entry and is not theirs to retype here. */}
+              {isPerformance ? (
+                <span>{itemCell(item, column.key, format)}</span>
+              ) : (
+                <BlockTitle programId={programId} item={item} />
+              )}
               {/* The badge names the kind; a break literally titled "Перерыв" needs no
                   second label saying so. */}
               {isPerformance || item.title === ITEM_KIND_LABELS[item.kind] ? null : (
@@ -581,12 +1266,17 @@ function ProgramItemRow({
         </td>
       ))}
 
-      <td className="px-2 py-2">
-        <div className="flex items-center justify-end gap-1">
+      {/* `px-1`, not `px-2`: the padding is width this cell does not have to spare, and
+          the buttons already carry their own. `flex-wrap` is the backstop — a block row
+          also holds its minutes field, and a second line inside the cell beats a row of
+          buttons sitting on top of the comment beside it. */}
+      <td className="px-1 py-2 align-top">
+        <div className="flex flex-wrap items-center justify-end gap-1">
           {isPerformance ? null : <EditBlockDuration programId={programId} item={item} />}
           <Button
             variant="ghost"
             size="xs"
+            iconOnly
             aria-label={`Вверх: ${item.title}`}
             disabled={index === 0 || busy}
             onClick={onUp}
@@ -596,6 +1286,7 @@ function ProgramItemRow({
           <Button
             variant="ghost"
             size="xs"
+            iconOnly
             aria-label={`Вниз: ${item.title}`}
             disabled={index === total - 1 || busy}
             onClick={onDown}
@@ -615,6 +1306,7 @@ function ProgramItemRow({
           <Button
             variant="ghost"
             size="xs"
+            iconOnly
             aria-label={`Удалить: ${item.title}`}
             disabled={busy}
             onClick={onRemove}
@@ -624,6 +1316,58 @@ function ProgramItemRow({
         </div>
       </td>
     </tr>
+  );
+}
+
+/**
+ * A block's own name, editable in place.
+ *
+ * «Перерыв» is what the generator calls one, and it is almost never what the day calls
+ * it: «Обед», «Перерыв 15 минут», «Технический перерыв — смена рояля», «Антракт». The
+ * name goes out on every public link and onto the printed programme, so it is the
+ * organizer's to write — and this is the cell everyone already looks at to read it.
+ *
+ * Saved on blur, like every other hand-filled cell in this table, and a title rubbed out
+ * entirely is refused rather than saved: a nameless block is a gap in the running order
+ * nobody can account for. The old name comes back, which says so without a message.
+ */
+function BlockTitle({
+  programId,
+  item,
+}: {
+  programId: string;
+  item: ProgramItem;
+}): React.JSX.Element {
+  const edit = useEditItem(programId);
+  const [title, setTitle] = useState(item.title);
+
+  // Follow the slot when it changes underneath — a rebuild, another tab — but never
+  // over what is being typed here.
+  useEffect(() => setTitle(item.title), [item.title]);
+
+  return (
+    <Input
+      aria-label={`Название: ${item.title}`}
+      // `min-w-0`, emphatically: a minimum wider than the column leaves the field
+      // sitting on top of the next one, which is what a fixed-width table cannot
+      // absorb. It is as wide as its column and no wider.
+      className="h-7 w-full min-w-0 text-sm"
+      value={title}
+      onChange={(event) => setTitle(event.target.value)}
+      onBlur={() => {
+        const next = title.trim();
+        if (next === "") {
+          setTitle(item.title);
+          return;
+        }
+        if (next !== item.title) {
+          edit.mutate(
+            { itemId: item.id, title: next },
+            { onError: () => toast.error("Не удалось переименовать блок") },
+          );
+        }
+      }}
+    />
   );
 }
 
@@ -642,7 +1386,7 @@ function EditBlockDuration({
         aria-label={`Минуты: ${item.title}`}
         type="number"
         min={1}
-        className="h-8 w-16"
+        className="h-7 w-14"
         value={minutes}
         onChange={(event) => setMinutes(event.target.value)}
         onBlur={() => {
@@ -764,7 +1508,7 @@ function CustomCell({
   return (
     <Input
       aria-label={`Значение: ${item.title}`}
-      className="h-7 w-32 text-xs"
+      className="h-7 w-full min-w-0 text-xs"
       value={value}
       onChange={(event) => setValue(event.target.value)}
       onBlur={() => {
@@ -899,6 +1643,65 @@ function AddBreakControls({ programId }: { programId: string }): React.JSX.Eleme
 }
 
 /**
+ * The chosen columns, left to right, with the arrows that rearrange them.
+ *
+ * Shared by the two places a cut of the table is taken — a printed page and a published
+ * link — because it is the same decision in both: the strip reads in the order the
+ * reader's eye will, so what is being arranged is the table itself rather than a list of
+ * names. Silent below two columns, where there is no order to arrange.
+ */
+function ColumnOrderStrip({
+  label,
+  chosen,
+  labels,
+  onShift,
+}: {
+  /** What this order is *for* — two cuts of one table are arranged on the same screen. */
+  label: string;
+  chosen: ColumnKey[];
+  labels: Map<ColumnKey, string>;
+  onShift: (key: ColumnKey, by: -1 | 1) => void;
+}): React.JSX.Element | null {
+  if (chosen.length < 2) {
+    return null;
+  }
+  return (
+    // A `fieldset`, like the pickers it follows: the arrows are a group of controls over
+    // one decision, and its `legend` names which cut of the table is being arranged —
+    // both are on screen at once.
+    <fieldset className="flex min-w-0 flex-wrap items-center gap-2">
+      <legend className="px-1 text-muted-foreground text-xs">{label} — слева направо</legend>
+      {chosen.map((key, index) => (
+        <span
+          key={key}
+          className="flex items-center gap-0.5 rounded-md border border-border py-0.5 pr-0.5 pl-2 text-xs"
+        >
+          {labels.get(key)}
+          <Button
+            variant="ghost"
+            size="xs"
+            aria-label={`Левее: ${labels.get(key)}`}
+            disabled={index === 0}
+            onClick={() => onShift(key, -1)}
+          >
+            <ArrowLeft className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="xs"
+            aria-label={`Правее: ${labels.get(key)}`}
+            disabled={index === chosen.length - 1}
+            onClick={() => onShift(key, 1)}
+          >
+            <ArrowRight className="size-3.5" />
+          </Button>
+        </span>
+      ))}
+    </fieldset>
+  );
+}
+
+/**
  * Print the programme: tick the columns, get a PDF.
  *
  * The same column-picking shape as publishing a link, because it is the same decision —
@@ -906,10 +1709,10 @@ function AddBreakControls({ programId }: { programId: string }): React.JSX.Eleme
  * printed running order almost always wants, rather than to everything, since a thirteen-
  * column page is unreadable.
  *
- * Their order is the organizer's too, and only here: a published edition keeps the
- * canonical order so a column sits in the same place on every screen, while a page is
- * printed for one job — the number and the act first for the sound desk, the organization
- * first for the register — and the eye reads left to right whatever the table thinks.
+ * Their order is the organizer's too: a page is printed for one job — the number and the
+ * act first for the sound desk, the organization first for the register — and the eye
+ * reads left to right whatever the table thinks. A published link is arranged the same
+ * way, by the same strip.
  */
 function ExportPanel({ program }: { program: Program }): React.JSX.Element {
   const [columns, setColumns] = useState<ColumnKey[]>(DEFAULT_EXPORT_COLUMNS);
@@ -949,27 +1752,45 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
     }
   };
 
-  const downloadMusic = async () => {
-    setMusicBusy(true);
+  /**
+   * One archive download, with the wait said out loud.
+   *
+   * The server assembles the whole ZIP before the first byte leaves it — a festival's
+   * backing tracks are hundreds of files and gigabytes — so there is a minutes-long
+   * stretch where a spinner is the only sign anything is happening. An organizer who
+   * reads that as "сломалось" clicks again, and the second click rebuilds the archive
+   * from scratch alongside the first.
+   */
+  const collect = async (
+    fetchArchive: () => Promise<void>,
+    setPending: (pending: boolean) => void,
+    failure: string,
+  ) => {
+    setPending(true);
+    const waiting = toast.loading("Собираем архив — на большой программе это несколько минут");
     try {
-      await downloadProgramMusic(program.id, program.name);
+      await fetchArchive();
+      toast.success("Архив готов", { id: waiting });
     } catch {
-      toast.error("Не удалось собрать архив фонограмм");
+      toast.error(failure, { id: waiting });
     } finally {
-      setMusicBusy(false);
+      setPending(false);
     }
   };
 
-  const downloadMedia = async () => {
-    setMediaBusy(true);
-    try {
-      await downloadProgramMedia(program.id, program.name);
-    } catch {
-      toast.error("Не удалось собрать архив медиафайлов");
-    } finally {
-      setMediaBusy(false);
-    }
-  };
+  const downloadMusic = () =>
+    collect(
+      () => downloadProgramMusic(program.id, program.name),
+      setMusicBusy,
+      "Не удалось собрать архив фонограмм",
+    );
+
+  const downloadMedia = () =>
+    collect(
+      () => downloadProgramMedia(program.id, program.name),
+      setMediaBusy,
+      "Не удалось собрать архив медиафайлов",
+    );
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -1019,39 +1840,12 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
           />
         ))}
       </fieldset>
-      {chosen.length > 1 ? (
-        // Order, not selection: the strip reads left to right exactly as the printed page
-        // will, so what is being arranged is the page itself rather than a list of names.
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="text-muted-foreground text-xs">Порядок слева направо:</span>
-          {chosen.map((key, index) => (
-            <span
-              key={key}
-              className="flex items-center gap-0.5 rounded-md border border-border py-0.5 pr-0.5 pl-2 text-xs"
-            >
-              {available.get(key)}
-              <Button
-                variant="ghost"
-                size="xs"
-                aria-label={`Левее: ${available.get(key)}`}
-                disabled={index === 0}
-                onClick={() => shift(key, -1)}
-              >
-                <ArrowLeft className="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="xs"
-                aria-label={`Правее: ${available.get(key)}`}
-                disabled={index === chosen.length - 1}
-                onClick={() => shift(key, 1)}
-              >
-                <ArrowRight className="size-3.5" />
-              </Button>
-            </span>
-          ))}
-        </div>
-      ) : null}
+      <ColumnOrderStrip
+        label="Порядок колонок в PDF"
+        chosen={chosen}
+        labels={available}
+        onShift={shift}
+      />
       <p className="text-muted-foreground text-xs">
         Таблица печатается на A4 в альбомной ориентации, заголовок повторяется на каждой странице.
       </p>
@@ -1155,11 +1949,15 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
   const remove = useRemoveShare(program.id);
   const [name, setName] = useState("");
   const [columns, setColumns] = useState<ColumnKey[]>(DEFAULT_SHARE_COLUMNS);
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
   const [controls, setControls] = useState(false);
 
+  // A column the organizer has since deleted would still be ticked here and would fail
+  // the request; dropping it keeps the strip below readable and what is published valid.
+  const available = new Map(program.availableColumns.map((column) => [column.key, column.label]));
+  const chosen = columns.filter((key) => available.has(key));
+
   const toggle = (key: ColumnKey, checked: boolean) => {
+    // A newly ticked column goes last, which is where somebody adding one expects it.
     setColumns((current) =>
       checked
         ? [...current.filter((item) => item !== key), key]
@@ -1167,26 +1965,23 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
     );
   };
 
+  const shift = (key: ColumnKey, by: -1 | 1) => {
+    setColumns((current) => {
+      const from = current.indexOf(key);
+      return moveItem(current, from, from + by);
+    });
+  };
+
   const publish = () => {
-    // Numbers are what an organizer talks in ("пункты 25-40") and what the table shows;
-    // ids are what the API takes, so the range is resolved here against the numbers on
-    // screen — not against row indexes, which drift from them after a reorder.
-    const start = Number(from) || 0;
-    const end = Number(to) || 0;
-    const selected =
-      start > 0 && end >= start
-        ? program.items
-            .filter((item) => item.number >= start && item.number <= end)
-            .map((item) => item.id)
-        : [];
+    // An empty list means the whole programme, and the whole programme is what a link is
+    // for: the sound engineer's copy should grow when the day does, rather than go stale
+    // the moment the organizer adds an item past the end of a hand-typed range.
     create.mutate(
-      { name: name.trim(), columns, itemIds: selected, controlsRunningOrder: controls },
+      { name: name.trim(), columns: chosen, itemIds: [], controlsRunningOrder: controls },
       {
         onSuccess: () => {
           setName("");
           setColumns(DEFAULT_SHARE_COLUMNS);
-          setFrom("");
-          setTo("");
           setControls(false);
           toast.success("Публичная программа создана");
         },
@@ -1199,9 +1994,9 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
     <div className="flex flex-col gap-3">
       <p className="font-medium text-sm">Публичные программы</p>
       <p className="text-muted-foreground text-xs">
-        Отметьте колонки, которые нужно показать по ссылке: звукорежиссёру — время, номер и
-        комментарий; экрану у сцены — время, участника и номер. Неотмеченные колонки по ссылке не
-        передаются вообще.
+        Отметьте колонки, которые нужно показать по ссылке, и расставьте их в том порядке, в котором
+        их будут читать: звукорежиссёру — время, номер и комментарий; экрану у сцены — время,
+        участника и номер. Неотмеченные колонки по ссылке не передаются вообще.
       </p>
 
       <div className="flex flex-wrap items-end gap-2">
@@ -1212,27 +2007,9 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
           value={name}
           onChange={(event) => setName(event.target.value)}
         />
-        <Input
-          label="Номера с"
-          aria-label="Пункты с"
-          type="number"
-          min={1}
-          className="w-24"
-          value={from}
-          onChange={(event) => setFrom(event.target.value)}
-        />
-        <Input
-          label="по"
-          aria-label="Пункты по"
-          type="number"
-          min={1}
-          className="w-24"
-          value={to}
-          onChange={(event) => setTo(event.target.value)}
-        />
         <Button
           loading={create.isPending}
-          disabled={name.trim().length === 0 || columns.length === 0}
+          disabled={name.trim().length === 0 || chosen.length === 0}
           onClick={publish}
         >
           <Link2 className="size-4" /> Создать ссылку
@@ -1251,6 +2028,12 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
           />
         ))}
       </fieldset>
+      <ColumnOrderStrip
+        label="Порядок колонок по ссылке"
+        chosen={chosen}
+        labels={available}
+        onShift={shift}
+      />
       <div className="flex flex-col gap-1">
         <Checkbox
           label="Программа ведущего — можно отмечать номера и менять порядок по ссылке"
@@ -1263,8 +2046,7 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
         </p>
       </div>
       <p className="text-muted-foreground text-xs">
-        Оставьте диапазон пунктов пустым, чтобы опубликовать всю программу — такая ссылка сама
-        подхватывает новые пункты.
+        Ссылка публикует всю программу и сама подхватывает новые пункты.
       </p>
 
       {program.shares.length === 0 ? (
@@ -1306,6 +2088,7 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
                   Открыть
                 </a>
               </Button>
+              <AnnounceShare programId={program.id} share={share} />
               <Button
                 variant="ghost"
                 size="xs"
@@ -1334,15 +2117,99 @@ function PublicLinks({ program }: { program: Program }): React.JSX.Element {
   );
 }
 
-/** ISO instant → the value a ``datetime-local`` input expects, in the local zone. */
-function toLocalInput(iso: string | null): string {
-  if (!iso) {
-    return "";
-  }
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+/**
+ * «Разослать участникам» — the letter that closes the gap between publishing a
+ * programme and anyone knowing it exists.
+ *
+ * It hangs off **one link** rather than off the programme, because the link is the
+ * decision: a programme may carry one edition for the hall screen, one for the sound
+ * desk and one for participants, and only the organizer knows which of them is the one
+ * to send. The edition also settles who hears — one cut to the second отделение writes
+ * to the second отделение.
+ *
+ * Behind a dialog, and the dialog says how many letters it is about to send before it
+ * sends them: this is the one action in the constructor that reaches people outside it,
+ * and it cannot be taken back.
+ */
+function AnnounceShare({
+  programId,
+  share,
+}: {
+  programId: string;
+  share: ProgramShare;
+}): React.JSX.Element {
+  const announce = useAnnounceShare(programId);
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState("");
+
+  const send = () => {
+    announce.mutate(
+      { shareId: share.id, ...(note.trim() ? { note: note.trim() } : {}) },
+      {
+        onSuccess: (result) => {
+          setOpen(false);
+          setNote("");
+          // The skipped acts are named out loud rather than quietly left out of the
+          // count: they are the ones the organizer now has to reach some other way.
+          toast.success(
+            `Разослано писем: ${result.notified}` +
+              (result.skipped > 0 ? ` · без адреса: ${result.skipped}` : ""),
+          );
+        },
+        onError: () => toast.error("Не удалось разослать программу"),
+      },
+    );
+  };
+
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="xs"
+        aria-label={`Разослать участникам: ${share.name}`}
+        onClick={() => setOpen(true)}
+      >
+        <Send className="size-4" /> Разослать
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Разослать программу участникам</DialogTitle>
+            <DialogDescription>
+              Каждому, кто подал заявку на выступление из этой ссылки, уйдёт письмо с его номером,
+              временем и ссылкой на программу. Одно письмо на заявителя, даже если у него несколько
+              номеров.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <p className="text-sm">
+              Ссылка: <span className="font-medium">{share.name}</span> ·{" "}
+              {share.coversWholeProgram ? "вся программа" : `пунктов в ней: ${share.itemCount}`}
+            </p>
+            <Textarea
+              label="Что добавить от себя"
+              placeholder="Сбор за час до начала, вход со двора."
+              description="Необязательно. Эта строка встанет в письме над ссылкой."
+              maxLength={500}
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+            />
+            <Alert variant="warning">
+              Письма уйдут сразу и их нельзя отозвать. Проверьте порядок и время перед отправкой.
+            </Alert>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Отмена
+            </Button>
+            <Button onClick={send} loading={announce.isPending}>
+              <Send className="size-4" /> Разослать
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }

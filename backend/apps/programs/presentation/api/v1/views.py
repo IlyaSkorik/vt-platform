@@ -32,6 +32,7 @@ from apps.programs.application.commands import (
     AddBlockCommand,
     AddColumnCommand,
     AddPerformanceCommand,
+    AnnounceProgramCommand,
     ArrangementPayload,
     ArrangeProgramCommand,
     CreateProgramCommand,
@@ -50,6 +51,8 @@ from apps.programs.presentation.api.v1 import problems
 from apps.programs.presentation.api.v1.serializers import (
     AddBlockRequestSerializer,
     AddPerformanceRequestSerializer,
+    AnnouncementResourceSerializer,
+    AnnounceProgramRequestSerializer,
     ArrangeProgramRequestSerializer,
     ColumnRequestSerializer,
     CreateProgramRequestSerializer,
@@ -142,7 +145,9 @@ def _item_json(item: dto.ProgramItemView) -> dict[str, Any]:
         "submissionId": item.submission_id,
         "leadParticipant": item.lead_participant,
         "participants": list(item.participants),
+        "participantCount": item.participant_count,
         "teachers": list(item.teachers),
+        "contacts": list(item.contacts),
         "nomination": item.nomination,
         "discipline": item.discipline,
         "ageCategory": item.age_category,
@@ -633,9 +638,8 @@ class ProgramExportView(_StaffView):
     file. Columns arrive as a comma-separated list so the URL stays something that can be
     copied, bookmarked, or wired into a print button; omitting them exports every column.
 
-    The list is ordered, and the page follows it: a printed cut is laid out for one job by
-    the person printing it. A published edition is the other way round — canonical order,
-    so a column sits in the same place on every screen.
+    The list is ordered, and the page follows it: a cut of the table is laid out for one
+    job by the person taking it — the same rule a public link is published by.
     """
 
     @extend_schema(
@@ -686,9 +690,9 @@ class ProgramMusicArchiveView(_StaffView):
             **_PROBLEM_RESPONSES,
         },
     )
-    # `HttpResponseBase`, not `HttpResponse`: a ZIP download is a `FileResponse`, which
-    # descends from `StreamingHttpResponse` and so is not an `HttpResponse` at all. The
-    # base class is the only type that covers a streamed body and a DRF `Response` both.
+    # `HttpResponseBase`, not `HttpResponse`: a ZIP download is a `StreamingHttpResponse`,
+    # which is not an `HttpResponse` at all. The base class is the only type that covers a
+    # streamed body and a DRF `Response` both.
     def get(self, request: Request, program_id: str) -> HttpResponseBase | Response:
         try:
             archive = build_program_service().music_archive(program_id=program_id)
@@ -776,6 +780,34 @@ class ProgramShareCollectionView(_StaffView):
         except ProgramError as exc:
             return self._problem(exc, request)
         return problems.envelope(request, {"share": _share_json(share), "program": _program_json(program)}, status=201)
+
+
+class ProgramShareAnnounceView(_StaffView):
+    """``POST`` — tell everyone in this published edition that it is up.
+
+    On the edition rather than on the programme because the edition is the choice: a
+    programme may carry a link for the hall screen, one for the sound desk and one for
+    participants, and only the organizer knows which of them is the one to send. It also
+    settles who hears about it — an edition cut to one отделение announces that отделение.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="programsAnnounceShare",
+        request=AnnounceProgramRequestSerializer,
+        responses={200: AnnouncementResourceSerializer, **_PROBLEM_RESPONSES},
+    )
+    def post(self, request: Request, program_id: str, share_id: str) -> Response:
+        serializer = AnnounceProgramRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.get_full_path(), request=request)
+        note = serializer.validated_data.get("note")
+        command = AnnounceProgramCommand(program_id=program_id, share_id=share_id, note=str(note) if note else None)
+        try:
+            result = build_program_service().announce_program(command)
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        return problems.envelope(request, {"notified": result.notified, "acts": result.acts, "skipped": result.skipped})
 
 
 class ProgramShareDetailView(_StaffView):

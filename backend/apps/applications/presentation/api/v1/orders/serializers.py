@@ -139,6 +139,9 @@ class ApplicationResourceSerializer(serializers.Serializer[dict[str, object]]):
     competitionId = serializers.UUIDField()
     applicantId = serializers.UUIDField()
     status = serializers.CharField()
+    # Ответ сервера на «можно ли ещё править» — чтобы экран не предлагал того,
+    # что эндпоинт откажет. Считается на чтении карточки.
+    editable = serializers.BooleanField()
     hasCorrections = serializers.BooleanField()
     correctionComment = serializers.CharField(allow_null=True)
     educationalOrganizationId = serializers.UUIDField(allow_null=True)

@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, Check, Play, SkipForward } from "lucide-react";
 import { useParams } from "react-router";
 
 import {
+  blockLine,
   moveRowNextTo,
   moveRowTo,
   type PublicProgram,
@@ -83,20 +84,23 @@ function PublicProgramTable({
     <div className="min-h-svh overflow-x-clip bg-background">
       {/* `min-w-0` on the column: a flex item sizes to its content by default, and the wide
           table would push the whole page sideways instead of scrolling inside itself. */}
-      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 md:py-12">
-        <header className="space-y-2">
+      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-3 px-2 py-4 sm:px-4 sm:py-6">
+        {/* The page is read off a phone backstage and off a screen beside it, so the
+            chrome is kept to a line or two: every row of padding here is a performance
+            that falls below the fold. */}
+        <header className="space-y-1">
           {heading ? (
             <p className="font-medium text-muted-foreground text-xs uppercase tracking-[0.18em]">
               {heading}
             </p>
           ) : null}
           <div className="flex flex-wrap items-baseline gap-2">
-            <h1 className="font-bold text-3xl text-foreground tracking-tight sm:text-4xl">
+            <h1 className="font-bold text-foreground text-xl tracking-tight sm:text-2xl">
               {program.name}
             </h1>
             {isHost ? <Badge variant="secondary">Управление программой</Badge> : null}
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-xs">
             {program.rows.length > 0
               ? `Пунктов: ${program.rows.length} · Продолжительность: ${formatSpan(program.totalSeconds)}`
               : "Пока ни один пункт не опубликован"}
@@ -132,13 +136,18 @@ function PublicProgramTable({
                     <th
                       key={column.key}
                       scope="col"
-                      className="whitespace-nowrap px-3 py-2.5 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+                      className="px-2 py-1.5 align-bottom font-medium text-muted-foreground text-[11px] uppercase tracking-wide sm:px-3"
                     >
-                      {column.label}
+                      {/* Capped like the cells below it: a column the organizer named
+                          «Ответственный за фонограмму» would otherwise set the column's
+                          width from its header alone. */}
+                      <span className="block max-w-[26ch] [overflow-wrap:anywhere]">
+                        {column.label}
+                      </span>
                     </th>
                   ))}
                   {isHost ? (
-                    <th scope="col" className="px-3 py-2.5 text-right">
+                    <th scope="col" className="px-2 py-1.5 text-right sm:px-3">
                       <span className="sr-only">Управление</span>
                     </th>
                   ) : null}
@@ -164,7 +173,7 @@ function PublicProgramTable({
           </div>
         )}
 
-        <footer className="pt-4 text-center text-muted-foreground text-xs">
+        <footer className="pt-1 text-center text-[11px] text-muted-foreground">
           Программа обновляется автоматически · «{APP_NAME}»
         </footer>
       </div>
@@ -190,6 +199,7 @@ function ProgramTableRow({
   const isPerformance = row.kind === "PERFORMANCE";
   const onStage = row.progress === "ON_STAGE";
   const behindUs = row.progress === "PERFORMED" || row.progress === "SKIPPED";
+  const block = isPerformance ? null : blockLine(row, columns);
 
   return (
     <tr
@@ -205,33 +215,63 @@ function ProgramTableRow({
               : "border-border border-b bg-muted/40 last:border-0"
       }
     >
-      {row.cells.map((cell, cellIndex) => {
-        const column = columns[cellIndex];
-        const emphasise = column === "TIME" || (column === "TITLE" && !isPerformance);
-        return (
-          <td
-            key={column ?? String(cellIndex)}
-            className={
-              emphasise
-                ? "whitespace-nowrap px-3 py-3 font-semibold text-base tabular-nums"
-                : "px-3 py-3 text-sm"
-            }
-          >
-            <span className={behindUs ? "line-through decoration-1" : undefined}>
-              {cell || <span className="text-muted-foreground">—</span>}
-            </span>
-            {/* The state is announced beside the first column so it is legible from the
-                hall without hunting for a status column that may not be published. */}
-            {cellIndex === 0 && onStage ? (
-              <Badge variant="success" className="ml-2">
-                Сейчас
-              </Badge>
+      {block !== null ? (
+        // A break is not an act with blank cells, so it is not drawn as one: one line
+        // across the whole table, pinned to the left edge, where it is readable without
+        // scrolling a table cut wide for the acts around it.
+        <td colSpan={columns.length} className="px-2 py-1.5 sm:px-3">
+          {/* Pinned at the cell's own padding, not at `left-0`: scrolled right, the line
+              keeps the gap it has at rest instead of riding the table's border. */}
+          <div className="sticky left-2 flex w-fit flex-wrap items-baseline gap-x-2 gap-y-0.5 sm:left-3">
+            {block.time ? (
+              <span className="font-semibold text-sm tabular-nums">{block.time}</span>
             ) : null}
-          </td>
-        );
-      })}
+            <span
+              className={
+                behindUs
+                  ? "font-medium text-sm uppercase tracking-wide line-through decoration-1"
+                  : "font-medium text-sm uppercase tracking-wide"
+              }
+            >
+              {block.title || "—"}
+            </span>
+            {block.extras.length > 0 ? (
+              <span className="text-muted-foreground text-xs">{block.extras.join(" · ")}</span>
+            ) : null}
+            {onStage ? <Badge variant="success">Сейчас</Badge> : null}
+          </div>
+        </td>
+      ) : (
+        row.cells.map((cell, cellIndex) => {
+          const column = columns[cellIndex];
+          return (
+            <td
+              key={column ?? String(cellIndex)}
+              className={
+                column === "TIME"
+                  ? "whitespace-nowrap px-2 py-1.5 align-top font-semibold text-sm tabular-nums sm:px-3"
+                  : "px-2 py-1.5 align-top text-sm sm:px-3"
+              }
+            >
+              {/* The cap is what keeps the table narrow: a collective with six surnames in
+                  its name, or a title that is half a sentence, wraps onto a second and a
+                  third line instead of widening its column and pushing everything to the
+                  right of it off the screen. `align-top` above is its other half — beside a
+                  cell that wrapped, the short ones still start at the first line. */}
+              <div className="flex max-w-[26ch] flex-wrap items-baseline gap-x-1.5 [overflow-wrap:anywhere]">
+                <span className={behindUs ? "line-through decoration-1" : undefined}>
+                  {cell || <span className="text-muted-foreground">—</span>}
+                </span>
+                {/* The state is announced beside the first column so it is legible from the
+                    hall without hunting for a status column that may not be published. */}
+                {cellIndex === 0 && onStage ? <Badge variant="success">Сейчас</Badge> : null}
+              </div>
+            </td>
+          );
+        })
+      )}
       {isHost ? (
-        <td className="px-3 py-3">
+        <td className="px-2 py-1.5 sm:px-3">
           <HostControls slug={slug} row={row} rows={rows} index={index} columns={columns} />
         </td>
       ) : null}
@@ -288,7 +328,7 @@ function HostControls({
   };
 
   return (
-    <div className="flex items-center justify-end gap-1">
+    <div className="flex items-center justify-end gap-0.5">
       <Button
         variant={row.progress === "ON_STAGE" ? "primary" : "outline"}
         size="xs"
@@ -296,7 +336,7 @@ function HostControls({
         disabled={busy}
         onClick={() => mark("ON_STAGE")}
       >
-        <Play className="size-4" />
+        <Play className="size-3.5" />
       </Button>
       <Button
         variant="ghost"
@@ -305,7 +345,7 @@ function HostControls({
         disabled={busy}
         onClick={() => mark("PERFORMED")}
       >
-        <Check className="size-4" />
+        <Check className="size-3.5" />
       </Button>
       <Button
         variant="ghost"
@@ -314,7 +354,7 @@ function HostControls({
         disabled={busy}
         onClick={() => mark("SKIPPED")}
       >
-        <SkipForward className="size-4" />
+        <SkipForward className="size-3.5" />
       </Button>
       <Button
         variant="ghost"
@@ -323,7 +363,7 @@ function HostControls({
         disabled={busy || index === 0}
         onClick={() => move(index - 1)}
       >
-        <ArrowUp className="size-4" />
+        <ArrowUp className="size-3.5" />
       </Button>
       <Button
         variant="ghost"
@@ -332,7 +372,7 @@ function HostControls({
         disabled={busy || index === rows.length - 1}
         onClick={() => move(index + 1)}
       >
-        <ArrowDown className="size-4" />
+        <ArrowDown className="size-3.5" />
       </Button>
       <MoveToNumber
         label={label}

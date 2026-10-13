@@ -14,6 +14,7 @@ __all__ = [
     "PerformanceAlreadyInProgramError",
     "PerformanceNotAvailableError",
     "ProgramColumnNotFoundError",
+    "ProgramConcurrencyError",
     "ProgramError",
     "ProgramItemNotFoundError",
     "ProgramNotFoundError",
@@ -35,6 +36,23 @@ class InvalidProgramDataError(ProgramError):
     """Raised when a value object rejects its input (blank name, bad duration, ...)."""
 
     code = "invalid_program_data"
+
+
+class ProgramConcurrencyError(ProgramError):
+    """Raised when the program moved on between being read and being written.
+
+    Every write to a program rewrites the whole aggregate - root row, items, columns,
+    links - from the copy it loaded. That is the right unit to save in and the wrong
+    thing to do blindly: a write that read the program before somebody else's change
+    landed puts every field back the way it found them. The start time set a second
+    earlier is simply gone, and nothing anywhere reports that it happened.
+
+    So the version the copy was read at is checked at the moment of writing. It is the
+    same ``version`` the API already hands to every client - it was being incremented,
+    stored and returned, and never once used to refuse anything.
+    """
+
+    code = "program_conflict"
 
 
 class ProgramNotFoundError(ProgramError):

@@ -78,7 +78,12 @@ def _submissions() -> DjangoSubmissionRepository:
 
 
 def build_get_submission_handler() -> GetSubmissionHandler:
-    return GetSubmissionHandler(submissions=_submissions(), organization=DjangoOrganizationReadModel())
+    return GetSubmissionHandler(
+        submissions=_submissions(),
+        organization=DjangoOrganizationReadModel(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+    )
 
 
 def build_list_competition_submissions_handler() -> ListCompetitionSubmissionsHandler:

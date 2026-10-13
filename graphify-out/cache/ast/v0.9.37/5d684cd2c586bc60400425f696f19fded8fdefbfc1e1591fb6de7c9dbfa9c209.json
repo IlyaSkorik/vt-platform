@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_frontend_deploy_nginx_proxy_archive_conf_inc", "label": "proxy-archive.conf.inc", "file_type": "code", "source_file": "frontend/deploy/nginx/proxy-archive.conf.inc", "source_location": "L1"}], "edges": [], "input_tokens": 0, "output_tokens": 0, "raw_calls": []}

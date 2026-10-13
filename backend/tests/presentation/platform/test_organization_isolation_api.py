@@ -192,7 +192,7 @@ class TestApplicationsAreScopedToTheirOrganization:
         # A ZIP download is a streamed FileResponse; the test client's response type is
         # the non-streaming alias, so the body is reached through the concrete class.
         assert isinstance(response, StreamingHttpResponse)
-        assert b"".join(response.streaming_content)
+        assert b"".join(response)
 
 
 def _create_template(client: APIClient, name: str, document_type: str = "DIPLOMA") -> str:

@@ -12,6 +12,7 @@ import {
   visibleStaffNavigation,
 } from "@/applications/staff/navigation";
 import { WorkspaceSwitcher } from "@/applications/workspace-switcher";
+import { ActingAsBanner } from "@/features/acting-as-organization";
 import { APP_NAME, ROUTES } from "@/shared/config";
 import { cn } from "@/shared/lib";
 import {
@@ -285,6 +286,7 @@ export function StaffLayout(): React.JSX.Element {
         </DrawerContent>
       </Drawer>
       <div className="flex min-w-0 flex-1 flex-col">
+        <ActingAsBanner />
         <header className="sticky top-0 z-[var(--z-sticky)] flex min-h-16 items-center gap-3 border-border border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <IconButton
             variant="ghost"

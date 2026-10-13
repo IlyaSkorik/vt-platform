@@ -21,6 +21,7 @@ import {
 } from "@/applications/platform/lib/billing";
 import { FeeTierEditor } from "@/applications/platform/ui/fee-tier-editor";
 import { ModuleSwitchboard } from "@/applications/platform/ui/module-switchboard";
+import { EnterPanelButton } from "@/features/acting-as-organization";
 import {
   Badge,
   Button,
@@ -292,6 +293,10 @@ function OrganizationCard({
           <Button variant="ghost" loading={update.isPending} onClick={toggleStatus}>
             {suspended ? "Возобновить" : "Приостановить"}
           </Button>
+          {/* Рядом с настройками, а не в заголовке карточки: зайти в кабинет —
+              такое же действие над организацией, как сменить ей тариф, и
+              приостановленная организация разбирается изнутри ровно так же. */}
+          <EnterPanelButton organizationId={organization.id} organizationName={organization.name} />
         </div>
       </CardContent>
     </Card>

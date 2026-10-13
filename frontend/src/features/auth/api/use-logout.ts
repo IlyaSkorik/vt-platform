@@ -1,6 +1,6 @@
 import { type UseMutationResult, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ApiError } from "@/shared/api";
-import { tokenStore } from "@/shared/api";
+import { actingOrganizationStore, tokenStore } from "@/shared/api";
 import { deleteCurrentSession } from "@/shared/api/generated/identity/identity";
 import { authKeys } from "./current-user";
 
@@ -23,6 +23,8 @@ export function useLogout(): UseMutationResult<void, ApiError, void> {
       }
     },
     onSettled: async () => {
+      // Вместе с сессией кончается и кабинет, в который оператор заходил.
+      actingOrganizationStore.set(null);
       queryClient.setQueryData(authKeys.currentUser, null);
       await queryClient.clear();
     },

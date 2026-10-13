@@ -178,9 +178,19 @@ class ApplicationView:
     created_at: datetime
     updated_at: datetime
     version: int
+    #: Whether the applicant may still change anything in this order: any of its
+    #: numbers still editable, or — while it is a draft — any door into the festival
+    #: still open. The same rule the command use cases enforce, answered once so the
+    #: «Редактировать» button is absent rather than present and refused.
+    #:
+    #: Computed on the detail read and nowhere else. Command results leave it at
+    #: ``True`` and mean nothing by it: a command that was just accepted was allowed,
+    #: and the clients refetch the order after every change rather than believing the
+    #: echo.
+    editable: bool = True
 
     @classmethod
-    def from_application(cls, application: Application) -> ApplicationView:
+    def from_application(cls, application: Application, *, editable: bool = True) -> ApplicationView:
         org = application.organization_name
         payer = application.payer_name
         total = application.total_price
@@ -216,6 +226,7 @@ class ApplicationView:
             created_at=application.created_at,
             updated_at=application.updated_at,
             version=application.version,
+            editable=editable,
         )
 
 

@@ -7,7 +7,6 @@ import {
   REGULATION_PRICE_NOTE,
   submissionStatusPresentation,
   useApplication,
-  useRegistration,
 } from "@/entities/application";
 import { BenefitDocumentsCard } from "@/features/application-benefit-documents";
 import { PhonogramsCard } from "@/features/application-phonograms";
@@ -30,19 +29,9 @@ import {
   PageTitle,
 } from "@/shared/ui";
 
-/**
- * Статусы заказа, в которых его ещё правят.
- *
- * Оплата заказ не запечатывает: пока идёт приём заявок, участник правит состав и
- * номер — фамилию с заявки печатают на дипломе, и оплатить пораньше не должно
- * означать потерять право на исправление. Закрыты только завершённый и отменённый.
- */
-const EDITABLE = new Set(["DRAFT", "SUBMITTED", "WAITING_PAYMENT", "PAID"]);
-
 export function ApplicationDetailPage(): React.JSX.Element {
   const { applicationId } = useParams<{ applicationId: string }>();
   const { data: application, isLoading } = useApplication(applicationId);
-  const { data: registration } = useRegistration(application?.competitionId);
 
   if (isLoading || !application) {
     return (
@@ -55,11 +44,11 @@ export function ApplicationDetailPage(): React.JSX.Element {
   }
 
   const status = applicationStatusPresentation(application.status);
-  const registrationOpen = registration?.registrationOpen === true;
-  // Редактировать можно пока открыта регистрация, а также после её закрытия —
-  // если организатор запросил исправления или недостающие файлы (hasCorrections).
-  const canEdit =
-    (registrationOpen || application.hasCorrections) && EDITABLE.has(application.status);
+  // Отвечает сервер — тем же правилом, которым откажет эндпоинту (`editable` на
+  // заявке). Считать его здесь заново значит считать иначе: «приём на фестивале
+  // открыт» — это не то же, что «приём открыт по моей номинации», и у фестиваля
+  // с остановленным вокалом и работающей хореографией ответы разные.
+  const canEdit = application.editable;
   // Черновик — это ещё не заявка: его дозаполняют в мастере подачи. Поданную заявку
   // правят на отдельном экране редактирования, где сказано, что она уже у организатора
   // и что о правках ему сообщат.

@@ -10,17 +10,26 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 from typing import Any
+from unittest.mock import patch
 
 import pytest
+from django.core import mail
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import CategoryModel
+from apps.identity.infrastructure.models.user import UserModel
 from apps.identity.presentation.api.v1.auth import composition as identity_composition
 from apps.organization.application.dto.commands import ProvisionOwnerCommand
 from apps.organization.composition import build_provision_owner_handler
+from apps.programs.application.commands import UpdateProgramCommand
+from apps.programs.composition import build_program_service
+from apps.programs.domain.entities import Program
+from apps.programs.domain.exceptions import ProgramConcurrencyError
+from apps.programs.infrastructure.repositories import DjangoProgramRepository
+from apps.teachers.infrastructure.models import TeacherModel
 
 pytestmark = pytest.mark.django_db
 
@@ -94,6 +103,19 @@ def _act(
         teachers=[{"first_name": "Мария", "last_name": "Иванова", "middle_name": None, "role": "COACH"}],
     )
     return str(submission.id)
+
+
+def _applicant(email: str, first_name: str, last_name: str) -> UserModel:
+    """An account an announcement can actually be delivered to."""
+    return UserModel.objects.create(
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+        locale="ru",
+        timezone="Europe/Minsk",
+        password_algorithm="argon2",
+        password_hash="x",
+    )
 
 
 def _create_program(client: APIClient, scope: tuple[str, str], **overrides: Any) -> dict[str, Any]:
@@ -377,6 +399,72 @@ class TestBufferAndOrder:
         assert staff_client.patch(f"{_PROGRAMS}/{program_id}", {"bufferSeconds": 7200}, format="json").status_code == 400
 
 
+class TestOneWriteDoesNotUndoAnother:
+    """A program is read, changed and written back whole, by every endpoint there is.
+
+    Which makes two overlapping writes a silent data loss: the later one restores every
+    field to what *it* read, so the start time an organizer set a second earlier simply
+    comes back empty after a reload. The version each copy was read at is what makes
+    that refusable instead of invisible.
+    """
+
+    def test_a_start_set_on_an_untimed_programme_survives_a_reload(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        created = _create_program(staff_client, scope, startsAt=None)
+        assert created["startsAt"] is None
+
+        patched = staff_client.patch(f"{_PROGRAMS}/{created['id']}", {"startsAt": "2026-10-06T21:00:00.000Z"}, format="json")
+        assert patched.status_code == 200, patched.data
+
+        reloaded = staff_client.get(f"{_PROGRAMS}/{created['id']}")
+        assert reloaded.data["data"]["startsAt"] == datetime(2026, 10, 6, 21, 0, tzinfo=UTC)
+
+    def test_a_write_that_read_the_programme_too_early_is_refused(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        program_id = _create_program(staff_client, scope, startsAt=None)["id"]
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+
+        repository = DjangoProgramRepository()
+        # One request has read the programme and not yet written it back.
+        stale = repository.get(uuid.UUID(program_id))
+        assert stale is not None and stale.starts_at is None
+
+        # Another sets the start and commits in the meantime.
+        build_program_service().update_program(UpdateProgramCommand(program_id=program_id, starts_at=TEN_AM))
+
+        # The first now finishes its own work. It must not put the start back to None.
+        stale.reorder([item.id for item in stale.items], now=TEN_AM)
+        with pytest.raises(ProgramConcurrencyError):
+            repository.save(stale)
+        reloaded = repository.get(uuid.UUID(program_id))
+        assert reloaded is not None and reloaded.starts_at == TEN_AM
+
+    def test_a_settings_edit_replays_itself_rather_than_failing(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        """The settings are the one thing edited *while* the rest is being worked on.
+
+        A partial edit means the same thing on a fresher copy — «поставь начало в 10:00»
+        does not depend on what else moved — so it is replayed instead of reported.
+        """
+        program_id = _create_program(staff_client, scope, startsAt=None)["id"]
+        collided = {"yet": False}
+        read = DjangoProgramRepository.get
+
+        def read_then_let_somebody_else_in(self: DjangoProgramRepository, pid: uuid.UUID) -> Program | None:
+            program = read(self, pid)
+            # Exactly once, between this read and its write, another write lands.
+            if not collided["yet"]:
+                collided["yet"] = True
+                build_program_service().update_program(UpdateProgramCommand(program_id=str(pid), name="Переименована"))
+            return program
+
+        with patch.object(DjangoProgramRepository, "get", read_then_let_somebody_else_in):
+            updated = build_program_service().update_program(UpdateProgramCommand(program_id=program_id, starts_at=TEN_AM))
+
+        assert updated.starts_at == TEN_AM
+        # And the write it collided with is still there: the retry re-read rather than overwrote.
+        assert updated.name == "Переименована"
+
+
 class TestTheProgrammeTable:
     def test_the_programme_exposes_every_column_it_can_carry(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program = _create_program(staff_client, scope)
@@ -390,10 +478,12 @@ class TestTheProgrammeTable:
             "NOMINATION",
             "DISCIPLINE",
             "PARTICIPANT_GROUP",
+            "PARTICIPANT_COUNT",
             "AGE_CATEGORY",
             "PARTICIPATION_FORMAT",
             "TEACHERS",
             "ORGANIZATION",
+            "CONTACTS",
             "COMMENT",
         ]
         assert {column["key"]: column["label"] for column in program["availableColumns"]}["TEACHERS"] == "Педагог"
@@ -419,6 +509,101 @@ class TestTheProgrammeTable:
         # Every taxonomy column the table offers is resolved, not just the ids.
         for key in ("nomination", "discipline", "ageCategory", "participantGroup", "participationFormat"):
             assert key in item
+
+
+class TestHowManyPeopleStandOnStage:
+    """The headcount column, which is not the number of performer rows.
+
+    A collective is one row in the entry and the headcount its applicant typed; a solo
+    is one row and one person. The organizer needs the second number - it is how many
+    chairs, microphones and diplomas the act costs - and ``len(participants)`` answers
+    the wrong question for exactly the entries where it matters.
+    """
+
+    def test_a_collective_reports_the_headcount_it_stated(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Калинка", seconds=200)
+        submission = SubmissionModel.objects.get(id=submission_id)
+        submission.participants = [{"id": str(uuid.uuid4()), "display_name": "Ансамбль «Росинка»", "member_count": 14}]
+        submission.save(update_fields=["participants"])
+
+        program_id = _create_program(staff_client, scope)["id"]
+        item = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill").data["data"]["items"][0]
+        assert item["participantCount"] == 14
+        assert len(item["participants"]) == 1
+
+    def test_several_performers_without_a_headcount_are_counted_one_each(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Дуэт", seconds=200)
+        submission = SubmissionModel.objects.get(id=submission_id)
+        # No ``member_count`` at all: entries filled in before the field existed.
+        submission.participants = [
+            {"id": str(uuid.uuid4()), "display_name": "Иванов Иван"},
+            {"id": str(uuid.uuid4()), "display_name": "Петрова Анна"},
+        ]
+        submission.save(update_fields=["participants"])
+
+        program_id = _create_program(staff_client, scope)["id"]
+        item = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill").data["data"]["items"][0]
+        assert item["participantCount"] == 2
+
+    def test_a_break_puts_nobody_on_stage(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        program_id = _create_program(staff_client, scope)["id"]
+        added = staff_client.post(f"{_PROGRAMS}/{program_id}/items", {"title": "Перерыв", "durationSeconds": 600}, format="json")
+        assert added.status_code == 201, added.data
+        assert added.data["data"]["items"][0]["participantCount"] == 0
+
+
+class TestWhoToRingAboutAnAct:
+    """The contacts column: the teacher's phone, and the applicant's when there is none."""
+
+    def test_the_teacher_of_record_is_the_number_to_call(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        teacher = TeacherModel.objects.create(
+            owner_id=uuid.uuid4(),
+            first_name="Мария",
+            last_name="Иванова",
+            role="COACH",
+            phone="+375291112233",
+            status="ACTIVE",
+        )
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        submission = SubmissionModel.objects.get(id=submission_id)
+        submission.teachers = [
+            {"first_name": "Мария", "last_name": "Иванова", "middle_name": None, "role": "COACH", "directory_teacher_id": str(teacher.id)}
+        ]
+        submission.save(update_fields=["teachers"])
+
+        program_id = _create_program(staff_client, scope)["id"]
+        item = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill").data["data"]["items"][0]
+        assert item["contacts"] == ["+375291112233"]
+
+    def test_an_act_with_no_reachable_teacher_falls_back_to_the_applicant(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        applicant = UserModel.objects.create(
+            email="mother@example.com",
+            phone="+375337778899",
+            first_name="Анна",
+            last_name="Петрова",
+            locale="ru",
+            timezone="Europe/Minsk",
+            password_algorithm="argon2",
+            password_hash="x",
+        )
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        # The seeded teacher is hand-typed: a name on the entry and nowhere to ring.
+        SubmissionModel.objects.filter(id=submission_id).update(applicant_id=applicant.id)
+
+        program_id = _create_program(staff_client, scope)["id"]
+        item = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill").data["data"]["items"][0]
+        assert item["contacts"] == ["+375337778899"]
+
+    def test_an_act_nobody_left_a_number_for_says_so_with_a_blank(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        program_id = _create_program(staff_client, scope)["id"]
+        item = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill").data["data"]["items"][0]
+        assert item["contacts"] == []
 
 
 class TestCustomColumns:
@@ -646,6 +831,134 @@ class TestPublicEditions:
         revoked = staff_client.delete(f"{_PROGRAMS}/{program_id}/shares/{share_id}")
         assert revoked.status_code == 200
         assert revoked.data["data"]["shares"] == []
+
+    def test_an_edition_announces_itself_to_everyone_it_covers(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        """The gap this closes: the link exists and nobody knows it does."""
+        competition_id, nomination_id = scope
+        first = _applicant("petrova@example.com", "Анна", "Петрова")
+        second = _applicant("sidorov@example.com", "Пётр", "Сидоров")
+        katyusha = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        kalinka = _act(competition_id=competition_id, nomination_id=nomination_id, title="Калинка", seconds=200)
+        SubmissionModel.objects.filter(id=katyusha).update(applicant_id=first.id)
+        SubmissionModel.objects.filter(id=kalinka).update(applicant_id=second.id)
+        program_id = _create_program(staff_client, scope)["id"]
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+        created = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Для участников"}, format="json")
+        share = created.data["data"]["share"]
+        mail.outbox.clear()
+
+        announced = staff_client.post(
+            f"{_PROGRAMS}/{program_id}/shares/{share['id']}/announce",
+            {"note": "Сбор за час до начала."},
+            format="json",
+        )
+
+        assert announced.status_code == 200, announced.data
+        assert announced.data["data"] == {"notified": 2, "acts": 2, "skipped": 0}
+        assert sorted(address for message in mail.outbox for address in message.to) == [
+            "petrova@example.com",
+            "sidorov@example.com",
+        ]
+        letter = next(message for message in mail.outbox if message.to == ["petrova@example.com"])
+        assert letter.subject == "Программа опубликована"
+        # The number, the time and the act — what the reader is actually being told —
+        # and the link for everything else.
+        assert "Катюша" in letter.body
+        # Ten UTC read on the wall in the festival's own zone, the same minute the
+        # constructor, the link and the PDF all show.
+        assert "13:00" in letter.body
+        assert "Сбор за час до начала." in letter.body
+        assert share["path"] in letter.body
+        # Their own act only: a letter listing the whole festival is a letter nobody reads.
+        assert "Калинка" not in letter.body
+
+    def test_a_studio_with_several_acts_is_written_to_once(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        studio = _applicant("studio@example.com", "Ольга", "Руководитель")
+        for title in ("Катюша", "Калинка", "Барыня"):
+            submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title=title, seconds=200)
+            SubmissionModel.objects.filter(id=submission_id).update(applicant_id=studio.id)
+        program_id = _create_program(staff_client, scope)["id"]
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+        share = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Для участников"}, format="json").data["data"]["share"]
+        mail.outbox.clear()
+
+        announced = staff_client.post(f"{_PROGRAMS}/{program_id}/shares/{share['id']}/announce", {}, format="json")
+
+        assert announced.data["data"] == {"notified": 1, "acts": 3, "skipped": 0}
+        assert len(mail.outbox) == 1
+        for title in ("Катюша", "Калинка", "Барыня"):
+            assert title in mail.outbox[0].body
+
+    def test_an_edition_cut_to_part_of_the_day_announces_only_that_part(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        first = _applicant("first@example.com", "Анна", "Петрова")
+        second = _applicant("second@example.com", "Пётр", "Сидоров")
+        katyusha = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        kalinka = _act(competition_id=competition_id, nomination_id=nomination_id, title="Калинка", seconds=200)
+        SubmissionModel.objects.filter(id=katyusha).update(applicant_id=first.id)
+        SubmissionModel.objects.filter(id=kalinka).update(applicant_id=second.id)
+        program_id = _create_program(staff_client, scope)["id"]
+        items = staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill").data["data"]["items"]
+        only_kalinka = next(item for item in items if item["title"] == "Калинка")
+        share = staff_client.post(
+            f"{_PROGRAMS}/{program_id}/shares",
+            {"name": "Второе отделение", "itemIds": [only_kalinka["id"]]},
+            format="json",
+        ).data["data"]["share"]
+        mail.outbox.clear()
+
+        announced = staff_client.post(f"{_PROGRAMS}/{program_id}/shares/{share['id']}/announce", {}, format="json")
+
+        assert announced.data["data"] == {"notified": 1, "acts": 1, "skipped": 0}
+        assert [message.to for message in mail.outbox] == [["second@example.com"]]
+
+    def test_an_act_nobody_can_be_written_to_about_is_counted_not_hidden(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        reachable = _applicant("reachable@example.com", "Анна", "Петрова")
+        katyusha = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        # The second act's applicant has no account on the platform at all.
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Калинка", seconds=200)
+        SubmissionModel.objects.filter(id=katyusha).update(applicant_id=reachable.id)
+        program_id = _create_program(staff_client, scope)["id"]
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+        share = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Для участников"}, format="json").data["data"]["share"]
+        mail.outbox.clear()
+
+        announced = staff_client.post(f"{_PROGRAMS}/{program_id}/shares/{share['id']}/announce", {}, format="json")
+
+        # One letter sent and one act named as unreachable, rather than a failed request:
+        # forty letters delivered beats none plus an error about the forty-first.
+        assert announced.data["data"] == {"notified": 1, "acts": 1, "skipped": 1}
+        assert [message.to for message in mail.outbox] == [["reachable@example.com"]]
+
+    def test_breaks_are_not_announced_to_anybody(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        applicant = _applicant("solo@example.com", "Анна", "Петрова")
+        katyusha = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        SubmissionModel.objects.filter(id=katyusha).update(applicant_id=applicant.id)
+        program_id = _create_program(staff_client, scope)["id"]
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items", {"title": "Перерыв", "durationSeconds": 600}, format="json")
+        share = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Для участников"}, format="json").data["data"]["share"]
+        mail.outbox.clear()
+
+        announced = staff_client.post(f"{_PROGRAMS}/{program_id}/shares/{share['id']}/announce", {}, format="json")
+
+        assert announced.data["data"] == {"notified": 1, "acts": 1, "skipped": 0}
+        assert "Перерыв" not in mail.outbox[0].body
+
+    def test_announcing_a_link_from_another_programme_is_refused(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        program_id = _create_program(staff_client, scope)["id"]
+        other_id = _create_program(staff_client, scope, name="Другая")["id"]
+        share = staff_client.post(f"{_PROGRAMS}/{other_id}/shares", {"name": "Чужая"}, format="json").data["data"]["share"]
+
+        refused = staff_client.post(f"{_PROGRAMS}/{program_id}/shares/{share['id']}/announce", {}, format="json")
+
+        assert refused.status_code == 404
+
+    def test_an_outsider_cannot_announce(self, outsider_client: APIClient, scope: tuple[str, str]) -> None:
+        assert outsider_client.post(f"{_PROGRAMS}/{uuid.uuid4()}/shares/{uuid.uuid4()}/announce", {}, format="json").status_code == 403
 
     def test_an_edition_cannot_select_a_foreign_item(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         program_id = _create_program(staff_client, scope)["id"]

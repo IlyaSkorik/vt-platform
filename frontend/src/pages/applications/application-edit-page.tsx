@@ -17,6 +17,7 @@ import {
   PerformanceBuilder,
   ServicesCard,
 } from "@/features/registration-wizard";
+import type { ApplicationResource } from "@/shared/api/generated/model-applications";
 import { ROUTES } from "@/shared/config";
 import {
   Alert,
@@ -36,9 +37,6 @@ import {
   PageTitle,
 } from "@/shared/ui";
 
-/** Статусы заказа, в которых экран редактирования имеет смысл (черновик уходит в мастер). */
-const EDITABLE_ORDER_STATUSES = new Set(["SUBMITTED", "WAITING_PAYMENT", "PAID"]);
-
 /**
  * Статусы заказа, в которых ещё меняется его состав: номера, услуги, согласия,
  * плательщик.
@@ -49,6 +47,21 @@ const EDITABLE_ORDER_STATUSES = new Set(["SUBMITTED", "WAITING_PAYMENT", "PAID"]
  * правится до конца приёма заявок.
  */
 const COMPOSABLE_ORDER_STATUSES = new Set(["SUBMITTED"]);
+
+/**
+ * Чем объясняется право на правку, когда приём заявок уже закрыт.
+ *
+ * Два случая, и участнику важно, который из них его: возврат на доработку — это
+ * просьба организатора с ограниченным сроком, а очередь — ожидание, из которого
+ * заявка может и не выйти. Сказать «регистрация закрыта» и замолчать значило бы
+ * оставить открытую форму без объяснения, почему она открыта.
+ */
+function closedNotice(application: ApplicationResource): string {
+  if (application.hasCorrections) {
+    return "Регистрация закрыта — правки приняты по запросу организатора.";
+  }
+  return "Регистрация закрыта: заявка стоит в листе ожидания, и правки принимаются, пока очередь открыта.";
+}
 
 /** Статусы заказа, в которых чек ещё принимают: пока оплата не зачтена. */
 const RECEIPT_ORDER_STATUSES = new Set(["SUBMITTED", "WAITING_PAYMENT"]);
@@ -97,16 +110,11 @@ export function ApplicationEditPage(): React.JSX.Element {
     );
   }
 
-  // Editing stays open while registration runs, and after it closes only for an order
-  // the organizer sent back. Anything else is read-only, and the card is the place to
-  // read it — the same rule the detail screen applies to its "Редактировать" button.
-  //
-  // Оплата сюда не входит: заказ, оплаченный в первый день, правится ровно столько же,
-  // сколько неоплаченный — до конца приёма заявок. Завершённый и отменённый закрыты.
-  const editable =
-    (registration.registrationOpen || application.hasCorrections) &&
-    EDITABLE_ORDER_STATUSES.has(application.status);
-  if (!editable) {
+  // Один и тот же вопрос, что у кнопки «Редактировать» на карточке, и один ответ:
+  // правка живёт, пока идёт приём заявок, а после его конца — только у заявки в
+  // очереди и у той, которую организатор вернул на доработку. Остальное доступно на
+  // чтение, и читают его на карточке.
+  if (!application.editable) {
     return <Navigate to={detailTo} replace />;
   }
 
@@ -144,9 +152,7 @@ export function ApplicationEditPage(): React.JSX.Element {
           <p className="mt-1 text-sm">
             Каждое изменение сохраняется сразу — отдельной кнопки «Сохранить» здесь нет. Организатор
             получит письмо со списком внесённых правок.
-            {registration.registrationOpen
-              ? ""
-              : " Регистрация закрыта — правки приняты по запросу организатора."}
+            {registration.registrationOpen ? "" : ` ${closedNotice(application)}`}
           </p>
           {composable ? null : (
             <p className="mt-1 text-sm">

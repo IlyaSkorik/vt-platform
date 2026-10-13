@@ -5,6 +5,14 @@ items and shares synchronized to the aggregate's current contents. Children the
 aggregate no longer holds are soft-deleted rather than dropped, so a removed slot or
 a revoked link stays auditable - and a revoked slug stays claimed, which is why the
 unique constraint on it is unconditional.
+
+Saving the whole aggregate is the right unit and the wrong thing to do blindly. Every
+endpoint of this context reads the program, changes one thing and writes all of it
+back, so two writes that overlap do not merge - the later one restores every field to
+what it read. An organizer who set the start time and then moved a row watched the
+start time come back empty after a reload, with nothing anywhere saying so. The write
+is therefore conditional on the version the copy was read at, the same way the
+Applications context does it, and a stale write is refused rather than applied.
 """
 
 from __future__ import annotations
@@ -14,6 +22,7 @@ import uuid
 from django.db import transaction
 
 from apps.programs.domain.entities import Program
+from apps.programs.domain.exceptions import ProgramConcurrencyError
 from apps.programs.infrastructure.mappers import ProgramMapper
 from apps.programs.infrastructure.models import (
     ProgramColumnModel,
@@ -76,13 +85,27 @@ class DjangoProgramRepository:
 
     @transaction.atomic
     def save(self, program: Program) -> None:
-        """Persist the whole aggregate: root row plus synchronized children."""
-        ProgramModel.objects.update_or_create(id=program.id, defaults=ProgramMapper.root_fields(program))
+        """Persist the whole aggregate: root row plus synchronized children.
+
+        Refuses to write over a program that moved since this copy was read. The match
+        is on the version the aggregate was **loaded** at rather than ``version - 1``:
+        one use case may bump the version several times before a single save, so the
+        pre-image is the loaded version and the new value is the current one.
+        """
+        fields = ProgramMapper.root_fields(program)
+        updated = ProgramModel.objects.filter(id=program.id, version=program.initial_version).update(**fields)
+        if not updated:
+            if ProgramModel.objects.filter(id=program.id).exists():
+                raise ProgramConcurrencyError("Программа изменилась в другом окне — обновите страницу, чтобы не потерять чужие правки.")
+            ProgramModel.objects.create(id=program.id, **fields)
         # Columns first: an item's values are keyed by column id, so the columns they
         # refer to should exist by the time the items land.
         self._sync_columns(program)
         self._sync_items(program)
         self._sync_shares(program)
+        # The instance is now clean at its current version, so saving it again in the
+        # same use case is not a conflict with itself.
+        program.mark_persisted()
 
     # ------------------------------------------------------------------
     # Internals

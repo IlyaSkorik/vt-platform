@@ -10057,9 +10057,8 @@ paths:
         file. Columns arrive as a comma-separated list so the URL stays something that can be
         copied, bookmarked, or wired into a print button; omitting them exports every column.
 
-        The list is ordered, and the page follows it: a printed cut is laid out for one job by
-        the person printing it. A published edition is the other way round — canonical order,
-        so a column sits in the same place on every screen.
+        The list is ordered, and the page follows it: a cut of the table is laid out for one
+        job by the person taking it — the same rule a public link is published by.
       parameters:
       - in: query
         name: columns
@@ -10857,6 +10856,71 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/shares/{share_id}/announce:
+    post:
+      operationId: programsAnnounceShare
+      description: |-
+        ``POST`` — tell everyone in this published edition that it is up.
+
+        On the edition rather than on the programme because the edition is the choice: a
+        programme may carry a link for the hall screen, one for the sound desk and one for
+        participants, and only the organizer knows which of them is the one to send. It also
+        settles who hears about it — an edition cut to one отделение announces that отделение.
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: share_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnounceProgramRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AnnounceProgramRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnnounceProgramRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnouncementResource'
           description: ''
         '400':
           content:
@@ -13240,6 +13304,29 @@ components:
         * `VK_VIDEO` - VK_VIDEO
         * `RUTUBE` - RUTUBE
         * `VIMEO` - VIMEO
+    AnnounceProgramRequest:
+      type: object
+      description: Validate an announcement body. Everything about *who* is decided
+        by the edition.
+      properties:
+        note:
+          type: string
+          maxLength: 500
+    AnnouncementResource:
+      type: object
+      description: 'What came of an announcement: who was written to, and who could
+        not be.'
+      properties:
+        notified:
+          type: integer
+        acts:
+          type: integer
+        skipped:
+          type: integer
+      required:
+      - acts
+      - notified
+      - skipped
     ApplicationListResponse:
       type: object
       properties:
@@ -13278,6 +13365,8 @@ components:
           format: uuid
         status:
           type: string
+        editable:
+          type: boolean
         hasCorrections:
           type: boolean
         correctionComment:
@@ -13334,6 +13423,7 @@ components:
       - consents
       - correctionComment
       - createdAt
+      - editable
       - educationalOrganizationId
       - hasCorrections
       - id
@@ -15757,6 +15847,7 @@ components:
       - APPLICATION_CORRECTED
       - FILES_REQUESTED
       - RESULTS_PUBLISHED
+      - PROGRAM_PUBLISHED
       type: string
       description: |-
         * `APPLICATION_SUBMITTED` - APPLICATION_SUBMITTED
@@ -15768,6 +15859,7 @@ components:
         * `APPLICATION_CORRECTED` - APPLICATION_CORRECTED
         * `FILES_REQUESTED` - FILES_REQUESTED
         * `RESULTS_PUBLISHED` - RESULTS_PUBLISHED
+        * `PROGRAM_PUBLISHED` - PROGRAM_PUBLISHED
     NullEnum:
       type: 'null'
     OrderWithinGroupEnum:
@@ -17557,7 +17649,13 @@ components:
           type: array
           items:
             type: string
+        participantCount:
+          type: integer
         teachers:
+          type: array
+          items:
+            type: string
+        contacts:
           type: array
           items:
             type: string
@@ -17600,6 +17698,7 @@ components:
       required:
       - ageCategory
       - comment
+      - contacts
       - customValues
       - discipline
       - durationSeconds
@@ -17610,6 +17709,7 @@ components:
       - nomination
       - number
       - organization
+      - participantCount
       - participantGroup
       - participants
       - participationFormat
@@ -20365,6 +20465,8 @@ components:
           format: uuid
         status:
           type: string
+        editable:
+          type: boolean
         performance:
           oneOf:
           - $ref: '#/components/schemas/_PerformanceResource'
@@ -20399,6 +20501,7 @@ components:
       - attachments
       - competitionId
       - createdAt
+      - editable
       - id
       - participants
       - performance

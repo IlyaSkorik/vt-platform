@@ -24,13 +24,16 @@ from apps.competitions.infrastructure.models.taxonomy import CategoryModel
 from apps.identity.presentation.api.v1.auth import composition as identity_composition
 from apps.organization.application.dto.commands import ProvisionOwnerCommand
 from apps.organization.composition import build_provision_owner_handler
+from apps.programs.application.rendering import DISPLAY_TZ
 
 pytestmark = pytest.mark.django_db
 
 _PASSWORD = "V3ry$ecurePass!"
 _PROGRAMS = "/api/v1/staff/programs"
 _PUBLIC = "/api/v1/public/programs"
-TEN_AM = datetime(2026, 8, 1, 10, 0, tzinfo=UTC)
+#: Ten in the morning **in the hall**: every cell of a public table is rendered in the
+#: festival's zone, so a fixture pinned to UTC would assert 13:00.
+TEN_AM = datetime(2026, 8, 1, 10, 0, tzinfo=DISPLAY_TZ)
 
 
 @pytest.fixture
@@ -94,7 +97,7 @@ def _published_program(
             "competitionId": competition_id,
             "nominationId": nomination_id,
             "name": "Вокал",
-            "startsAt": TEN_AM.isoformat().replace("+00:00", "Z"),
+            "startsAt": TEN_AM.astimezone(UTC).isoformat().replace("+00:00", "Z"),
             "bufferSeconds": 40,
         },
         format="json",
@@ -302,7 +305,11 @@ class TestPublicContent:
         slug, program_id, _items = _published_program(staff_client, scope, columns=["TIME"])
         organizer = staff_client.get(f"{_PROGRAMS}/{program_id}").data["data"]
         public = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
-        assert [item["schedule"]["startsAt"].strftime("%H:%M") for item in organizer["items"]] == [row["cells"][0] for row in public["rows"]]
+        # Both sides in the festival's zone: the organizer's screen carries the instant and
+        # renders it in the browser, the public link carries the already-rendered cell.
+        assert [item["schedule"]["startsAt"].astimezone(DISPLAY_TZ).strftime("%H:%M") for item in organizer["items"]] == [
+            row["cells"][0] for row in public["rows"]
+        ]
 
     def test_a_partial_edition_publishes_only_its_own_rows(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, _program_id, _items = _published_program(staff_client, scope, name="Только второй номер", item_slice=slice(1, 2))
@@ -329,7 +336,8 @@ class TestPublicContent:
         data = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
         assert [row["kind"] for row in data["rows"]] == ["PERFORMANCE", "PERFORMANCE", "BREAK"]
         # A break has no participant, so that cell is blank rather than a placeholder.
-        assert data["rows"][-1]["cells"] == ["3", "10:08", "", "Перерыв"]
+        # No «№»: a break is a gap in the running order, not an act with a number.
+        assert data["rows"][-1]["cells"] == ["", "10:08", "", "Перерыв"]
 
     def test_a_whole_programme_edition_keeps_following_the_programme(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, program_id, _items = _published_program(staff_client, scope, name="Экран у сцены")

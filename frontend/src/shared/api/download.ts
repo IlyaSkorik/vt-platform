@@ -1,4 +1,5 @@
 import { apiClient, toApiError } from "./client";
+import { DOWNLOAD_TIMEOUT_MS } from "./config";
 
 /**
  * Fetching an authenticated download and handing it to the browser.
@@ -40,7 +41,11 @@ export async function saveAuthenticatedDownload(path: string, fallbackName: stri
   let blob: Blob;
   let disposition: string | null;
   try {
-    const response = await apiClient(path);
+    // Not the shared policy: a download waits out a server that is still assembling the
+    // file, and it is never retried. `retry: 0` matters as much as the timeout — GET is
+    // retryable by default, so a ZIP that timed out was re-requested twice more, and the
+    // server rebuilt the whole archive each time while the organizer saw one spinner.
+    const response = await apiClient(path, { timeout: DOWNLOAD_TIMEOUT_MS, retry: 0 });
     blob = await response.blob();
     disposition = response.headers.get("Content-Disposition");
   } catch (error) {

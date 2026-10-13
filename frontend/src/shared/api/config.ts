@@ -24,10 +24,26 @@ export const HEADER = {
   idempotencyKey: "Idempotency-Key",
   ifMatch: "If-Match",
   acceptLanguage: "Accept-Language",
+  actingOrganization: "X-Acting-Organization",
 } as const;
 
 /** Primary locale (ARCH-001 §8.6 — ru-RU primary, i18n-ready). */
 export const DEFAULT_LOCALE = "ru-RU";
+
+/**
+ * Сколько ждать скачивание файла, который сервер ещё только собирает.
+ *
+ * `API_TIMEOUT_MS` — про JSON-ответ: его нет за 15 секунд, значит не будет. Для
+ * выгрузок это неверно дважды. Архив фонограмм фестиваля собирается из сотен уже
+ * загруженных файлов и целиком пишется в спул, прежде чем уйдёт первый байт, — то
+ * есть все эти секунды клиент не видит вообще ничего; а потом эти сотни мегабайт
+ * ещё надо принять. Ky рвёт запрос по AbortController, и ровно это выглядело как
+ * «архив не скачивается»: работа на сервере доделывалась впустую.
+ *
+ * Потолок тот же, что у выгрузки файлов: полчаса — это уже «не доедет».
+ * На стороне nginx парный лимит — `proxy_read_timeout` (deploy/nginx/proxy.conf.inc).
+ */
+export const DOWNLOAD_TIMEOUT_MS = 30 * 60_000;
 
 /**
  * Насколько медленной может оказаться отдача файла, чтобы загрузку всё ещё имело

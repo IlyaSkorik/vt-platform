@@ -47,6 +47,10 @@ class NotificationKind(models.TextChoices):
     APPLICATION_CORRECTED = "APPLICATION_CORRECTED", "Application corrected by organizer"
     FILES_REQUESTED = "FILES_REQUESTED", "Files requested"
     RESULTS_PUBLISHED = "RESULTS_PUBLISHED", "Results published"
+    #: The running order for a day the reader is in has been published. Its own kind
+    #: rather than a general notice: nothing is owed and nothing is being asked, but it
+    #: carries a time the reader has to be somewhere, which no other kind here does.
+    PROGRAM_PUBLISHED = "PROGRAM_PUBLISHED", "Programme published"
 
 
 class NotificationModel(BasePersistenceModel):

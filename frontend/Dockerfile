@@ -66,8 +66,10 @@ FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
 USER root
 
 COPY --from=builder /app/dist /opt/spa
-COPY deploy/nginx/default.conf /opt/nginx-conf/default.conf
-COPY deploy/nginx/proxy.conf.inc /opt/nginx-conf/proxy.conf.inc
+# Every config file, by glob rather than one COPY per name: the server block includes the
+# others, so a new include forgotten here is a container that will not start — and the
+# failure shows up at deploy time, not in review. `docker-entrypoint.sh` does not match.
+COPY deploy/nginx/*.conf* /opt/nginx-conf/
 COPY deploy/nginx/docker-entrypoint.sh /usr/local/bin/vt-publish.sh
 RUN chmod +x /usr/local/bin/vt-publish.sh
 

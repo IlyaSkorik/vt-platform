@@ -98,6 +98,7 @@ def _application_resource(dto: ApplicationView) -> dict[str, Any]:
         "competitionId": dto.competition_id,
         "applicantId": dto.applicant_id,
         "status": dto.status,
+        "editable": dto.editable,
         "hasCorrections": has_corrections,
         "correctionComment": latest_correction_comment,
         "educationalOrganizationId": dto.educational_organization_id,

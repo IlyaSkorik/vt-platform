@@ -92,8 +92,9 @@ class ProgramColumn(StrEnum):
     act and its notes while the audience screen gets the time, the participant and the
     act and nothing else.
 
-    Order here is the canonical order a table is rendered in, whichever subset was
-    chosen: a column means the same thing and sits in the same place on every screen.
+    Order here is the order the constructor offers them in and the default a cut starts
+    from; the left-to-right order of a printed page or a published link is the
+    organizer's, chosen per cut (:meth:`Program.select_columns`).
     """
 
     POSITION = "POSITION"
@@ -104,10 +105,12 @@ class ProgramColumn(StrEnum):
     NOMINATION = "NOMINATION"
     DISCIPLINE = "DISCIPLINE"
     PARTICIPANT_GROUP = "PARTICIPANT_GROUP"
+    PARTICIPANT_COUNT = "PARTICIPANT_COUNT"
     AGE_CATEGORY = "AGE_CATEGORY"
     PARTICIPATION_FORMAT = "PARTICIPATION_FORMAT"
     TEACHERS = "TEACHERS"
     ORGANIZATION = "ORGANIZATION"
+    CONTACTS = "CONTACTS"
     COMMENT = "COMMENT"
 
 
@@ -128,10 +131,15 @@ COLUMN_LABELS: Final[dict[ProgramColumn, str]] = {
     ProgramColumn.NOMINATION: "Жанр",
     ProgramColumn.DISCIPLINE: "Номинация",
     ProgramColumn.PARTICIPANT_GROUP: "Состав участников",
+    # «Человек», not «Участников»: it stands next to «Состав участников» in the same
+    # table, and two headers one word apart are two headers nobody can tell apart at a
+    # glance. It is also four characters shorter, which a column this narrow notices.
+    ProgramColumn.PARTICIPANT_COUNT: "Человек",
     ProgramColumn.AGE_CATEGORY: "Возрастная категория",
     ProgramColumn.PARTICIPATION_FORMAT: "Формат участия",
     ProgramColumn.TEACHERS: "Педагог",
     ProgramColumn.ORGANIZATION: "Организация",
+    ProgramColumn.CONTACTS: "Контакты",
     ProgramColumn.COMMENT: "Комментарий",
 }
 
@@ -323,6 +331,17 @@ class ProgramItemKind(StrEnum):
     @property
     def binds_performance(self) -> bool:
         """Whether this kind references a competing act instead of carrying a title."""
+        return self is ProgramItemKind.PERFORMANCE
+
+    @property
+    def takes_number(self) -> bool:
+        """Whether this kind of slot is numbered at all.
+
+        Only performances. A number is what a participant is told and what the sound desk
+        cues from, and a break has neither - numbering it pushes every act after it one
+        place along and makes "номер 12" mean a fifteen-minute gap. The running order still
+        contains the block, it simply has no «№».
+        """
         return self is ProgramItemKind.PERFORMANCE
 
     @property

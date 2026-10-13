@@ -25,6 +25,7 @@ from apps.programs.application.commands import (
     AddBlockCommand,
     AddColumnCommand,
     AddPerformanceCommand,
+    AnnounceProgramCommand,
     ArrangementPayload,
     ArrangeProgramCommand,
     CreateProgramCommand,
@@ -39,6 +40,7 @@ from apps.programs.application.commands import (
     UpdateShareCommand,
 )
 from apps.programs.application.dto import (
+    AnnouncementView,
     ArchiveFileView,
     ArrangementView,
     ColumnView,
@@ -53,19 +55,23 @@ from apps.programs.application.dto import (
     SchedulePosition,
 )
 from apps.programs.application.interfaces import (
+    CatalogApplicant,
     CatalogPerformance,
     Clock,
     PerformanceCatalog,
+    ProgramNotifier,
     ProgramRepository,
     SlugFactory,
     TableRenderer,
 )
+from apps.programs.application.rendering import clock as _clock
 from apps.programs.domain.arrangement import ArrangedItem, ArrangementCandidate, arrange
 from apps.programs.domain.entities import Program, ProgramItem, ProgramShare
 from apps.programs.domain.exceptions import (
     ExportUnavailableError,
     InvalidProgramDataError,
     PerformanceNotAvailableError,
+    ProgramConcurrencyError,
     ProgramNotFoundError,
     ProgramShareNotFoundError,
     RunningOrderNotControllableError,
@@ -107,6 +113,11 @@ __all__ = ["PUBLIC_PROGRAM_PATH", "ProgramService"]
 #: the organizer can copy a link without the frontend re-deriving the URL shape.
 PUBLIC_PROGRAM_PATH = "/program/{slug}"
 
+#: How many times a partial settings edit is replayed on a program that moved underneath.
+#: Two, not more: one retry covers the single overlapping write that actually happens,
+#: and a loop that keeps trying would hide a program being written to continuously.
+_UPDATE_ATTEMPTS: Final = 2
+
 #: How many times to re-roll a slug before giving up. A collision needs two of ~57
 #: random bits to coincide, so a single retry is already generous; the loop exists so
 #: the failure is an explicit error instead of an integrity error from the database.
@@ -118,11 +129,6 @@ def _uuid(value: str, *, what: str) -> uuid.UUID:
         return uuid.UUID(str(value))
     except (ValueError, TypeError, AttributeError) as exc:
         raise InvalidProgramDataError(f"{what} must be a UUID, got {value!r}.") from exc
-
-
-def _clock(moment: datetime | None) -> str:
-    """A cell's time of day, or blank when the programme is not timed yet."""
-    return "" if moment is None else moment.strftime("%H:%M")
 
 
 def _duration(seconds: int) -> str:
@@ -300,14 +306,17 @@ class ProgramService:
         clock: Clock,
         slugs: SlugFactory,
         tables: TableRenderer | None = None,
+        notifier: ProgramNotifier | None = None,
     ) -> None:
         self._programs = programs
         self._catalog = catalog
         self._clock = clock
         self._slugs = slugs
         # Optional: every use case except the export works without a renderer, and a test
-        # that never exports should not have to supply one.
+        # that never exports should not have to supply one. Same for the notifier and the
+        # announcement.
         self._tables = tables
+        self._notifier = notifier
 
     # ------------------------------------------------------------------
     # Programs
@@ -341,19 +350,34 @@ class ProgramService:
         return self._detail(self._load(program_id))
 
     def update_program(self, command: UpdateProgramCommand) -> ProgramDetailView:
-        """Rename, re-buffer or re-time a program."""
-        now = self._clock.utcnow()
-        program = self._load(command.program_id)
-        if command.name is not None:
-            program.rename(ProgramName(command.name), now=now)
-        if command.buffer_seconds is not None:
-            program.set_buffer(TimeBuffer(int(command.buffer_seconds)), now=now)
-        if command.clear_starts_at:
-            program.set_start(None, now=now)
-        elif command.starts_at is not None:
-            program.set_start(command.starts_at, now=now)
-        self._programs.save(program)
-        return self._detail(program)
+        """Rename, re-buffer or re-time a program.
+
+        Retried once if the program moved underneath, because this command is a
+        *partial* edit and replaying it is exactly right: "set the start to 10:00" means
+        the same thing on a fresher copy, and nothing of the other write is lost. The
+        settings are also the one thing an organizer changes while the rest of the
+        programme is being worked on — the buffer set a moment before a row is dragged —
+        so a conflict here is both the likeliest and the least interesting to report.
+        """
+        for attempt in range(_UPDATE_ATTEMPTS):
+            now = self._clock.utcnow()
+            program = self._load(command.program_id)
+            if command.name is not None:
+                program.rename(ProgramName(command.name), now=now)
+            if command.buffer_seconds is not None:
+                program.set_buffer(TimeBuffer(int(command.buffer_seconds)), now=now)
+            if command.clear_starts_at:
+                program.set_start(None, now=now)
+            elif command.starts_at is not None:
+                program.set_start(command.starts_at, now=now)
+            try:
+                self._programs.save(program)
+            except ProgramConcurrencyError:
+                if attempt + 1 < _UPDATE_ATTEMPTS:
+                    continue
+                raise
+            return self._detail(program)
+        raise AssertionError("unreachable")  # pragma: no cover - the loop always returns or raises
 
     def delete_program(self, program_id: str) -> None:
         """Soft-delete a program; every public link into it stops resolving."""
@@ -648,10 +672,15 @@ class ProgramService:
 
         files: list[ArchiveFileView] = []
         missing: list[str] = []
-        for position, item in enumerate(program.items, start=1):
+        ordinal = 0
+        for item in program.items:
             if item.submission_id is None:
                 continue
-            number = item.number or position
+            # The slot's own number, or - on a programme that has somehow never been
+            # numbered - its place among the acts. Never its row index: that counts the
+            # breaks too, and the desk cues from the numbers on the running order.
+            ordinal += 1
+            number = item.number or ordinal
             performance = performances.get(item.submission_id)
             label = _act_label(number, performance)
             act_files = resolved.get(item.submission_id, ())
@@ -728,6 +757,74 @@ class ProgramService:
         program.reset_progress(now=now)
         self._programs.save(program)
         return self._detail(program)
+
+    def announce_program(self, command: AnnounceProgramCommand) -> AnnouncementView:
+        """Write to everyone in a published edition: the programme is up, here it is.
+
+        The gap this closes is the ordinary one between a festival and the people in it:
+        the running order exists, the link exists, and nobody knows. Until now the
+        organizer pasted it into however many chats they could reach, and whoever was in
+        none of them found out on the day.
+
+        **One letter per applicant, listing every act of theirs the edition shows.** A
+        studio that entered thirty numbers is told once, with thirty lines — which is
+        both what a person wants to open and the difference between one message and
+        thirty against a provider that counts its allowance per minute.
+
+        Each line carries the number and the time, because those are what the letter is
+        *for*: «№14, 11:47» is the whole of what a participant needs, and the link is
+        there for everything else. Service blocks carry neither and are left out — a
+        letter is addressed to people, and nobody is announced for the interval.
+
+        A failed address does not stop the others: an applicant who cannot be written to
+        is counted and the sending continues, because forty letters delivered is a
+        better outcome than none plus an error about the forty-first.
+        """
+        if self._notifier is None:  # pragma: no cover - the composition root always supplies one
+            raise InvalidProgramDataError("Рассылка недоступна: не настроена отправка писем.")
+        program = self._load(command.program_id)
+        share = program.share(_uuid(command.share_id, what="shareId"))
+        items = [item for item in program.items_for(share) if item.kind.takes_number]
+        schedule = {entry.item.id: entry for entry in build_schedule(items=program.items, buffer=program.buffer, starts_at=program.starts_at)}
+        performances = self._resolve_performances(items)
+        applicants = self._catalog.applicants_for([item.submission_id for item in items if item.submission_id is not None])
+
+        # Grouped before anything is sent: the unit of this message is the applicant,
+        # and the order inside each letter is the order of the day.
+        lines_by_applicant: dict[uuid.UUID, tuple[CatalogApplicant, list[tuple[str, str, str]]]] = {}
+        skipped = 0
+        for item in items:
+            applicant = applicants.get(item.submission_id) if item.submission_id is not None else None
+            if applicant is None:
+                skipped += 1
+                continue
+            entry = schedule.get(item.id)
+            _, lines = lines_by_applicant.setdefault(applicant.user_id, (applicant, []))
+            lines.append(
+                (
+                    str(item.number or (entry.position if entry is not None else 0)),
+                    _clock(entry.starts_at) if entry is not None else "",
+                    self._item_title(item, performances.get(item.submission_id) if item.submission_id is not None else None),
+                )
+            )
+
+        competition_title = self._catalog.competition_title(program.competition_id)
+        program_url = PUBLIC_PROGRAM_PATH.format(slug=share.slug)
+        notified = 0
+        for applicant, lines in lines_by_applicant.values():
+            self._notifier.notify_program_published(
+                user_id=applicant.user_id,
+                email=applicant.email,
+                applicant_name=applicant.name,
+                competition_title=competition_title,
+                program_name=str(program.name),
+                starts_at=program.starts_at,
+                slots=tuple(lines),
+                program_url=program_url,
+                note=(command.note or "").strip() or None,
+            )
+            notified += 1
+        return AnnouncementView(notified=notified, acts=len(items) - skipped, skipped=skipped)
 
     def remove_share(self, *, program_id: str, share_id: str) -> ProgramDetailView:
         """Revoke a public edition; its link stops resolving at once."""
@@ -935,7 +1032,11 @@ class ProgramService:
         match column:
             case ProgramColumn.POSITION:
                 # The participant's permanent number, not the row's index: a programme
-                # that was rearranged legitimately reads 2, 3, 5, 4.
+                # that was rearranged legitimately reads 2, 3, 5, 4. A break carries no
+                # number at all and gets a blank - it is a gap in the running order, not
+                # an act anybody was told to be ready for.
+                if not item.kind.takes_number:
+                    return ""
                 return str(item.number or position)
             case ProgramColumn.TIME:
                 return _clock(starts_at)
@@ -951,6 +1052,12 @@ class ProgramService:
                 return (performance.discipline or "") if performance is not None else ""
             case ProgramColumn.PARTICIPANT_GROUP:
                 return (performance.participant_group or "") if performance is not None else ""
+            case ProgramColumn.PARTICIPANT_COUNT:
+                # A collective is one row in the entry and twenty people on stage, so this
+                # is the headcount the applicant stated - never the number of rows.
+                if performance is None or performance.participant_count <= 0:
+                    return ""
+                return str(performance.participant_count)
             case ProgramColumn.AGE_CATEGORY:
                 return (performance.age_category or "") if performance is not None else ""
             case ProgramColumn.PARTICIPATION_FORMAT:
@@ -959,6 +1066,8 @@ class ProgramService:
                 return ", ".join(performance.teachers) if performance is not None else ""
             case ProgramColumn.ORGANIZATION:
                 return (performance.organization or "") if performance is not None else ""
+            case ProgramColumn.CONTACTS:
+                return ", ".join(performance.contacts) if performance is not None else ""
             case ProgramColumn.COMMENT:
                 return (performance.comment or "") if performance is not None else ""
         return ""
@@ -1032,7 +1141,9 @@ class ProgramService:
             submission_id=str(item.submission_id) if item.submission_id is not None else None,
             lead_participant=performance.lead_participant if performance is not None else None,
             participants=performance.participants if performance is not None else (),
+            participant_count=performance.participant_count if performance is not None else 0,
             teachers=performance.teachers if performance is not None else (),
+            contacts=performance.contacts if performance is not None else (),
             nomination=performance.nomination if performance is not None else None,
             discipline=performance.discipline if performance is not None else None,
             age_category=performance.age_category if performance is not None else None,

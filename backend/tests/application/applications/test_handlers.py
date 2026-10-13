@@ -205,7 +205,7 @@ class Env:
     # -- query handler factories --------------------------------------------
 
     def get_submission(self) -> GetSubmissionHandler:
-        return GetSubmissionHandler(submissions=self.submissions, organization=self.organization)
+        return GetSubmissionHandler(submissions=self.submissions, organization=self.organization, catalog=self.catalog, clock=self.clock)
 
     def get_history(self) -> GetSubmissionHistoryHandler:
         return GetSubmissionHistoryHandler(submissions=self.submissions, organization=self.organization)
@@ -662,6 +662,153 @@ class TestWaitlist:
         result = env.cancel_by_reviewer().handle(CancelSubmissionByReviewerCommand(submission_id=submission_id, reviewer_id=reviewer))
 
         assert result.submission.status == SubmissionStatus.CANCELLED.value
+
+
+class TestEditingAfterTheClose:
+    """Когда приём заявок кончился, правка заявки кончилась вместе с ним.
+
+    Статус номера говорит только о том, есть ли ещё что править; кто вправе править
+    это *сегодня* — вопрос календаря фестиваля, и ответ на него даёт приём заявок, а
+    не одобрение организатора. Поэтому срок один и для поданной заявки, и для стоящей
+    в расписании: закрылся приём — закрылась и правка, дальше только через оргкомитет.
+    """
+
+    @staticmethod
+    def _entered(env: Env, *, nomination: str, owner: str, competition_id: str) -> str:
+        """An entry that got in while the genre was open."""
+        submission_id = _reach_draft_ready(env, competition_id=competition_id, owner=owner, nomination_id=nomination)
+        env.submit().handle(SubmitSubmissionCommand(submission_id=submission_id, requested_by=owner))
+        return submission_id
+
+    def test_an_entry_in_the_festival_is_frozen_once_its_genre_closes(self) -> None:
+        nomination = uuid7_str()
+        env = Env()
+        owner, competition_id = uuid7_str(), uuid7_str()
+        submission_id = self._entered(env, nomination=nomination, owner=owner, competition_id=competition_id)
+
+        env.catalog.closed_nominations = frozenset({nomination})
+
+        with pytest.raises(CompetitionClosedError):
+            _add_participant(env, submission_id=submission_id, owner=owner, first="Late", birth="2010-02-02")
+
+    def test_an_early_stop_shuts_the_door_as_firmly_as_the_date(self) -> None:
+        # Досрочная остановка приёма — это тот же закрытый приём: организатор набрал
+        # достаточно и больше ничего не ждёт, в том числе правок.
+        nomination = uuid7_str()
+        env = Env()
+        owner, competition_id = uuid7_str(), uuid7_str()
+        submission_id = self._entered(env, nomination=nomination, owner=owner, competition_id=competition_id)
+
+        env.catalog.open_for_submissions = False
+
+        with pytest.raises(CompetitionClosedError):
+            env.add_teacher().handle(
+                AddTeacherCommand(
+                    submission_id=submission_id,
+                    requested_by=owner,
+                    first_name="Olga",
+                    last_name="Petrova",
+                    role="Concertmaster",
+                )
+            )
+
+    def test_a_queue_behind_the_closed_door_does_not_reopen_it(self) -> None:
+        """Лист ожидания — дверь для тех, кто ещё не внутри.
+
+        Заявка, прошедшая приём, уже в фестивале: очередь, оставленная организатором
+        для опоздавших, не возвращает её владельцу право править состав.
+        """
+        nomination = uuid7_str()
+        env = Env()
+        owner, competition_id = uuid7_str(), uuid7_str()
+        submission_id = self._entered(env, nomination=nomination, owner=owner, competition_id=competition_id)
+
+        env.catalog.waitlisting_nominations = frozenset({nomination})
+
+        with pytest.raises(CompetitionClosedError):
+            _add_participant(env, submission_id=submission_id, owner=owner, first="Late", birth="2010-02-02")
+
+    def test_a_scheduled_entry_is_no_more_editable_than_a_submitted_one(self) -> None:
+        nomination = uuid7_str()
+        env = Env()
+        owner, competition_id, reviewer = uuid7_str(), uuid7_str(), uuid7_str()
+        submission_id = self._entered(env, nomination=nomination, owner=owner, competition_id=competition_id)
+        env.start_review().handle(StartReviewCommand(submission_id=submission_id, reviewer_id=reviewer))
+        env.approve().handle(ApproveSubmissionCommand(submission_id=submission_id, reviewer_id=reviewer))
+        env.catalog.open_for_submissions = False
+
+        with pytest.raises(CompetitionClosedError):
+            _add_participant(env, submission_id=submission_id, owner=owner, first="Late", birth="2010-02-02")
+
+    def test_the_price_is_not_recomputed_after_the_close_either(self) -> None:
+        nomination = uuid7_str()
+        env = Env()
+        owner, competition_id = uuid7_str(), uuid7_str()
+        submission_id = self._entered(env, nomination=nomination, owner=owner, competition_id=competition_id)
+        env.catalog.open_for_submissions = False
+
+        with pytest.raises(CompetitionClosedError):
+            env.calculate_price().handle(CalculatePriceCommand(submission_id=submission_id, requested_by=owner))
+
+    def test_a_queued_entry_is_still_its_applicants_to_correct(self) -> None:
+        """Заявка в очереди в фестиваль не попала: её состав живёт, пока живёт очередь."""
+        nomination = uuid7_str()
+        env = Env(catalog=FakeCompetitionCatalog(open_for_submissions=False, waitlisting_nominations=frozenset({nomination})))
+        owner, competition_id = uuid7_str(), uuid7_str()
+        submission_id = _reach_draft_ready(env, competition_id=competition_id, owner=owner, nomination_id=nomination)
+        env.submit().handle(SubmitSubmissionCommand(submission_id=submission_id, requested_by=owner))
+
+        _add_participant(env, submission_id=submission_id, owner=owner, first="Boris", birth="2010-02-02")
+
+        view = env.get_submission().handle(GetSubmissionQuery(submission_id=submission_id, requested_by=owner))
+        assert view.status == SubmissionStatus.WAITLISTED.value
+        assert len(view.participants) == 2
+
+    def test_a_draft_still_reaches_the_queue_after_the_close(self) -> None:
+        # Приём закрыт, но очередь открыта — черновик дописывают именно для неё.
+        nomination = uuid7_str()
+        env = Env(catalog=FakeCompetitionCatalog(open_for_submissions=False, waitlisting_nominations=frozenset({nomination})))
+        owner = uuid7_str()
+        submission_id = _create(env, competition_id=uuid7_str(), applicant_id=owner)
+
+        _set_performance(env, submission_id=submission_id, owner=owner, nomination_id=nomination)
+        _add_participant(env, submission_id=submission_id, owner=owner)
+
+        view = env.get_submission().handle(GetSubmissionQuery(submission_id=submission_id, requested_by=owner))
+        assert view.performance is not None
+
+    def test_the_correction_the_organizer_asked_for_outlives_the_close(self) -> None:
+        """Организатор вернул номер на доработку — срок правки задаёт он, а не календарь.
+
+        Возвращают чаще всего как раз после закрытия приёма, когда организатор сел
+        разбирать поданное; отказать в той правке, о которой сам же попросил, нельзя.
+        Исправленный номер уходит обратно на рассмотрение — и дверь закрывается за ним.
+        """
+        nomination = uuid7_str()
+        env = Env()
+        owner, competition_id, reviewer = uuid7_str(), uuid7_str(), uuid7_str()
+        submission_id = self._entered(env, nomination=nomination, owner=owner, competition_id=competition_id)
+        env.start_review().handle(StartReviewCommand(submission_id=submission_id, reviewer_id=reviewer))
+        env.return_for_correction().handle(
+            ReturnSubmissionForCorrectionCommand(submission_id=submission_id, reviewer_id=reviewer, comment="Проверьте фамилию.")
+        )
+        env.catalog.open_for_submissions = False
+        view = env.get_submission().handle(GetSubmissionQuery(submission_id=submission_id, requested_by=owner))
+
+        result = env.update_participant().handle(
+            UpdateParticipantCommand(
+                submission_id=submission_id,
+                requested_by=owner,
+                participant_id=view.participants[0].id,
+                first_name="Anna",
+                last_name="Ivanova-Petrova",
+                birth_date="2005-04-01",
+                gender="FEMALE",
+            )
+        )
+
+        assert result.submission.participants[0].last_name == "Ivanova-Petrova"
+        assert result.submission.status == SubmissionStatus.SUBMITTED.value
 
 
 class TestDeleteDraft:

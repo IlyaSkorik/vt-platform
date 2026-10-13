@@ -12,6 +12,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { apiClient } from "@/shared/api";
+import { OrganizationModule } from "@/shared/api/generated/model";
 
 export type OrganizationStatus = "ACTIVE" | "SUSPENDED";
 
@@ -208,36 +209,22 @@ export type PlatformAudience = {
 };
 
 /**
- * One switchable part of the platform.
+ * One switchable part of the platform — the server's own list, not a copy of it.
  *
- * Mirrors `OrganizationModule` on the server. The list is short and changes with a
- * release, so it is spelled out rather than fetched: the console has to label each
- * one in Russian anyway, and a module the interface cannot name is one it cannot
- * usefully offer.
+ * Раньше список был набран здесь руками, и это молча стоило модуля: `REVIEWS`
+ * появился на сервере, в консоль его дописать забыли — выключателя не было ни у
+ * кого, а «Полный доступ» собирался из того же списка, так что ни одна вновь
+ * подключённая организация отзывов не получала. Дыру не видно: экран выглядит
+ * исправным, в нём просто нет одной строки.
+ *
+ * Теперь список берётся из сгенерированного контракта, а подписи остаются
+ * `Record<PlatformModule, string>` — модуль, который на сервере есть, а назвать
+ * его по-русски забыли, валит сборку вместо того, чтобы тихо исчезнуть с доски.
  */
-export type PlatformModule =
-  | "COMPETITIONS"
-  | "APPLICATIONS"
-  | "PARTICIPANTS"
-  | "JURY"
-  | "PROGRAMS"
-  | "DIPLOMAS"
-  | "VOTING"
-  | "FINANCE"
-  | "ANALYTICS";
+export type PlatformModule = OrganizationModule;
 
-/** Every module, in the order the console shows them. */
-export const PLATFORM_MODULES: PlatformModule[] = [
-  "COMPETITIONS",
-  "APPLICATIONS",
-  "PARTICIPANTS",
-  "JURY",
-  "PROGRAMS",
-  "DIPLOMAS",
-  "VOTING",
-  "FINANCE",
-  "ANALYTICS",
-];
+/** Every module, in the order the server declares them. */
+export const PLATFORM_MODULES: PlatformModule[] = Object.values(OrganizationModule);
 
 /** What each module is called on the switchboard and in the organizer's own menu. */
 export const MODULE_LABELS: Record<PlatformModule, string> = {
@@ -248,6 +235,7 @@ export const MODULE_LABELS: Record<PlatformModule, string> = {
   PROGRAMS: "Программа",
   DIPLOMAS: "Дипломы",
   VOTING: "Зрительское голосование",
+  REVIEWS: "Отзывы",
   FINANCE: "Финансы",
   ANALYTICS: "Аналитика",
 };

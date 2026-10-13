@@ -28,10 +28,12 @@ export type ProgramColumnKey =
   | "NOMINATION"
   | "DISCIPLINE"
   | "PARTICIPANT_GROUP"
+  | "PARTICIPANT_COUNT"
   | "AGE_CATEGORY"
   | "PARTICIPATION_FORMAT"
   | "TEACHERS"
   | "ORGANIZATION"
+  | "CONTACTS"
   | "COMMENT";
 
 /**
@@ -94,7 +96,16 @@ export interface ProgramItem {
   submissionId: string | null;
   leadParticipant: string | null;
   participants: string[];
+  /**
+   * How many people stand on stage — the headcount, not `participants.length`.
+   *
+   * A collective is one entry row and the number its applicant typed on the form; a solo
+   * is one row and one person. `0` for a block, which puts nobody on stage.
+   */
+  participantCount: number;
   teachers: string[];
+  /** Phones to ring about this act: its teachers', or the applicant's if none has one. */
+  contacts: string[];
   nomination: string | null;
   discipline: string | null;
   ageCategory: string | null;
@@ -145,13 +156,25 @@ export type PerformanceOrder =
  */
 export type BreakRule = "NONE" | "EVERY_DURATION" | "EVERY_COUNT" | "BETWEEN_GROUPS";
 
-/** What each grouping axis is called on the settings form. */
+/**
+ * What each grouping axis is called on the settings form.
+ *
+ * **Display vocabulary.** The code's `NOMINATION` is shown to people as «Жанр», and
+ * `DISCIPLINE` as «Номинация» — the identifiers keep the older names because they run
+ * through the API contract and every stored snapshot, while the words the platform
+ * speaks to organizers changed. These labels lagged behind that change, so the generator
+ * offered to group «по номинации» and grouped by genre: the dialog and the table beside
+ * it named the same axis two different things.
+ *
+ * Word for word the backend's `COLUMN_LABELS` (`apps/programs/domain/value_objects.py`),
+ * which is what the programme's own column headers come from.
+ */
 export const GROUPING_AXIS_LABELS: Record<GroupingAxis, string> = {
-  NOMINATION: "Номинация",
-  DISCIPLINE: "Дисциплина",
+  NOMINATION: "Жанр",
+  DISCIPLINE: "Номинация",
   AGE_CATEGORY: "Возрастная категория",
-  PARTICIPANT_GROUP: "Состав",
-  PARTICIPATION_FORMAT: "Форма участия",
+  PARTICIPANT_GROUP: "Состав участников",
+  PARTICIPATION_FORMAT: "Формат участия",
   ORGANIZATION: "Организация",
 };
 
@@ -364,6 +387,25 @@ export interface AddBlockInput {
   position?: number;
 }
 
+/**
+ * What came of announcing one published edition to the people in it.
+ *
+ * Three numbers, because an organizer who sent 40 letters for 47 acts needs to know
+ * which gap they are looking at. `skipped` is acts whose applicant has no address on
+ * the platform — nobody's mistake, and nothing a second attempt would fix.
+ */
+export interface ProgramAnnouncement {
+  notified: number;
+  acts: number;
+  skipped: number;
+}
+
+export interface AnnounceShareInput {
+  shareId: string;
+  /** A line of the organizer's own above the running order. Optional. */
+  note?: string;
+}
+
 export interface CreateShareInput {
   name: string;
   /** The columns this link publishes. Empty falls back to the backend's defaults. */
@@ -374,8 +416,14 @@ export interface CreateShareInput {
   controlsRunningOrder?: boolean;
 }
 
-/** The buffer presets the constructor offers (seconds). */
-export const BUFFER_PRESETS = [0, 30, 45, 60, 90, 120] as const;
+/**
+ * The buffer presets the constructor offers (seconds).
+ *
+ * Twenty seconds is the shortest one worth having: it is a soloist walking off while the
+ * next walks on, which is the gap a tightly run festival actually leaves — anything
+ * smaller is not a changeover, and the schedule it produces does not survive the day.
+ */
+export const BUFFER_PRESETS = [0, 20, 30, 45, 60, 90, 120] as const;
 
 /** What a public link shows when the organizer has not chosen otherwise. */
 export const DEFAULT_SHARE_COLUMNS: ProgramColumnKey[] = [
@@ -418,9 +466,12 @@ export function itemCell(
     return item.customValues[column] ?? "";
   }
   switch (column) {
-    case "POSITION":
-      // The participant's permanent number, not the row's index.
-      return String(item.number || item.schedule.position);
+    case "POSITION": {
+      // The participant's permanent number, not the row's index — and nothing at all for
+      // a break: it is a gap in the running order rather than an act with a number.
+      const number = itemNumber(item);
+      return number === null ? "" : String(number);
+    }
     case "TIME":
       return format.clock(item.schedule.startsAt);
     case "PARTICIPANT":
@@ -435,6 +486,10 @@ export function itemCell(
       return item.discipline ?? "";
     case "PARTICIPANT_GROUP":
       return item.participantGroup ?? "";
+    case "PARTICIPANT_COUNT":
+      // Blank rather than "0" for a slot that puts nobody on stage: a break with a
+      // headcount of zero reads like an act nobody turned up to.
+      return item.participantCount > 0 ? String(item.participantCount) : "";
     case "AGE_CATEGORY":
       return item.ageCategory ?? "";
     case "PARTICIPATION_FORMAT":
@@ -443,6 +498,8 @@ export function itemCell(
       return item.teachers.join(", ");
     case "ORGANIZATION":
       return item.organization ?? "";
+    case "CONTACTS":
+      return item.contacts.join(", ");
     case "COMMENT":
       return item.comment ?? "";
     default:
@@ -477,13 +534,106 @@ export function moveItem<T>(items: readonly T[], from: number, to: number): T[] 
 }
 
 /**
- * The number a person reads in the «№» column.
+ * Move a contiguous run of items to `to`, returning the new complete order.
+ *
+ * `to` is an **insertion index into the list as it is now**: the run lands in front of
+ * whatever currently sits there, and `items.length` means the very end. Counted that way
+ * because that is what a drop between two rows means — and the run has to be lifted out
+ * before it can be put back, which shifts every index past it down by its own length.
+ *
+ * This is {@link moveItem} generalised to a block, and the block is the point: "возьми
+ * весь эстрадный вокал и подними наверх" is one gesture, not forty.
+ */
+export function moveBlock<T>(items: readonly T[], start: number, count: number, to: number): T[] {
+  const next = [...items];
+  if (start < 0 || count <= 0 || start + count > next.length || to < 0 || to > next.length) {
+    return next;
+  }
+  // Dropped back inside itself — including on either of its own edges, which is a move
+  // to where it already is.
+  if (to >= start && to <= start + count) {
+    return next;
+  }
+  const moved = next.splice(start, count);
+  next.splice(to > start ? to - count : to, 0, ...moved);
+  return next;
+}
+
+/** One run of consecutive slots that share a value — what a group move acts on. */
+export interface ProgramGroup {
+  /** Stable React key: the id of the run's first slot. */
+  key: string;
+  /** The header: the shared value, or a block's own title. */
+  label: string;
+  /** Where the run starts in the programme's order. */
+  start: number;
+  items: ProgramItem[];
+  /** A service block is a divider between groups, never part of one. */
+  standalone: boolean;
+}
+
+/**
+ * The running order cut into consecutive runs of one value.
+ *
+ * **Consecutive, not sorted.** The order on screen is the order of the day, and grouping
+ * is a reading of it rather than a rearrangement of it: if эстрадный вокал appears in two
+ * places because the organizer put it there, this says so with two groups instead of
+ * pretending there is one. That is also what makes a group safe to drag — a group is a
+ * slice of the order, so moving it is one {@link moveBlock} and the rest of the day is
+ * untouched.
+ *
+ * A break (or an award, or an opening) always stands alone: it is what separates one part
+ * of the day from the next, and swallowing it into the group above would mean dragging
+ * вокал somewhere and taking lunch along with it.
+ *
+ * The axis is a {@link GroupingAxis} — the same vocabulary the generator groups by, so
+ * "собрать по жанрам" and "показать по жанрам" cannot drift apart.
+ */
+export function groupRuns(items: readonly ProgramItem[], axis: GroupingAxis): ProgramGroup[] {
+  const groups: ProgramGroup[] = [];
+  items.forEach((item, index) => {
+    const standalone = item.kind !== "PERFORMANCE";
+    const label = standalone ? item.title : groupLabel(item, axis);
+    const open = groups.at(-1);
+    if (open !== undefined && !open.standalone && !standalone && open.label === label) {
+      open.items.push(item);
+      return;
+    }
+    groups.push({ key: item.id, label, start: index, items: [item], standalone });
+  });
+  return groups;
+}
+
+/**
+ * The value one slot is grouped under.
+ *
+ * Deliberately the same text {@link itemCell} puts in that column: the header of a group
+ * and the cells under it have to read identically, or the grouping looks wrong even when
+ * it is right. A slot with nothing in that column gets «—», so an act missing its age
+ * category is visibly missing it rather than silently joining the group above.
+ */
+function groupLabel(item: ProgramItem, axis: GroupingAxis): string {
+  return itemCell(item, axis, UNUSED_FORMAT) || "—";
+}
+
+/** {@link itemCell} wants a formatter; none of the grouping axes is a time or a length. */
+const UNUSED_FORMAT = { clock: () => "", duration: () => "" };
+
+/**
+ * The number a person reads in the «№» column, or `null` for a slot that has none.
  *
  * The printed one once numbers are frozen, the row's own while the programme is still
  * being assembled — the same fallback {@link itemCell} renders, because a control that
  * asks "after which number?" has to mean the number the organizer is looking at.
+ *
+ * Service blocks — перерыв, награждение, открытие — are deliberately unnumbered, on both
+ * sides: numbering a break pushes every act after it one place along, and «номер 12»
+ * then means a fifteen-minute gap to whoever is holding the printed programme.
  */
-export function itemNumber(item: ProgramItem): number {
+export function itemNumber(item: ProgramItem): number | null {
+  if (item.kind !== "PERFORMANCE") {
+    return null;
+  }
   return item.number || item.schedule.position;
 }
 

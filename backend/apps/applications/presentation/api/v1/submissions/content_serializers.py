@@ -161,6 +161,9 @@ class SubmissionResourceSerializer(serializers.Serializer[dict[str, object]]):
     type = serializers.CharField(default="submission")
     competitionId = serializers.UUIDField()
     status = serializers.CharField()
+    # Может ли заявитель править этот номер прямо сейчас: карточка, которая его
+    # рисует, — это карточка с кнопками правки, и предлагать 409 она не должна.
+    editable = serializers.BooleanField()
     performance = _PerformanceResourceSerializer(allow_null=True)
     participants = _ParticipantResourceSerializer(many=True)
     teachers = _TeacherResourceSerializer(many=True)

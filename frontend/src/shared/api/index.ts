@@ -4,8 +4,9 @@
  * Feature and entity code imports from here — never from deep paths — so the
  * transport internals (Ky instance, hooks, mutator) remain private.
  */
+export { type ActingOrganization, actingOrganizationStore } from "./acting-organization";
 export { apiClient, toApiError } from "./client";
-export { DEFAULT_LOCALE, HEADER, uploadTimeoutMs } from "./config";
+export { DEFAULT_LOCALE, DOWNLOAD_TIMEOUT_MS, HEADER, uploadTimeoutMs } from "./config";
 export { filenameFromDisposition, saveAuthenticatedDownload } from "./download";
 export {
   ApiError,

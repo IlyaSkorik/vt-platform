@@ -336,9 +336,10 @@ CORS_ALLOWED_ORIGINS = settings.cors_allowed_origins
 CORS_ALLOW_CREDENTIALS = True
 # The frontend transport tags requests with custom headers the browser must be
 # told to allow, or it blocks the preflight: a correlation id on every request
-# (X-Request-ID, API-000 §7) and an idempotency key on unsafe creates
-# (Idempotency-Key, API-000 §19).
-CORS_ALLOW_HEADERS = (*default_headers, "x-request-id", "idempotency-key")
+# (X-Request-ID, API-000 §7), an idempotency key on unsafe creates
+# (Idempotency-Key, API-000 §19), and the organization a platform operator has
+# stepped into (X-Acting-Organization, apps.organization.presentation.scope).
+CORS_ALLOW_HEADERS = (*default_headers, "x-request-id", "idempotency-key", "x-acting-organization")
 
 # --- Email / SMTP (transactional mail, IDN-002) ---------------------------
 # Driven by the typed EmailSettings group. Development points at the Mailhog

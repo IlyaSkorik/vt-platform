@@ -9,8 +9,11 @@ export type MovePlacement = "before" | "after";
 export interface MoveToNumberProps {
   /** What is being moved, used for the control's accessible name. */
   label: string;
-  /** The number that slot carries now, so the form says what it is about. */
-  current: number;
+  /**
+   * The number that slot carries now, so the form says what it is about — `null` for a
+   * slot that has none (перерыв, награждение), which is then named by its title instead.
+   */
+  current: number | null;
   /** Whether the slot is already first / last, which is what greys out the shortcuts. */
   atStart: boolean;
   atEnd: boolean;
@@ -74,6 +77,7 @@ export function MoveToNumber({
         <Button
           variant="ghost"
           size="xs"
+          iconOnly
           aria-label={`Перенести: ${label}`}
           disabled={disabled || (atStart && atEnd)}
         >
@@ -88,7 +92,9 @@ export function MoveToNumber({
             place("after");
           }}
         >
-          <p className="font-medium text-sm">Перенести №{current}</p>
+          <p className="font-medium text-sm">
+            {current === null ? `Перенести «${label}»` : `Перенести №${current}`}
+          </p>
           <Input
             label="Рядом с номером"
             description="Enter — поставить после него."
