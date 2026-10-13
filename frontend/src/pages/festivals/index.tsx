@@ -112,11 +112,12 @@ export function PublicFestivalLandingPage(): React.JSX.Element {
   );
 
   return (
-    // Same container as the catalogue and the header — see the note there.
-    <PageContainer
-      size="wide"
-      className="max-w-336 px-3.5 pt-9 pb-[55px] md:px-8 md:pt-[27px] md:pb-8"
-    >
+    // Same container as the catalogue and the header — see the note there, with
+    // one difference: 30px of air under the bar before the poster, at every
+    // width. The catalogue opens with a filters panel and a search band, which
+    // are chrome and can sit closer; this page opens with artwork, and the
+    // frame gives it the same margin on a phone as on a desktop.
+    <PageContainer size="wide" className="max-w-336 px-3.5 pt-[30px] pb-[55px] md:px-8 md:pb-8">
       {festival ? (
         <>
           <JsonLd id="festival-event" data={festivalEventSchema(festival, { path })} />
