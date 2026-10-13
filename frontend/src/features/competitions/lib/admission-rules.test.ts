@@ -66,6 +66,7 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
         registrationClosesAt: null,
         registrationStopped: false,
         waitlistEnabled: false,
+        heldAt: null,
       },
       {
         id: "cat-2",
@@ -76,6 +77,7 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
         registrationClosesAt: null,
         registrationStopped: false,
         waitlistEnabled: false,
+        heldAt: null,
       },
     ],
     disciplines: [

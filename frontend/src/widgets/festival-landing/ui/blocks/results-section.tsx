@@ -74,11 +74,13 @@ export function ResultsSection({ festivalId }: ResultsSectionProps): React.JSX.E
   }
 
   return (
-    <LandingSection
-      id="results"
-      title="Результаты"
-      subtitle="Итоги по жанрам. Участникам электронные дипломы доступны в личном кабинете."
-    >
+    <LandingSection id="results" title="Результаты">
+      {/* The lead line is the section's own content now: `LandingSection` lost
+          its `subtitle` when the frame turned out to have no section that
+          carries one, and this is the only place that did. */}
+      <p className="mb-4 text-foreground/70 text-sm leading-[19px] md:text-lg md:leading-[25px] dark:text-foreground/80">
+        Итоги по жанрам. Участникам электронные дипломы доступны в личном кабинете.
+      </p>
       <ul className="space-y-3">
         {protocols.map((protocol) => (
           <ResultRow key={protocol.slug} protocol={protocol} />

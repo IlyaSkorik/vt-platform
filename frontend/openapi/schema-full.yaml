@@ -21575,8 +21575,14 @@ components:
           type: boolean
         waitlistEnabled:
           type: boolean
+        heldAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
       required:
       - description
+      - heldAt
       - id
       - name
       - registrationClosesAt

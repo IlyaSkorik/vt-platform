@@ -89,6 +89,9 @@ function aRegistration({
         waitlistOpen: waitlisted,
         registrationOpensAt: null,
         registrationClosesAt: null,
+        // Unset: the wizard does not read the date a nomination is performed —
+        // it is the public page's business — but the projection carries it.
+        heldAt: null,
       },
     ],
     disciplines: [

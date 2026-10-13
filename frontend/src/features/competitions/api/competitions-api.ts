@@ -348,7 +348,9 @@ async function deleteCategory(
 async function scheduleNominationRegistration(
   competitionId: string,
   categoryId: string,
-  payload: { opensAt: string | null; closesAt: string | null },
+  // The nomination's whole schedule, not just its intake window: a PUT here
+  // replaces all three, so an omitted value clears it.
+  payload: { opensAt: string | null; closesAt: string | null; heldAt: string | null },
 ): Promise<CompetitionDetail> {
   try {
     const response = await apiClient
