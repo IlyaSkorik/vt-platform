@@ -178,6 +178,7 @@ from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.organization.domain.value_objects import OrganizationModule
 from apps.organization.presentation.permissions import IsModuleEnabled
 
+from .images import LANDING_PIXELS, POSTER_PIXELS, ImageRejectedError, store_image
 from .serializers import (
     AddAdditionalServiceSerializer,
     AddAdmissionRuleSerializer,
@@ -411,43 +412,24 @@ class CompetitionViewSet(viewsets.ViewSet):
     @action(detail=True, methods=["post"], url_path="branding/poster", parser_classes=[MultiPartParser, FormParser])
     def upload_poster(self, request: Request, pk: str) -> Response:
         """Upload a competition poster image and store its media reference."""
-        uploaded = request.FILES.get("file")
-        if uploaded is None:
+        # Re-encoded rather than stored as it arrived — see ``images.py`` for why
+        # the raw file is both a performance problem and a privacy one. The key is
+        # fresh every time, never a fixed ``poster.jpg``: a bucket overwrites a
+        # repeated key in place and serves it back ``immutable`` for a year, so
+        # replacing the poster left both the stored reference and every cached copy
+        # pointing at the old image.
+        try:
+            poster_ref = store_image(
+                uploaded=request.FILES.get("file"),
+                key_prefix=f"competitions/{pk}/poster",
+                max_edge=POSTER_PIXELS,
+            )
+        except ImageRejectedError as exc:
             return validation_problem(
-                {"file": ["Выберите файл афиши."]},
+                {"file": [str(exc)]},
                 instance=request.path,
                 request=request,
             )
-
-        content_type = (uploaded.content_type or "").lower()
-        allowed = {"image/jpeg", "image/png", "image/webp"}
-        if content_type not in allowed:
-            return validation_problem(
-                {"file": ["Допустимы только JPEG, PNG или WebP."]},
-                instance=request.path,
-                request=request,
-            )
-
-        if uploaded.size > 5 * 1024 * 1024:
-            return validation_problem(
-                {"file": ["Размер файла не должен превышать 5 МБ."]},
-                instance=request.path,
-                request=request,
-            )
-
-        extension_by_type = {
-            "image/jpeg": ".jpg",
-            "image/png": ".png",
-            "image/webp": ".webp",
-        }
-        extension = extension_by_type[content_type]
-        # A fresh key every time, never a fixed ``poster.jpg``: a bucket overwrites a repeated
-        # key in place and serves it back ``immutable`` for a year, so replacing the poster left
-        # both the stored reference and every cached copy pointing at the old image.
-        relative_path = default_storage.save(f"competitions/{pk}/poster/{uuid.uuid4().hex}{extension}", uploaded)
-        # Ask the storage for the URL rather than assembling one: that is the single line
-        # that decides whether this lives under /media/ or in a bucket.
-        poster_ref = default_storage.url(relative_path)
 
         return self._run(
             UpdateCompetitionBrandingHandler,
@@ -997,40 +979,22 @@ class CompetitionViewSet(viewsets.ViewSet):
         except (ApplicationError, CompetitionDomainError) as exc:
             return competition_problem(exc, instance=request.path, request=request)
 
-        uploaded = request.FILES.get("file")
-        if uploaded is None:
+        # Re-encoded rather than stored as it arrived: a jury portrait off a phone
+        # is twelve megapixels painted into a 287×276 box, and it carries the GPS
+        # of where it was taken. See ``images.py``.
+        try:
+            file_reference = store_image(
+                uploaded=request.FILES.get("file"),
+                key_prefix=f"competitions/{pk}/landing",
+                max_edge=LANDING_PIXELS,
+            )
+        except ImageRejectedError as exc:
             return validation_problem(
-                {"file": ["Выберите изображение."]},
+                {"file": [str(exc)]},
                 instance=request.path,
                 request=request,
             )
 
-        content_type = (uploaded.content_type or "").lower()
-        extension_by_type = {
-            "image/jpeg": ".jpg",
-            "image/png": ".png",
-            "image/webp": ".webp",
-        }
-        if content_type not in extension_by_type:
-            return validation_problem(
-                {"file": ["Допустимы только JPEG, PNG или WebP."]},
-                instance=request.path,
-                request=request,
-            )
-
-        if uploaded.size > 5 * 1024 * 1024:
-            return validation_problem(
-                {"file": ["Размер файла не должен превышать 5 МБ."]},
-                instance=request.path,
-                request=request,
-            )
-
-        extension = extension_by_type[content_type]
-        relative_path = default_storage.save(
-            f"competitions/{pk}/landing/{uuid.uuid4().hex}{extension}",
-            uploaded,
-        )
-        file_reference = default_storage.url(relative_path)
         correlation_id = request_id(request)
         return Response(
             {
