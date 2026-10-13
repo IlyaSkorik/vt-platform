@@ -133,8 +133,10 @@ interface GallerySectionProps {
   block: LandingBlock;
 }
 
-/** The GALLERY block: a paged carousel of photographs, four to a screen, with
- * a lightbox behind every tile. */
+/**
+ * The GALLERY block: photographs four to a screen with a lightbox behind every
+ * tile, paged by arrows on a desktop and drifting endlessly on a phone.
+ */
 export function GallerySection({ block }: GallerySectionProps): React.JSX.Element | null {
   const [active, setActive] = useState<number | null>(null);
   const images = block.images
@@ -148,7 +150,7 @@ export function GallerySection({ block }: GallerySectionProps): React.JSX.Elemen
       id={`block-${block.id}`}
       title="Галерея"
       align="center"
-      headingGap="mb-5 md:mb-[26px]"
+      headingGap="mb-3.5 md:mb-[26px]"
     >
       <LandingCarousel
         label="Галерея"
@@ -167,7 +169,15 @@ export function GallerySection({ block }: GallerySectionProps): React.JSX.Elemen
         // the basis below has to stay in step with this gap.
         gapClassName="gap-2"
         sideGapClassName="gap-4 md:gap-3.5"
-        itemClassName="basis-full sm:basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-1rem)/3)] xl:basis-[calc((100%-1.5rem)/4)]"
+        // 291 fixed on a phone rather than a full-width slide: the frame leaves
+        // the next tile's edge showing, which is what says the row scrolls.
+        itemClassName="basis-[291px] max-w-full sm:basis-[calc((100%-0.5rem)/2)] lg:basis-[calc((100%-1rem)/3)] xl:basis-[calc((100%-1.5rem)/4)]"
+        // On a phone the gallery is a strip that moves on its own and is
+        // dragged with a thumb — no paddles, no dashes. The jury keeps both,
+        // because there a reader is comparing three people rather than
+        // glancing past photographs.
+        controls="md-up"
+        drift
       />
       <GalleryLightbox
         images={images}

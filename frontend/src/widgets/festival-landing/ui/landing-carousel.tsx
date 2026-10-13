@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/shared/lib";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/shared/ui";
 
@@ -17,7 +17,33 @@ interface LandingCarouselProps {
   gapClassName: string;
   /** Air between a paddle and the track. The frame sets it per section. */
   sideGapClassName: string;
+  /**
+   * Extra classes for the scrolling track itself — side padding, mostly.
+   * Padding is how a strip is centred: a flex container that overflows cannot
+   * be `justify-center` without clipping its own first item, so the slide is
+   * brought to the middle by leaving half the leftover width either side of
+   * it instead.
+   */
+  trackClassName?: string;
+  /**
+   * Where the paddles and the dash rail appear. `"md-up"` hides both on a
+   * phone, where the frame leaves the gallery as a bare strip of pictures.
+   */
+  controls?: "always" | "md-up";
+  /**
+   * Creep sideways on a phone, endlessly, while nobody is touching it.
+   *
+   * Only where the controls are hidden: a track that moves on its own *and*
+   * has arrows fights the reader for the same slide.
+   */
+  drift?: boolean;
 }
+
+/** Pixels per second the drifting track travels. Slow enough to read past. */
+const DRIFT_SPEED = 30;
+
+/** How long after a touch the drift waits before picking up again. */
+const DRIFT_RESUME_MS = 3500;
 
 /**
  * The paged carousel the festival page uses for its jury and its gallery.
@@ -45,11 +71,15 @@ export function LandingCarousel({
   itemClassName,
   gapClassName,
   sideGapClassName,
+  trackClassName,
+  controls = "always",
+  drift = false,
 }: LandingCarouselProps): React.JSX.Element {
   const trackRef = useRef<HTMLUListElement>(null);
   // Everything the scroll handler needs lives in a ref, because reading any of
   // it off the DOM there would force a layout on every frame of a scroll.
   const strideRef = useRef(0);
+  const slotRef = useRef(0);
   const pageCountRef = useRef(1);
   // The scrollable distance, measured once per layout instead of per event.
   // `scrollWidth` is the expensive read — asking for it mid-scroll made the
@@ -64,6 +94,25 @@ export function LandingCarousel({
   const frameRef = useRef<number | null>(null);
   const [page, setPage] = useState(0);
   const [pageCount, setPageCount] = useState(1);
+  // How many slides have already been carried round to the back of the queue.
+  // The drifting track never runs out: when the leading slide has scrolled out
+  // of sight it is moved to the end and the scroll position is pulled back by
+  // exactly its width, so the strip is endless with one copy of each picture.
+  // Rotating the data rather than rendering the list twice keeps every tile
+  // real — a duplicated strip has to be `aria-hidden`, and then half the
+  // pictures on screen are not clickable and not announced.
+  const [rotation, setRotation] = useState(0);
+  // Set between deciding to rotate and the layout effect that compensates the
+  // scroll for it, so the two happen in one frame and nothing visibly jumps.
+  const pendingRotation = useRef(0);
+  // The drift's own position, in fractions of a pixel.
+  //
+  // It cannot live in `scrollLeft`: that property rounds, and at 28 px/s a
+  // frame is under half a pixel — `scrollLeft += 0.46` rounded straight back
+  // to where it started, every frame, so the strip sat still. Accumulating
+  // here and *assigning* the total is what makes a slow drift possible at all.
+  const positionRef = useRef(0);
+  const [drifting, setDrifting] = useState(false);
 
   const measure = useCallback(() => {
     const track = trackRef.current;
@@ -77,6 +126,7 @@ export function LandingCarousel({
     // it, so without this the division lands just under the true count.
     const perView = Math.max(1, Math.round((track.clientWidth + gap) / slot));
     const pages = Math.max(1, Math.ceil(items.length / perView));
+    slotRef.current = slot;
     strideRef.current = slot * perView;
     pageCountRef.current = pages;
     maxScrollRef.current = track.scrollWidth - track.clientWidth;
@@ -138,6 +188,99 @@ export function LandingCarousel({
     };
   }, [measure, read]);
 
+  // Drift only below `md`, and only if the reader has not asked for less
+  // motion: a strip that moves by itself with no way to stop it is exactly
+  // what `prefers-reduced-motion` is about.
+  useEffect(() => {
+    if (!drift) {
+      return;
+    }
+    const narrow = window.matchMedia("(max-width: 767px)");
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = (): void => {
+      setDrifting(narrow.matches && !calm.matches);
+    };
+    update();
+    narrow.addEventListener("change", update);
+    calm.addEventListener("change", update);
+    return () => {
+      narrow.removeEventListener("change", update);
+      calm.removeEventListener("change", update);
+    };
+  }, [drift]);
+
+  // The drift itself. Nothing is measured inside the loop — the slide's width
+  // comes from the last layout pass — so a frame costs an assignment and a
+  // comparison. A touch, a drag or a wheel stops it for a few seconds: the
+  // reader's gesture always wins over the animation.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!drifting || track == null) {
+      return;
+    }
+    let frame = 0;
+    let previous = 0;
+    let heldUntil = 0;
+    positionRef.current = track.scrollLeft;
+    const tick = (now: number): void => {
+      frame = requestAnimationFrame(tick);
+      const elapsed = previous === 0 ? 0 : (now - previous) / 1000;
+      previous = now;
+      // Held: the reader is dragging, so the track's position is theirs. Keep
+      // ours in step with it, or the drift would snap back to where it left
+      // off the moment it resumes.
+      if (now < heldUntil) {
+        positionRef.current = track.scrollLeft;
+        return;
+      }
+      // A rotation is queued but the list has not re-rendered yet. Moving now
+      // would shift the strip before the slide behind it had moved, which is
+      // the one-slide jump the layout effect exists to prevent.
+      if (pendingRotation.current > 0) {
+        return;
+      }
+      positionRef.current += DRIFT_SPEED * elapsed;
+      track.scrollLeft = positionRef.current;
+      const slot = slotRef.current;
+      // The leading slide has gone: carry it to the back and pull the scroll
+      // position back by its width in the same frame — see `rotation`.
+      if (slot > 0 && positionRef.current >= slot) {
+        pendingRotation.current += 1;
+        setRotation((value) => value + 1);
+      }
+    };
+    const hold = (): void => {
+      heldUntil = performance.now() + DRIFT_RESUME_MS;
+    };
+    track.addEventListener("pointerdown", hold);
+    track.addEventListener("touchstart", hold, { passive: true });
+    track.addEventListener("wheel", hold, { passive: true });
+    frame = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(frame);
+      track.removeEventListener("pointerdown", hold);
+      track.removeEventListener("touchstart", hold);
+      track.removeEventListener("wheel", hold);
+    };
+  }, [drifting]);
+
+  // Before the browser paints the rotated list, take back the distance the
+  // slide that moved to the end was occupying. In an effect that runs after
+  // paint this is a visible jump of one slide, every slide.
+  //
+  // `rotation` is named as a dependency even though the body never reads it:
+  // it is the trigger, and the correction has to run exactly once per rotation.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: trigger, not input
+  useLayoutEffect(() => {
+    const track = trackRef.current;
+    if (track == null || pendingRotation.current === 0) {
+      return;
+    }
+    track.scrollLeft -= slotRef.current * pendingRotation.current;
+    positionRef.current = track.scrollLeft;
+    pendingRotation.current = 0;
+  }, [rotation]);
+
   const goTo = useCallback((target: number) => {
     const track = trackRef.current;
     const stride = strideRef.current;
@@ -151,6 +294,10 @@ export function LandingCarousel({
   // Clamped rather than trusted: a resize can shrink the page count under a
   // scroll position that was valid a moment ago.
   const current = Math.min(page, pageCount - 1);
+  const shown =
+    rotation === 0
+      ? items
+      : [...items.slice(rotation % items.length), ...items.slice(0, rotation % items.length)];
 
   return (
     // A labelled `<section>` carries the `region` role the APG's carousel
@@ -170,11 +317,16 @@ export function LandingCarousel({
           ref={trackRef}
           onScroll={sync}
           className={cn(
-            "flex min-w-0 flex-1 snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+            "flex min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+            // Snapping and drifting cannot both have the scroll position:
+            // mandatory snap drags the track back to the nearest slide on every
+            // frame the drift nudges it forward.
+            drifting ? "snap-none" : "snap-x snap-mandatory",
             gapClassName,
+            trackClassName,
           )}
         >
-          {items.map((item) => (
+          {shown.map((item) => (
             <li key={item.id} className={cn("min-w-0 shrink-0 grow-0 snap-start", itemClassName)}>
               {item.content}
             </li>
@@ -195,7 +347,15 @@ export function LandingCarousel({
         // On a phone the paddles come down here and flank the dots — the frame
         // has no room for them beside a full-width slide. Because the two are
         // the same width, `justify-between` also centres the dots exactly.
-        <div className="mt-[11px] flex items-center justify-between gap-6 md:mt-[37px] md:justify-center md:gap-0">
+        <div
+          className={cn(
+            "mt-[11px] flex items-center justify-between gap-6 md:mt-[37px] md:justify-center md:gap-0",
+            // `hidden md:flex`, not unmounted: the dash rail is still the
+            // desktop's paging indicator, it is only the phone that does
+            // without one.
+            controls === "md-up" && "hidden md:flex",
+          )}
+        >
           <CarouselPaddle
             direction="prev"
             label={label}

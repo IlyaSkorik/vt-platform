@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { resolveMediaUrl } from "@/features/festival-catalog";
 import type { LandingBlock, PartnerCard } from "@/features/festival-landing";
 import { Button, OpenInNewIcon } from "@/shared/ui";
+import { LandingCarousel } from "../landing-carousel";
 import { LandingSection } from "../landing-section";
 
 /**
@@ -74,10 +76,42 @@ interface PartnersSectionProps {
   block: LandingBlock;
 }
 
-/** «Партнеры» — a centred row of partner tiles that wraps rather than scrolls:
- * there are rarely more than a handful, and a carousel for four logos is
- * machinery nobody needs. */
+/**
+ * True while the viewport is narrower than `md`.
+ *
+ * The two layouts below are different enough that CSS cannot switch between
+ * them: one is a wrapping row, the other a scrolling track with its own
+ * machinery. Rendering both and hiding one would put every partner's «Сайт»
+ * link in the page twice, which is two of everything for a screen reader.
+ */
+function useNarrow(): boolean {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 767px)");
+    const update = (): void => {
+      setNarrow(query.matches);
+    };
+    update();
+    query.addEventListener("change", update);
+    return () => {
+      query.removeEventListener("change", update);
+    };
+  }, []);
+  return narrow;
+}
+
+/**
+ * «Партнеры» — a centred row that wraps on a desktop and a drifting strip on a
+ * phone.
+ *
+ * Two 220px tiles plus their gap do not fit a 375px screen, and stacking them
+ * turns four partners into a column longer than the gallery above it. So the
+ * phone gets the same treatment the gallery does: the tile sits in the middle
+ * with its neighbours' edges showing either side, the strip creeps along by
+ * itself, and a thumb outranks it.
+ */
 export function PartnersSection({ block }: PartnersSectionProps): React.JSX.Element | null {
+  const narrow = useNarrow();
   if (block.partners.length === 0) {
     return null;
   }
@@ -86,15 +120,36 @@ export function PartnersSection({ block }: PartnersSectionProps): React.JSX.Elem
       id={`block-${block.id}`}
       title="Партнеры"
       align="center"
-      headingGap="mb-5 md:mb-[26px]"
+      headingGap="mb-3.5 md:mb-[26px]"
     >
-      <ul className="flex flex-wrap justify-center gap-[26px]">
-        {block.partners.map((partner) => (
-          <li key={partner.id}>
-            <PartnerTile partner={partner} />
-          </li>
-        ))}
-      </ul>
+      {narrow ? (
+        <LandingCarousel
+          label="Партнеры"
+          items={block.partners.map((partner) => ({
+            id: partner.id,
+            content: <PartnerTile partner={partner} />,
+          }))}
+          gapClassName="gap-[26px]"
+          sideGapClassName="gap-0"
+          itemClassName="basis-[220px]"
+          // Half the leftover width either side, so the tile in play is in the
+          // middle of the screen rather than against its left edge. The
+          // negative margin lets the strip reach into the page gutter; without
+          // it the padding would start inside the text column and the
+          // neighbours would be clipped flush against it.
+          trackClassName="-mx-4 px-[calc((100vw-220px)/2)]"
+          controls="md-up"
+          drift
+        />
+      ) : (
+        <ul className="flex flex-wrap justify-center gap-[26px]">
+          {block.partners.map((partner) => (
+            <li key={partner.id}>
+              <PartnerTile partner={partner} />
+            </li>
+          ))}
+        </ul>
+      )}
     </LandingSection>
   );
 }
