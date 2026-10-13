@@ -155,6 +155,60 @@ export function MapPinIcon(props: IconProps): React.JSX.Element {
 }
 
 /**
+ * The folded map on the two «карты» links under the festival's address.
+ *
+ * Exported at 18×18 inside a 24px frame — which is why the glyph is given its
+ * own 18-unit box rather than the icons above's 26: a caller sizes the box, and
+ * the box *is* the glyph here. The Figma export draws it 293 units down its
+ * sheet, so the group lifts it back to the origin instead of the path being
+ * rewritten by hand — the next re-export then diffs cleanly against this one.
+ */
+export function MapIcon(props: IconProps): React.JSX.Element {
+  return (
+    <svg
+      viewBox="0 0 18 18"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      {...props}
+    >
+      <g transform="translate(0, -293)">
+        <path
+          d="M12 311L6 308.9L1.35 310.7C1.01667 310.833 0.708333 310.796 0.425 310.587C0.141667 310.379 0 310.1 0 309.75V295.75C0 295.533 0.0625 295.342 0.1875 295.175C0.3125 295.008 0.483333 294.883 0.7 294.8L6 293L12 295.1L16.65 293.3C16.9833 293.167 17.2917 293.204 17.575 293.412C17.8583 293.621 18 293.9 18 294.25V308.25C18 308.467 17.9375 308.658 17.8125 308.825C17.6875 308.992 17.5167 309.117 17.3 309.2L12 311ZM11 308.55V296.85L7 295.45V307.15L11 308.55ZM13 308.55L16 307.55V295.7L13 296.85V308.55ZM2 308.3L5 307.15V295.45L2 296.45V308.3Z"
+          fill="currentColor"
+        />
+      </g>
+    </svg>
+  );
+}
+
+/**
+ * Material's `open_in_new`: the mark every link that leaves the site wears —
+ * the map links, a partner's website, the regulation when it is a URL rather
+ * than a file.
+ *
+ * Decorative like the rest: the link beside it already says where it goes, and
+ * "opens in a new tab" belongs in the link's own accessible name if it needs
+ * saying at all.
+ */
+export function OpenInNewIcon(props: IconProps): React.JSX.Element {
+  return (
+    <svg
+      viewBox="0 0 14.25 14.25"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      {...props}
+    >
+      <path
+        d="M1.58333 14.25C1.14792 14.25 0.775174 14.095 0.465104 13.7849C0.155035 13.4748 0 13.1021 0 12.6667V1.58333C0 1.14792 0.155035 0.775174 0.465104 0.465104C0.775174 0.155035 1.14792 0 1.58333 0H7.125V1.58333H1.58333V12.6667H12.6667V7.125H14.25V12.6667C14.25 13.1021 14.095 13.4748 13.7849 13.7849C13.4748 14.095 13.1021 14.25 12.6667 14.25H1.58333ZM5.30417 10.0542L4.19583 8.94583L11.5583 1.58333H8.70833V0H14.25V5.54167H12.6667V2.69167L5.30417 10.0542Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+/**
  * The theme switch's dark-theme face, the moon's counterpart. 29×29 in the
  * export against the moon's 26×26, and its rays reach the very edge of that box
  * while the crescent keeps a margin — so it is scaled into the moon's box rather
