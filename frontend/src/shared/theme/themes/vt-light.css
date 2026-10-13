@@ -69,12 +69,14 @@
   --brand-control: var(--mauve-300);
   --brand-track: var(--mauve-300);
   --brand-band: rgb(177 150 208 / 0.53);
-  /* What a brand-filled control takes under the pointer. Here it is `тёмный
-   * акцент` — the same value `--brand-line` carries, because against a pale page
-   * deepening the fill one step *is* the darker violet. It is a token of its own
-   * rather than a second use of `--brand-line` because the night frame answers
-   * this question with a colour from the other ramp entirely. */
-  --brand-press: var(--mauve-500);
+  /* What a brand-filled control takes under the pointer: the bottom of the
+   * mauve ramp, well past `тёмный акцент`. Stopping at `тёмный акцент` — the
+   * value `--brand-line` carries — left the hover too near the resting fill to
+   * read as a press, so it drops far enough that the plate plainly darkens. A
+   * token of its own rather than a second use of `--brand-line` because the
+   * night frame answers this question with a colour from the other ramp
+   * entirely. */
+  --brand-press: var(--mauve-800);
   --brand-tint: var(--mauve-100);
   --brand-glass: rgb(247 245 245 / 0.23);
   --brand-pane: rgb(217 217 215 / 0.18);

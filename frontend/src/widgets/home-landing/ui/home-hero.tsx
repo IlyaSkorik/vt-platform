@@ -138,8 +138,8 @@ export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
           <div className="flex flex-col items-start gap-3 md:flex-row md:flex-wrap md:items-center md:gap-[18px]">
             {/* Hover swaps the fill rather than fading the primary the way the
                 variant does, and leaves the label white. Which fill is the
-                theme's business, not the button's: «тёмный акцент» by day,
-                «тёмный база ночная» by night — hence one `--brand-press` and not
+                theme's business, not the button's: the mauve ramp's darkest
+                step by day, «тёмный база ночная» by night — one `--brand-press`, not
                 a hard-coded violet. Every primary button on the landing and in
                 the catalogue does the same. */}
             <Button

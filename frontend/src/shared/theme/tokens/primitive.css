@@ -56,6 +56,11 @@
   --night-900: #201622; /* the organisers' panel */
   --mauve-600: #654180;
   --mauve-700: #4b2f61;
+  /* The pressed fill of a brand control in the light theme. Deeper *and* more
+   * saturated than the ramp's own trend: a desaturated step this dark went
+   * muddy under the pointer, so the bottom of the ramp leans back towards the
+   * violet family. */
+  --mauve-800: #3d1857;
 
   /* --- Gold ----------------------------------------------------------------
    * Kept, and still the secondary: the hero artwork's comet and stars are gold,
