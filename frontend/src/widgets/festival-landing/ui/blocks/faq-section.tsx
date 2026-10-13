@@ -1,5 +1,5 @@
-import { ChevronDown } from "lucide-react";
 import type { LandingBlock } from "@/features/festival-landing";
+import { ChevronDownIcon } from "@/shared/ui";
 import { LandingSection } from "../landing-section";
 
 interface FaqSectionProps {
@@ -25,12 +25,16 @@ export function FaqSection({ block }: FaqSectionProps): React.JSX.Element | null
             <details className="group rounded-brand border border-brand-line px-4 py-4 md:px-6 md:py-6">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-base leading-[22px] outline-none focus-visible:ring-2 focus-visible:ring-ring md:text-lg md:leading-[25px]">
                 <span className="min-w-0 break-words">{item.question}</span>
-                <ChevronDown
-                  className="size-5 shrink-0 transition-transform group-open:rotate-180 md:size-6"
+                {/* 25×14 — the frame's own wedge, wide and shallow, not a
+                    stroked Lucide chevron. Sized on both axes for that reason. */}
+                <ChevronDownIcon
+                  className="h-2.5 w-[18px] shrink-0 transition-transform group-open:rotate-180 md:h-3.5 md:w-[25px]"
                   aria-hidden="true"
                 />
               </summary>
-              <p className="mt-3 whitespace-pre-line break-words text-pretty text-sm leading-[19px] md:text-base md:leading-[22px]">
+              {/* 80% of «свет» at night: an answer is secondary to the question
+                  above it, and at full strength the two read as one block. */}
+              <p className="mt-3 whitespace-pre-line break-words text-pretty text-sm leading-[19px] md:text-base md:leading-[22px] dark:text-foreground/80">
                 {item.answer}
               </p>
             </details>

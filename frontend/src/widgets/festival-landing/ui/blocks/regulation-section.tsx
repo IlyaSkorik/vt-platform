@@ -1,8 +1,8 @@
-import { Download, FileText } from "lucide-react";
+import { Download } from "lucide-react";
 import { formatDate, resolveMediaUrl } from "@/features/festival-catalog";
 import type { Regulation } from "@/features/festival-landing";
 import { isExternalDocLink } from "@/shared/lib";
-import { Button, OpenInNewIcon } from "@/shared/ui";
+import { Button, DocumentIcon, OpenInNewIcon } from "@/shared/ui";
 import { LandingSection } from "../landing-section";
 
 interface RegulationSectionProps {
@@ -26,12 +26,17 @@ export function RegulationSection({ regulation }: RegulationSectionProps): React
           family of panels in this column. */}
       <div className="flex flex-col gap-3 rounded-[19px] border border-brand-line px-3 py-3 md:flex-row md:items-center md:justify-between md:px-3.5">
         <div className="flex min-w-0 items-start gap-2">
-          <FileText className="size-5 shrink-0 md:size-[23px]" aria-hidden="true" />
+          {/* 15.33×19.17 inside the frame's 23px slot, and 14×17.5 in the 21px
+              one a phone gives it — the glyph's own size, not the slot's. */}
+          <DocumentIcon
+            className="mt-0.5 h-[17.5px] w-3.5 shrink-0 md:h-[19.17px] md:w-[15.33px]"
+            aria-hidden="true"
+          />
           <div className="min-w-0">
             <p className="break-words font-bold text-base leading-[22px] md:text-xl md:leading-[27px]">
               {regulation.title}
             </p>
-            <p className="text-foreground/40 text-sm leading-[19px] md:text-base md:leading-[22px]">
+            <p className="text-foreground/40 text-sm leading-[19px] md:text-base md:leading-[22px] dark:text-foreground/70">
               Версия {regulation.version}
               {published ? ` · от ${published}` : ""}
             </p>
@@ -42,11 +47,14 @@ export function RegulationSection({ regulation }: RegulationSectionProps): React
           // not the page's full-width CTA.
           <Button
             asChild
-            className="h-[30px] w-full shrink-0 rounded-brand font-heading font-bold text-sm leading-[19px] hover:bg-brand-press md:h-[33px] md:w-auto md:px-5 md:text-lg md:leading-[25px]"
+            className="h-[30px] w-full shrink-0 rounded-brand font-heading font-bold text-sm leading-[19px] hover:bg-brand-press md:h-[33px] md:w-auto md:px-5 md:text-lg md:leading-[25px] dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-press"
           >
             <a href={href} target="_blank" rel="noopener noreferrer">
+              {/* 14.25, the same mark at the same size as on the map links —
+                  the export draws it 3% wider here (14.71×14.25) and that is
+                  Figma stretching one glyph, not a second icon. */}
               {isLink ? (
-                <OpenInNewIcon className="size-[14.25px] md:size-[19px]" aria-hidden="true" />
+                <OpenInNewIcon className="size-[14.25px]" aria-hidden="true" />
               ) : (
                 <Download className="size-4 md:size-5" aria-hidden="true" />
               )}

@@ -76,6 +76,12 @@
    * put a different violet on screen from the one the design names. */
   --brand-line: var(--mauve-500);
   --brand-line-soft: var(--mauve-300);
+  /* «Акцент темный»: the outline on a partner tile, and the only place the
+   * saturated violet is used as a line. A token rather than a second use of
+   * `--brand-line`, because the two are different published variables with
+   * near-identical names — see the note in `primitive.css`. */
+  --brand-line-vivid: var(--violet-550);
+
   --brand-surface: var(--night-800);
   --brand-control: var(--night-400);
   --brand-track: var(--night-800);
@@ -112,14 +118,31 @@
   --info-surface: color-mix(in oklab, var(--info) 20%, transparent);
   --info-foreground: oklch(0.98 0 0);
 
+  /* The plate under a photograph that has not arrived yet — see the note in
+   * `vt-light.css`. The same grey as by day, which the frame is explicit about:
+   * a gallery is a wall of pictures either way, and an empty tile reads as a
+   * missing picture rather than as a hole in the page. */
+  --media-placeholder: var(--grey-200);
+
   /* --- Intake state (the nomination chips on a festival's public page) ------
    * The same plates as the light theme, deliberately: they are light panels in
    * both, so a night-specific pair would mean inventing a dark mint and a dark
    * rose that the frame never drew. See the note in `vt-light.css`. */
-  --intake-open: var(--green-200);
-  --intake-closed: var(--red-200);
-  --intake-soon: var(--neutral-200);
-  --intake-foreground: var(--neutral-900);
+  /* Inverted after dark, and not merely darkened: the chip becomes a hairline
+   * with a tenth of its colour behind it and «свет» on top. A filled pastel
+   * plate is the loudest thing on a near-black page — three of them down the
+   * column would outshine the nominations they label. «Скоро откроется» has no
+   * wash at all, only a grey line: the one state that is deliberately colourless.
+   *
+   * The washes are their own values rather than the lines at 10%: the frame
+   * mixes a paler mint and a paler rose into them than it draws the lines with. */
+  --intake-open: rgb(183 255 179 / 0.1);
+  --intake-closed: rgb(255 92 92 / 0.1);
+  --intake-soon: transparent;
+  --intake-foreground: var(--neutral-50);
+  --intake-open-line: var(--green-300);
+  --intake-closed-line: var(--red-300);
+  --intake-soon-line: var(--grey-500);
 
   /* Shadows */
   --shadow-color: oklch(0 0 0 / 0.32);

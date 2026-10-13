@@ -26,10 +26,12 @@ export function LandingCtaButton({
   applyPath,
   className,
 }: LandingCtaButtonProps): React.JSX.Element {
-  // `hover:bg-brand-press` rather than the variant's own fade of the primary —
-  // the gesture every brand plate on the public surfaces answers with.
+  // `dark:bg-brand`, because `--primary` drifts lighter at night and the frame
+  // keeps «Акцентище» `#9400D3` on both plates — the same pairing every primary
+  // button on the public surfaces uses. `hover:bg-brand-press` rather than the
+  // variant's own fade of the primary.
   const plate = cn(
-    "h-[37px] w-full rounded-brand font-heading font-bold text-base leading-[22px] hover:bg-brand-press md:h-[61px] md:text-[28px] md:leading-[38px]",
+    "h-[37px] w-full rounded-brand font-heading font-bold text-base leading-[22px] hover:bg-brand-press md:h-[61px] md:text-[28px] md:leading-[38px] dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-press",
     className,
   );
 

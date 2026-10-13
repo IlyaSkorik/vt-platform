@@ -1,7 +1,7 @@
-import { Download, FileText } from "lucide-react";
+import { Download } from "lucide-react";
 import { resolveMediaUrl } from "@/features/festival-catalog";
 import type { FestivalDocument } from "@/features/festival-landing";
-import { Button } from "@/shared/ui";
+import { Button, DocumentIcon } from "@/shared/ui";
 import { LandingSection } from "../landing-section";
 
 /** Human labels for the document categories exposed publicly. */
@@ -21,7 +21,10 @@ function DocumentRow({ document }: { document: FestivalDocument }): React.JSX.El
   return (
     <li className="flex flex-col gap-3 rounded-lg border bg-card p-4 text-card-foreground shadow-elevation-1 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-start gap-3">
-        <FileText className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+        <DocumentIcon
+          className="mt-0.5 h-[17.5px] w-3.5 shrink-0 md:h-[19.17px] md:w-[15.33px]"
+          aria-hidden="true"
+        />
         <div className="min-w-0 space-y-0.5">
           <p className="break-words font-medium">{document.title}</p>
           <p className="text-sm text-muted-foreground">

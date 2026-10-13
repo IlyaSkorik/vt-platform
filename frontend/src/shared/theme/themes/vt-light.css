@@ -65,6 +65,12 @@
    * border is still what a table row or an input wears; these say "brand". */
   --brand-line: var(--mauve-500);
   --brand-line-soft: var(--mauve-300);
+  /* «Акцент темный»: the outline on a partner tile, and the only place the
+   * saturated violet is used as a line. A token rather than a second use of
+   * `--brand-line`, because the two are different published variables with
+   * near-identical names — see the note in `primitive.css`. */
+  --brand-line-vivid: var(--violet-550);
+
   --brand-surface: var(--mauve-300);
   --brand-control: var(--mauve-300);
   --brand-track: var(--mauve-300);
@@ -95,6 +101,12 @@
   --info-surface: var(--sky-100);
   --info-foreground: var(--neutral-0);
 
+  /* The plate under a photograph that has not arrived yet — a gallery tile, a
+   * poster slot. Not `--muted`: that is a surface the chrome tints towards the
+   * brand, and under a picture it reads as a pale panel rather than as an
+   * absence. */
+  --media-placeholder: var(--grey-200);
+
   /* --- Intake state (the nomination chips on a festival's public page) ------
    * Three pastel plates with dark text, not the `*-surface` status family: those
    * colour the *text* with the status and leave the fill a tint, which is the
@@ -107,6 +119,13 @@
   --intake-closed: var(--red-200);
   --intake-soon: var(--neutral-200);
   --intake-foreground: var(--neutral-900);
+  /* By day the chip is a solid plate, so its outline is the plate's own colour
+   * and reads as no outline at all. The token exists because the night frame
+   * builds the same chip the other way round — a hairline over a 10% wash — and
+   * a `dark:border-*` on each of three states would say that three times. */
+  --intake-open-line: var(--green-200);
+  --intake-closed-line: var(--red-200);
+  --intake-soon-line: var(--neutral-200);
 
   /* Elevation colour consumed by the shadow scale. */
   --shadow-color: color-mix(in oklab, var(--violet-900) 12%, transparent);

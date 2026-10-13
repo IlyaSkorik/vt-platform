@@ -1,6 +1,6 @@
-import { CalendarCheck } from "lucide-react";
 import type { RegistrationNominationView } from "@/features/festival-landing";
 import { cn } from "@/shared/lib";
+import { CalendarClockIcon } from "@/shared/ui";
 import { LandingSection } from "../landing-section";
 
 type IntakeTone = "open" | "closed" | "soon";
@@ -60,9 +60,9 @@ function deriveState(nomination: RegistrationNominationView): IntakeState {
 }
 
 const INTAKE_TONES: Record<IntakeTone, string> = {
-  open: "bg-intake-open",
-  closed: "bg-intake-closed",
-  soon: "bg-intake-soon",
+  open: "border-intake-open-line bg-intake-open",
+  closed: "border-intake-closed-line bg-intake-closed",
+  soon: "border-intake-soon-line bg-intake-soon",
 };
 
 /**
@@ -73,12 +73,17 @@ const INTAKE_TONES: Record<IntakeTone, string> = {
  * is a full-round pill — the application chrome's language, for a warning you
  * are meant to notice. Here the plate carries the colour and the label stays
  * dark, so three of these down a column read as labels on a panel.
+ *
+ * At night the chip turns inside out — a hairline with a tenth of its colour
+ * behind it — and the border is always drawn, because by day the line is the
+ * plate's own colour and reads as no line at all. The theme owns which of the
+ * two it is; this component just draws a bordered chip.
  */
 function IntakeChip({ state }: { state: IntakeState }): React.JSX.Element {
   return (
     <span
       className={cn(
-        "inline-flex h-[19px] shrink-0 items-center rounded-brand px-3 text-intake-foreground text-[10px] leading-[14px] md:h-6 md:text-sm md:leading-[19px]",
+        "inline-flex h-[19px] shrink-0 items-center rounded-brand border px-3 text-intake-foreground text-[10px] leading-[14px] md:h-6 md:text-sm md:leading-[19px]",
         INTAKE_TONES[state.tone],
       )}
     >
@@ -129,13 +134,23 @@ export function RegistrationBlock({
             >
               <div className="flex items-start justify-between gap-3">
                 <h3 className="flex min-w-0 items-center gap-2 font-bold text-base leading-[22px] md:text-xl md:leading-[27px]">
-                  <CalendarCheck className="size-[18px] shrink-0 md:size-6" aria-hidden="true" />
+                  {/* `h`/`w` rather than `size`: the glyph is 20×21, and the dial that
+                      hangs below the calendar is what makes it read as a window
+                      rather than as a date. */}
+                  <CalendarClockIcon
+                    className="h-[15.75px] w-[15px] shrink-0 md:h-[21px] md:w-5"
+                    aria-hidden="true"
+                  />
                   <span className="min-w-0 break-words">{nomination.name}</span>
                 </h3>
                 <IntakeChip state={state} />
               </div>
 
-              <div className="mt-2 text-foreground/70 text-sm leading-[19px] md:mt-3 md:text-lg md:leading-[25px]">
+              {/* 70% by day and full strength by night: at 70% over `#110B12`
+                  the dates stopped being readable, and the frame prints them in
+                  «свет» there. A `dark:` class rather than a token — this is one
+                  value at two opacities, not two colours from two ramps. */}
+              <div className="mt-2 text-foreground/70 text-sm leading-[19px] md:mt-3 md:text-lg md:leading-[25px] dark:text-foreground">
                 {opens || closes ? (
                   <>
                     <p>Приём заявок</p>

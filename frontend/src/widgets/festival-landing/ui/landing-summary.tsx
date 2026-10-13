@@ -23,7 +23,9 @@ interface SummaryRowProps {
 function SummaryRow({ icon: Icon, label, children }: SummaryRowProps): React.JSX.Element {
   return (
     <div>
-      <dt className="flex items-center gap-4 text-foreground/60">
+      {/* 59% of «Темный текст» by day, 70% of «свет» by night — the frame's own
+          two numbers. The icon takes the label's colour, as it does there. */}
+      <dt className="flex items-center gap-4 text-foreground/60 dark:text-foreground/70">
         <Icon className="size-5 shrink-0 md:size-6" aria-hidden="true" />
         <span className="uppercase text-sm leading-[19px] md:text-lg md:leading-[25px]">
           {label}

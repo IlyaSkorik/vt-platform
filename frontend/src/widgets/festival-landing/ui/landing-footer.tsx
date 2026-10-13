@@ -75,7 +75,13 @@ export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Eleme
   const supporterLegalInformation = supporter?.legalInformation?.trim();
 
   return (
-    <footer className="rounded-2xl border bg-muted/40 p-6 sm:p-8">
+    // Dressed like the rest of the page rather than like the application
+    // chrome it came from: the frame has no footer of its own for a festival,
+    // so it takes the page's own panel — a «тёмный акцент» hairline on the
+    // brand's 15px corner over «свет», with no grey fill. The type is Noto
+    // Serif by inheritance; the whole public surface opts in at the widget's
+    // root, so nothing here asks for it.
+    <footer className="rounded-brand border border-brand-line bg-background p-6 sm:p-8">
       {/* `min-w-0` on every column: without it a long organization name or
           e-mail sets the column's min-content width and pushes the grid wider
           than the phone screen instead of wrapping/truncating. */}
@@ -119,7 +125,7 @@ export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Eleme
 
         {hasReach ? (
           <div className="min-w-0 space-y-3">
-            <p className="text-sm font-semibold text-foreground">Ссылки</p>
+            <p className="font-semibold text-base text-foreground leading-[22px]">Ссылки</p>
             <div className="flex flex-col items-start gap-2 text-sm text-muted-foreground">
               {contacts.website ? (
                 <ContactLink icon={Globe} href={contacts.website} external>
@@ -142,7 +148,9 @@ export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Eleme
 
         {contacts.team.length > 0 ? (
           <div className="min-w-0 space-y-3">
-            <p className="text-sm font-semibold text-foreground">Контактные лица</p>
+            <p className="font-semibold text-base text-foreground leading-[22px]">
+              Контактные лица
+            </p>
             <ul className="space-y-3 text-sm">
               {contacts.team.map((member) => (
                 <li key={member.id} className="space-y-0.5">
@@ -170,7 +178,7 @@ export function LandingFooter({ contacts }: LandingFooterProps): React.JSX.Eleme
       </div>
 
       {legalInformation || supporterLegalInformation ? (
-        <div className="mt-8 space-y-2 border-t pt-6 text-muted-foreground text-xs leading-relaxed">
+        <div className="mt-8 space-y-2 border-brand-line/50 border-t pt-6 text-muted-foreground text-xs leading-relaxed">
           {legalInformation ? <p className="whitespace-pre-line">{legalInformation}</p> : null}
           {/* Prefixed, because two sets of requisites in a row read as one entity's
               otherwise — and which entity a УНП belongs to is the whole point. */}

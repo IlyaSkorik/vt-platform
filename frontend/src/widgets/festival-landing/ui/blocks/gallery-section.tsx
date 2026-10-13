@@ -113,12 +113,16 @@ function GalleryTile({
       type="button"
       onClick={onOpen}
       aria-label={image.caption ? `Открыть фото: ${image.caption}` : "Открыть фото"}
-      className="group block aspect-[291/221] w-full cursor-zoom-in overflow-hidden rounded-brand bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group block aspect-[291/221] w-full cursor-zoom-in overflow-hidden rounded-brand bg-media-placeholder outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
+      {/* Still lazy — a gallery can run to dozens of photographs — but decoded
+          off the main thread, so the decode of the next screen cannot land
+          inside the scroll animation that asked for it. */}
       <img
         src={image.src}
         alt={image.caption ?? ""}
         loading="lazy"
+        decoding="async"
         className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
       />
     </button>
@@ -140,7 +144,12 @@ export function GallerySection({ block }: GallerySectionProps): React.JSX.Elemen
     return null;
   }
   return (
-    <LandingSection id={`block-${block.id}`} title="Галерея" align="center">
+    <LandingSection
+      id={`block-${block.id}`}
+      title="Галерея"
+      align="center"
+      headingGap="mb-5 md:mb-[26px]"
+    >
       <LandingCarousel
         label="Галерея"
         items={images.map((image, index) => ({

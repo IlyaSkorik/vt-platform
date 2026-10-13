@@ -105,14 +105,42 @@ function LandingContent({
       {/* The rule the frame draws across the page: everything above it is about
           this festival's dates and how to enter, everything below is about who
           runs it and what it looked like. */}
-      <hr className="mt-12 border-brand-line/50 border-t-2 md:mt-16" />
+      {/* Half-strength «тёмный акцент» by day, «светлый база ночная» at full by
+          night: the daytime rule is a violet softened against a pale page, and
+          the same colour over `#110B12` is a line you cannot find. */}
+      <hr className="mt-10 border-brand-line/50 border-t-2 md:mt-[49px] dark:border-brand-control" />
 
-      <div className="mt-10 space-y-12 md:mt-16 md:space-y-16">
-        {jury ? <JurySection block={jury} /> : null}
-        {gallery ? <GallerySection block={gallery} /> : null}
-        {faq ? <FaqSection block={faq} /> : null}
-        {partners ? <PartnersSection block={partners} /> : null}
-        <LandingFooter contacts={festival.contacts} />
+      {/* 30px under the rule before the first full-width section — the same
+          margin the page opens with under the header bar. */}
+      {/* Each section carries its own margin rather than the column carrying one
+          rhythm: the frame does not space these evenly — 62 under the jury's
+          dashes, 84 under the gallery's — and a single `space-y` cannot say
+          that. `first:mt-0` keeps the top of the column flush whichever section
+          turns out to be first, since every one of them is optional. */}
+      <div className="mt-[30px]">
+        {jury ? (
+          <div className="first:mt-0">
+            <JurySection block={jury} />
+          </div>
+        ) : null}
+        {gallery ? (
+          <div className="mt-[62px] first:mt-0">
+            <GallerySection block={gallery} />
+          </div>
+        ) : null}
+        {faq ? (
+          <div className="mt-[84px] first:mt-0">
+            <FaqSection block={faq} />
+          </div>
+        ) : null}
+        {partners ? (
+          <div className="mt-[49px] first:mt-0">
+            <PartnersSection block={partners} />
+          </div>
+        ) : null}
+        <div className="mt-16 first:mt-0">
+          <LandingFooter contacts={festival.contacts} />
+        </div>
       </div>
     </div>
   );

@@ -33,6 +33,14 @@
   --violet-300: #c77cec;
   --violet-400: #ab2ddd;
   --violet-500: #9400d3;
+  /* «Акцент темный» — a published Figma variable, and not to be confused with
+   * «тёмный акцент» `#7D529B` in the mauve ramp below, which is the structural
+   * line the whole landing is drawn with. This one is the saturated cousin and
+   * the frame uses it in exactly one place: the partner tiles. It sits between
+   * `-500` and `-600` by lightness but well under both in saturation, which is
+   * why it gets a step of its own rather than replacing the interpolated 600 —
+   * that one is the primary's hover and would shift every button in the app. */
+  --violet-550: #7b279f;
   --violet-600: #7a00ae;
   --violet-700: #5f0088;
   --violet-900: #33004a;
@@ -50,7 +58,7 @@
    * to sit *above* a near-black page rather than below a white one, so it is
    * greyer and far darker than anything the mauve ramp carries. The names are
    * the Figma variables' — «светлый база ночная», «тёмный база ночная». */
-  --night-400: #88779b; /* светлый база ночная — paddles, chip outlines */
+  --night-400: #786191; /* светлый база ночная — paddles, chip outlines */
   --night-700: #432860; /* the footer band, laid down at half strength */
   --night-800: #362245; /* тёмный база ночная — the pagination rail */
   --night-900: #201622; /* the organisers' panel */
@@ -92,6 +100,14 @@
   --neutral-800: #2c2535;
   --neutral-900: #211929;
   --neutral-950: #14101a;
+  /* A true grey, deliberately outside the ramp above and its violet tint: this
+   * is the plate a photograph sits on before it loads, and it has to read as
+   * "nothing is here yet" rather than as a pale brand surface. The frame fills
+   * every gallery tile with it. */
+  --grey-200: #d9d9d9;
+  /* The hairline of an intake that has not opened yet: a true grey, because
+   * «ещё не открыта» is deliberately the one state with no colour to it. */
+  --grey-500: #9b9b9b;
   --black: #000000;
 
   /* --- Functional hues (status) -------------------------------------------
@@ -104,6 +120,10 @@
    * uses: the landing prints its state chips over a near-white panel, where the
    * paler one stopped reading as a colour at all. */
   --green-200: #cbffc8;
+  /* The outline of an open intake at night. The daytime plate is a fill with
+   * dark text on it; after dark the chip is a hairline with a 10% wash behind
+   * it, and this is the line. */
+  --green-300: #94ff77;
   --green-400: #34c07d;
   --green-500: #1f9d63;
 
@@ -115,6 +135,8 @@
   /* The rose plate of a closed intake — the mint one's opposite number, and
    * pitched to the same weight so the pair reads as one scale. */
   --red-200: #ffbfc0;
+  /* The closed intake's hairline — the mint one's opposite number at night. */
+  --red-300: #ff5151;
   --red-400: #ec6a6a;
   --red-500: #d64545;
 

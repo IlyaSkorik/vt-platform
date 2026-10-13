@@ -11,6 +11,15 @@ interface LandingSectionProps {
    * the slot rather than of the section, so the page passes it in.
    */
   align?: "start" | "center";
+  /**
+   * The margin under the heading, as a utility class.
+   *
+   * A constant was tried and does not survive contact with the frame: it is 20
+   * for every section in the right-hand column, 38 under «Жюри и эксперты» and
+   * 26 under «Галерея» and «Партнеры». Deriving it from `align` got two of
+   * those three right, which is the worst of both.
+   */
+  headingGap?: string;
   children: React.ReactNode;
 }
 
@@ -30,13 +39,15 @@ export function LandingSection({
   id,
   title,
   align = "start",
+  headingGap = "mb-5",
   children,
 }: LandingSectionProps): React.JSX.Element {
   return (
     <section id={id} className="scroll-mt-24">
       <h2
         className={cn(
-          "mb-5 text-pretty break-words font-heading font-bold text-2xl text-foreground leading-[33px] md:mb-[26px] md:text-[32px] md:leading-[44px]",
+          "text-pretty break-words font-heading font-bold text-2xl text-foreground leading-[33px] md:text-[32px] md:leading-[44px]",
+          headingGap,
           align === "center" && "text-center",
         )}
       >

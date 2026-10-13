@@ -95,6 +95,7 @@
    * as `border-border`, and so the dark theme restyles them for free. */
   --color-brand-line: var(--brand-line);
   --color-brand-line-soft: var(--brand-line-soft);
+  --color-brand-line-vivid: var(--brand-line-vivid);
   --color-brand-surface: var(--brand-surface);
   --color-brand-control: var(--brand-control);
   --color-brand-track: var(--brand-track);
@@ -114,12 +115,18 @@
    * other, which is why it is a token and not a `dark:` class. */
   --color-brand-pane: var(--brand-pane);
 
+  /* The plate a photograph sits on until it loads. */
+  --color-media-placeholder: var(--media-placeholder);
+
   /* The intake-state chips on a festival's public page — see the note in
    * `themes/vt-light.css` for why they are not part of the status family. */
   --color-intake-open: var(--intake-open);
   --color-intake-closed: var(--intake-closed);
   --color-intake-soon: var(--intake-soon);
   --color-intake-foreground: var(--intake-foreground);
+  --color-intake-open-line: var(--intake-open-line);
+  --color-intake-closed-line: var(--intake-closed-line);
+  --color-intake-soon-line: var(--intake-soon-line);
 
   /* Status utilities. */
   --color-success: var(--success);

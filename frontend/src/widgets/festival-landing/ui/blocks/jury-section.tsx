@@ -27,10 +27,29 @@ function initials(name: string): string {
 function JuryMemberCard({ card }: { card: JuryCard }): React.JSX.Element {
   const photo = resolveMediaUrl(card.photo);
   return (
-    <article className="flex h-full flex-col gap-3 rounded-brand border-[3px] border-brand-line p-4 md:gap-4 md:p-[25px]">
+    // 337×481 on a 15px corner with a three-pixel «тёмный акцент» outline, and
+    // a floor under the height rather than a fixed one: the frame draws every
+    // card the same height whatever is written on it, and a card that is only
+    // as tall as its text turns a row of three into a staircase. A longer
+    // description grows past the floor instead of being cut.
+    // The outline drops to 70% at night: at full strength three of these
+    // three-pixel frames over a near-black page read as a cage.
+    <article className="flex h-full min-h-[318px] flex-col gap-1 rounded-brand border-[3px] border-brand-line px-3.5 pt-[18px] pb-3.5 md:min-h-[481px] md:gap-0 md:px-[25px] md:pt-[21px] md:pb-[25px] dark:border-brand-line/70">
+      {/* 287×276 — near-square, because these are head-and-shoulders portraits;
+          the 4:3 landscape the grid used before cropped most of them at the
+          chin. Its own one-pixel outline, inset from the card's three: that
+          inset is what makes the card read as a mounted portrait. */}
       <div className="aspect-[287/276] overflow-hidden rounded-brand border border-brand-line bg-background">
         {photo ? (
-          <img src={photo} alt={card.name} loading="lazy" className="size-full object-cover" />
+          // Eager, and decoded off the main thread. `loading="lazy"` looks
+          // right here and is the reason the first click of the arrow felt
+          // heavy: the slides past the right edge of the track are outside the
+          // viewport, so nothing beyond the first screen was fetched until the
+          // carousel moved — and the decode then landed in the middle of the
+          // scroll animation. A jury is a handful of portraits in a fixed box,
+          // not an open-ended feed, so loading them with the page is cheaper
+          // than paying for it inside the first gesture.
+          <img src={photo} alt={card.name} decoding="async" className="size-full object-cover" />
         ) : (
           // Initials rather than an empty plate: the card keeps its silhouette
           // whether or not the organiser uploaded anything.
@@ -42,12 +61,20 @@ function JuryMemberCard({ card }: { card: JuryCard }): React.JSX.Element {
           </div>
         )}
       </div>
-      <div className="space-y-0.5">
+      {/* The three lines sit flush on each other — name, category, description —
+          with the line height doing all the spacing. The frame leaves no gap
+          between them at all, and the block as a whole is what is set apart
+          from the portrait above it. */}
+      <div>
         <p className="break-words font-bold text-lg leading-[25px] md:text-2xl md:leading-[33px]">
           {card.name}
         </p>
         {card.position ? (
-          <p className="break-words font-bold text-brand-line text-sm leading-[19px] md:text-base md:leading-[22px]">
+          /* «тёмный акцент» by day and «Акцент темный» by night: the desaturated
+             violet disappears into the plate after dark, so the frame swaps in
+             the saturated one — the same colour the partner tiles are outlined
+             with in the light theme. */
+          <p className="break-words font-bold text-brand-line text-sm leading-[19px] md:text-base md:leading-[22px] dark:text-brand-line-vivid">
             {card.position}
           </p>
         ) : null}
@@ -77,7 +104,12 @@ export function JurySection({ block }: JurySectionProps): React.JSX.Element | nu
     return null;
   }
   return (
-    <LandingSection id={`block-${block.id}`} title="Жюри и эксперты" align="center">
+    <LandingSection
+      id={`block-${block.id}`}
+      title="Жюри и эксперты"
+      align="center"
+      headingGap="mb-5 md:mb-[38px]"
+    >
       <LandingCarousel
         label="Жюри и эксперты"
         items={block.jury.map((card) => ({
