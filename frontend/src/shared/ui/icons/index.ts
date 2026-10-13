@@ -1,9 +1,12 @@
 export {
   AccountCircleIcon,
   ArrowRightIcon,
+  CalendarClockIcon,
   CalendarIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  DocumentIcon,
   FiltersIcon,
   MapIcon,
   MapPinIcon,

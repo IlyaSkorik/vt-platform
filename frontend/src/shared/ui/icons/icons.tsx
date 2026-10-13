@@ -67,6 +67,31 @@ export function AccountCircleIcon(props: IconProps): React.JSX.Element {
 }
 
 /**
+ * The disclosure wedge on a FAQ item — the same solid, angular chevron as the
+ * carousel paddles', drawn wide and shallow rather than tall and narrow.
+ *
+ * 25×14, so callers size it on both axes. Pointing down is its resting state;
+ * an open item turns it over with `rotate-180` rather than there being a
+ * second glyph for it.
+ */
+export function ChevronDownIcon(props: IconProps): React.JSX.Element {
+  return (
+    <svg
+      viewBox="0 0 25 14"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      {...props}
+    >
+      <path
+        d="M12.5 14L0 2.27921L2.43073 0L12.5 9.42547L22.5693 0L25 2.27921L12.5 14Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+/**
  * The carousel paddles' chevrons, drawn rather than stroked: the frame's are a
  * solid wedge 28×42, far heavier and more angular than a Lucide `ChevronRight`
  * at any stroke width. Taller than wide, so they are sized by both axes rather
@@ -150,6 +175,56 @@ export function MapPinIcon(props: IconProps): React.JSX.Element {
           fill="currentColor"
         />
       </g>
+    </svg>
+  );
+}
+
+/**
+ * A sheet with a folded corner and two ruled lines: the mark on «Положение
+ * фестиваля» and on every row of «Документы».
+ *
+ * 15.33×19.17 — a portrait box, like the paper it draws, so callers size it on
+ * both axes. A square `size-*` would stretch it into something squarer than
+ * any sheet of paper is.
+ */
+export function DocumentIcon(props: IconProps): React.JSX.Element {
+  return (
+    <svg
+      viewBox="0 0 15.3333 19.1667"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      {...props}
+    >
+      <path
+        d="M3.83333 15.3333H11.5V13.4167H3.83333V15.3333ZM3.83333 11.5H11.5V9.58333H3.83333V11.5ZM1.91667 19.1667C1.38958 19.1667 0.938368 18.979 0.563021 18.6036C0.187674 18.2283 0 17.7771 0 17.25V1.91667C0 1.38958 0.187674 0.938368 0.563021 0.563021C0.938368 0.187674 1.38958 0 1.91667 0H9.58333L15.3333 5.75V17.25C15.3333 17.7771 15.1457 18.2283 14.7703 18.6036C14.395 18.979 13.9438 19.1667 13.4167 19.1667H1.91667ZM8.625 6.70833V1.91667H1.91667V17.25H13.4167V6.70833H8.625Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+/**
+ * The calendar-with-a-clock on every nomination card: a date that has a window
+ * attached to it, which is exactly what a nomination's intake is.
+ *
+ * 20×21 and deliberately not square — the glyph's dial hangs past the
+ * calendar's bottom-right corner — so callers size it with `h-*`/`w-*` rather
+ * than `size-*`, which would squash the dial back into the box.
+ */
+export function CalendarClockIcon(props: IconProps): React.JSX.Element {
+  return (
+    <svg
+      viewBox="0 0 20 21"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      {...props}
+    >
+      <path
+        d="M2 6H16V4H2V6ZM2 20C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V4C0 3.45 0.195833 2.97917 0.5875 2.5875C0.979167 2.19583 1.45 2 2 2H3V0H5V2H13V0H15V2H16C16.55 2 17.0208 2.19583 17.4125 2.5875C17.8042 2.97917 18 3.45 18 4V9.675C17.6833 9.525 17.3583 9.4 17.025 9.3C16.6917 9.2 16.35 9.125 16 9.075V8H2V18H8.3C8.41667 18.3667 8.55417 18.7167 8.7125 19.05C8.87083 19.3833 9.05833 19.7 9.275 20H2ZM11.4625 19.5375C10.4875 18.5625 10 17.3833 10 16C10 14.6167 10.4875 13.4375 11.4625 12.4625C12.4375 11.4875 13.6167 11 15 11C16.3833 11 17.5625 11.4875 18.5375 12.4625C19.5125 13.4375 20 14.6167 20 16C20 17.3833 19.5125 18.5625 18.5375 19.5375C17.5625 20.5125 16.3833 21 15 21C13.6167 21 12.4375 20.5125 11.4625 19.5375ZM16.675 18.375L17.375 17.675L15.5 15.8V13H14.5V16.2L16.675 18.375Z"
+        fill="currentColor"
+      />
     </svg>
   );
 }
