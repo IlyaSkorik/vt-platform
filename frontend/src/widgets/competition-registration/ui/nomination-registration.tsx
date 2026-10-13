@@ -102,15 +102,16 @@ export function NominationRegistration({
   const resume = useResumeNominationRegistrationMutation();
   const enableWaitlist = useEnableNominationWaitlistMutation();
   const disableWaitlist = useDisableNominationWaitlistMutation();
-
   const [opensAt, setOpensAt] = useState(() => isoToLocalInput(category.registrationOpensAt));
   const [closesAt, setClosesAt] = useState(() => isoToLocalInput(category.registrationClosesAt));
+  const [heldAt, setHeldAt] = useState(() => isoToLocalInput(category.heldAt));
 
   // Keep local inputs in sync when the competition is refreshed from the server.
   useEffect(() => {
     setOpensAt(isoToLocalInput(category.registrationOpensAt));
     setClosesAt(isoToLocalInput(category.registrationClosesAt));
-  }, [category.registrationOpensAt, category.registrationClosesAt]);
+    setHeldAt(isoToLocalInput(category.heldAt));
+  }, [category.registrationOpensAt, category.registrationClosesAt, category.heldAt]);
 
   const state = deriveState(category);
   const closedNow = isClosedNow(category);
@@ -127,10 +128,11 @@ export function NominationRegistration({
         categoryId: category.id,
         opensAt: localInputToIso(opensAt),
         closesAt: localInputToIso(closesAt),
+        heldAt: localInputToIso(heldAt),
       });
-      toast.success("Окно регистрации сохранено");
+      toast.success("Сохранено");
     } catch (error) {
-      toast.error(apiErrorMessage(error, "Не удалось сохранить окно регистрации"));
+      toast.error(apiErrorMessage(error, "Не удалось сохранить"));
     }
   };
 
@@ -199,6 +201,17 @@ export function NominationRegistration({
           onChange={setClosesAt}
           {...(invalidRange ? { error: "Раньше начала" } : {})}
         />
+        {/* Not part of the window above, and the reason it is on this card
+            anyway: a festival running over several days judges one genre a day,
+            so this is the date an applicant is actually asking about. Leaving
+            it empty is normal — a one-afternoon festival has nothing to say
+            here, and the public card then shows only the intake window. */}
+        <DateTimePicker
+          label="Дата проведения номинации"
+          value={heldAt}
+          disabled={disabled}
+          onChange={setHeldAt}
+        />
       </div>
       <p className="text-muted-foreground text-xs">
         Приём заявок в номинации открыт только внутри окна. Если окно не задано — регистрация
@@ -215,7 +228,7 @@ export function NominationRegistration({
           disabled={disabled || invalidRange}
         >
           <CircleCheck className="size-3.5" aria-hidden="true" />
-          Сохранить окно
+          Сохранить
         </Button>
         {category.registrationStopped ? (
           <Button

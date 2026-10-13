@@ -1134,16 +1134,30 @@ export function useReorderCategoriesMutation(): UseMutationResult<
 export function useScheduleNominationRegistrationMutation(): UseMutationResult<
   CompetitionDetail,
   ApiError,
-  { competitionId: string; categoryId: string; opensAt: string | null; closesAt: string | null }
+  {
+    competitionId: string;
+    categoryId: string;
+    opensAt: string | null;
+    closesAt: string | null;
+    heldAt: string | null;
+  }
 > {
   const queryClient = useQueryClient();
   return useMutation<
     CompetitionDetail,
     ApiError,
-    { competitionId: string; categoryId: string; opensAt: string | null; closesAt: string | null }
+    {
+      competitionId: string;
+      categoryId: string;
+      opensAt: string | null;
+      closesAt: string | null;
+      // The nomination's own date rides along: it is the other half of the same
+      // schedule, and a PUT replaces the schedule whole.
+      heldAt: string | null;
+    }
   >({
-    mutationFn: ({ competitionId, categoryId, opensAt, closesAt }) =>
-      scheduleNominationRegistration(competitionId, categoryId, { opensAt, closesAt }),
+    mutationFn: ({ competitionId, categoryId, opensAt, closesAt, heldAt }) =>
+      scheduleNominationRegistration(competitionId, categoryId, { opensAt, closesAt, heldAt }),
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);
     },
