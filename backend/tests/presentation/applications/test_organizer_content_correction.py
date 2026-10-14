@@ -434,3 +434,87 @@ class TestTheCardCarriesWhatTheFormNeeds:
         performer = response.data["data"]["detail"]["performances"][0]["participants"][0]
         assert performer["lastName"] == "Иванва"
         assert performer["birthDate"] == "2016-05-12"
+
+
+class TestCorrectingTheInstitution:
+    """Учреждение правится здесь, а живёт в реестре кабинета заявителя.
+
+    Поэтому правка не переписывает реестр, а закрепляется в самой заявке и
+    перекрывает его для этого выступающего. Так исправление доходит до всех бумаг
+    фестиваля — карточки, программы, протокола, диплома, — не трогая ни чужой
+    кабинет, ни прошлые фестивали, ни остальные заявки того же участника.
+    """
+
+    def test_it_is_stored_on_the_entry(self, staff_client: APIClient, applicant_id: uuid.UUID) -> None:
+        festival = _Festival()
+        _, submission = _entry(festival, applicant_id)
+
+        response = _correct(
+            staff_client,
+            submission.id,
+            {"participants": [_fixed_participant(organizationName="Гимназия № 1")]},
+        )
+
+        assert response.status_code == 200, response.data
+        submission.refresh_from_db()
+        assert submission.participants[0]["organization_name"] == "Гимназия № 1"
+
+    def test_the_applicant_is_told_what_it_was_changed_to(self, staff_client: APIClient, applicant_id: uuid.UUID) -> None:
+        """Правка за участника никогда не молчит — это и есть цена такой ручки."""
+        festival = _Festival()
+        _, submission = _entry(festival, applicant_id)
+
+        response = _correct(
+            staff_client,
+            submission.id,
+            {"participants": [_fixed_participant(lastName="Иванва", organizationName="Гимназия № 1")]},
+        )
+
+        assert "Учреждение «Иванва Анна»: — → Гимназия № 1" in response.data["data"]["changes"]
+
+    def test_clearing_it_hands_the_performer_back_to_the_registry(self, staff_client: APIClient, applicant_id: uuid.UUID) -> None:
+        """Пустое поле — «брать из реестра», а не «учреждения нет»."""
+        festival = _Festival()
+        _, submission = _entry(festival, applicant_id)
+        _correct(staff_client, submission.id, {"participants": [_fixed_participant(organizationName="Гимназия № 1")]})
+
+        response = _correct(staff_client, submission.id, {"participants": [_fixed_participant(organizationName="")]})
+
+        assert response.status_code == 200, response.data
+        submission.refresh_from_db()
+        assert submission.participants[0]["organization_name"] is None
+
+    def test_an_entry_that_does_not_mention_it_keeps_what_it_had(self, staff_client: APIClient, applicant_id: uuid.UUID) -> None:
+        """Старый клиент (и любой другой экран) не должен молча отвязывать заявку."""
+        festival = _Festival()
+        _, submission = _entry(festival, applicant_id)
+        _correct(staff_client, submission.id, {"participants": [_fixed_participant(organizationName="Гимназия № 1")]})
+
+        _correct(staff_client, submission.id, {"performance": festival.performance_payload(title="Щелкунчик")})
+
+        submission.refresh_from_db()
+        assert submission.participants[0]["organization_name"] == "Гимназия № 1"
+
+    def test_the_registry_itself_is_never_written_to(self, staff_client: APIClient, applicant_id: uuid.UUID) -> None:
+        """Организатор правит бумаги фестиваля, а не адресную книгу заявителя."""
+        from apps.participants.infrastructure.models import ParticipantOrganizationMembershipModel
+
+        festival = _Festival()
+        _, submission = _entry(festival, applicant_id)
+
+        _correct(staff_client, submission.id, {"participants": [_fixed_participant(organizationName="Гимназия № 1")]})
+
+        assert ParticipantOrganizationMembershipModel.objects.count() == 0
+
+    def test_the_card_offers_what_is_printed_and_what_is_pinned(self, staff_client: APIClient, applicant_id: uuid.UUID) -> None:
+        """Форма исправления открывается на печатаемом значении, а отправляет закреплённое."""
+        festival = _Festival()
+        _, submission = _entry(festival, applicant_id)
+        _correct(staff_client, submission.id, {"participants": [_fixed_participant(organizationName="Гимназия № 1")]})
+
+        workspace = staff_client.get(f"/api/v1/staff/applications/workspace?selected={submission.id}")
+
+        performer = workspace.data["data"]["detail"]["participants"][0]
+        assert performer["organizationName"] == "Гимназия № 1"
+        assert performer["resolvedOrganizationName"] == "Гимназия № 1"
+        assert workspace.data["data"]["detail"]["educationalOrganizations"] == ["Гимназия № 1"]

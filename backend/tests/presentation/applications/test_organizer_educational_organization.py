@@ -32,7 +32,7 @@ pytestmark = pytest.mark.django_db
 _OWNER = uuid7()
 
 
-def _participant(*, registry_participant_id: str | None) -> ParticipantView:
+def _participant(*, registry_participant_id: str | None, organization_name: str | None = None) -> ParticipantView:
     return ParticipantView(
         id=str(uuid7()),
         display_name="Петрова Мария",
@@ -44,6 +44,7 @@ def _participant(*, registry_participant_id: str | None) -> ParticipantView:
         registry_participant_id=registry_participant_id,
         member_count=1,
         members=(),
+        organization_name=organization_name,
     )
 
 
@@ -219,3 +220,49 @@ class TestThroughTheRealEdge:
 
         assert workspace["detail"] is not None
         assert workspace["detail"]["educationalOrganizations"] == ["ДШИ № 5"]
+
+
+class TestAnInstitutionTheOrganizerCorrected:
+    """Учреждение, исправленное за участника прямо в заявке, — поверх реестра.
+
+    Школа живёт в реестре кабинета заявителя, и оттуда её читают все, кто её
+    печатает. Исправляют же её ради бумаг конкретного фестиваля — поэтому правка
+    остаётся в заявке и реестр не трогает: ни чужой кабинет, ни прошлые фестивали,
+    ни остальные заявки того же участника.
+    """
+
+    def test_it_is_printed_instead_of_the_registry_row(self) -> None:
+        row = _registry_row()
+        _enrol(row, _organization("ДШИ № 5"), primary=True)
+
+        assert _educational_organizations([_participant(registry_participant_id=str(row.id), organization_name="Гимназия № 1")]) == ["Гимназия № 1"]
+
+    def test_the_registry_is_not_even_asked(self, django_assert_num_queries: DjangoAssertNumQueries) -> None:
+        """Ответ уже в заявке; поход в реестр был бы запросом ради значения, которое не нужно."""
+        row = _registry_row()
+        _enrol(row, _organization("ДШИ № 5"), primary=True)
+
+        with django_assert_num_queries(0):
+            _educational_organizations([_participant(registry_participant_id=str(row.id), organization_name="Гимназия № 1")])
+
+    def test_an_entry_nobody_corrected_still_reads_the_registry(self) -> None:
+        """То самое, из-за чего поле безопасно добавлять к уже поданным заявкам."""
+        row = _registry_row()
+        _enrol(row, _organization("ДШИ № 5"), primary=True)
+
+        assert _educational_organizations([_participant(registry_participant_id=str(row.id), organization_name=None)]) == ["ДШИ № 5"]
+
+    def test_a_performer_typed_by_hand_can_be_given_one(self) -> None:
+        """Раньше у такого участника учреждение было негде взять вообще."""
+        assert _educational_organizations([_participant(registry_participant_id=None, organization_name="Студия «Радуга»")]) == ["Студия «Радуга»"]
+
+    def test_one_corrected_performer_does_not_silence_the_others(self) -> None:
+        """Совместный номер двух школ: исправили одну — вторая всё ещё из реестра."""
+        corrected = _participant(registry_participant_id=None, organization_name="Гимназия № 1")
+        row = _registry_row()
+        _enrol(row, _organization("ДШИ № 5"), primary=True)
+
+        assert sorted(_educational_organizations([corrected, _participant(registry_participant_id=str(row.id))])) == [
+            "Гимназия № 1",
+            "ДШИ № 5",
+        ]

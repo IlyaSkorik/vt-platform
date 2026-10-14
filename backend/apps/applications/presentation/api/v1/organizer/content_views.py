@@ -77,6 +77,7 @@ _FIELD_LABELS: dict[str, str] = {
     "participant_gender": "Пол",
     "participant_member_count": "Численность коллектива",
     "participant_members": "Состав коллектива",
+    "participant_organization": "Учреждение",
     "participant_added": "Добавлен участник",
     "participant_removed": "Удалён участник",
     "teacher_name": "Педагог",
@@ -172,6 +173,7 @@ def _participant_input(entry: Mapping[str, Any]) -> OrganizerParticipantInput:
         gender=(entry.get("gender") or "").strip() or None,
         member_count=int(entry.get("memberCount") or 1),
         members=tuple(str(name) for name in entry.get("members") or ()),
+        organization_name=(entry.get("organizationName") or "").strip() or None,
     )
 
 

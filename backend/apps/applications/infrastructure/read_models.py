@@ -233,6 +233,18 @@ class DjangoOrganizerParticipantRegistry:
                     acc = _Accumulator(key=key)
                     accumulators[key] = acc
                 acc.note_identity(updated_at=model.updated_at, participant=participant)
+                # Учреждение, которое организатор исправил прямо в заявке, идёт
+                # впереди реестрового: этот реестр и собран из заявок, и показывать в
+                # нём строку из кабинета, которую в бумагах фестиваля уже поправили,
+                # значит показывать то, чего ни в одном документе не напечатают.
+                # Без id — у исправленного учреждения его и нет, оно не из справочника.
+                pinned_organization = _clean(participant.get("organization_name"))
+                if pinned_organization is not None:
+                    acc.organizations.setdefault(
+                        pinned_organization,
+                        RegistryOrganizationView(id=None, name=pinned_organization),
+                    )
+                    acc.primary_org_key = pinned_organization
                 acc.competition_ids.add(competition_id)
                 if acc.last_activity is None or (model.updated_at is not None and model.updated_at > acc.last_activity):
                     acc.last_activity = model.updated_at
@@ -312,6 +324,10 @@ class DjangoOrganizerParticipantRegistry:
         (that snapshot is unused); it lives in the Participants context, linked to
         the ``registry_participant_id`` the submission denormalizes. We read it here
         for participants that carry a registry link (keys prefixed ``r:``).
+
+        The exception is an institution an organizer corrected on the entry itself.
+        That one is already in the accumulator by the time this runs, and it stays
+        primary: ``primary_org_key`` is only filled in here when nothing claimed it.
         """
         registry_ids: list[uuid.UUID] = []
         for key in accumulators:

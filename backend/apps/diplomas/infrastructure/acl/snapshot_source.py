@@ -157,6 +157,16 @@ def _competition_year(competition: CompetitionModel | None) -> int | None:
 
 
 def _organization(participant: dict[str, Any]) -> OrganizationSnapshot:
+    """The institution this diploma prints for the lead performer.
+
+    An organizer who corrected the institution on the entry corrected it *for the
+    paperwork*, which is what this is — so that answer wins outright and no registry
+    lookup happens. Absent (every entry nobody corrected, including all of them from
+    before the field existed), the applicant's Participant Registry answers as before.
+    """
+    pinned = _clean(participant.get("organization_name"))
+    if pinned is not None:
+        return OrganizationSnapshot(name=pinned)
     registry_id = _clean(participant.get("registry_participant_id"))
     if registry_id is None:
         return OrganizationSnapshot()

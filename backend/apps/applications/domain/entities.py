@@ -82,6 +82,7 @@ from .events import (
     ParticipantAdded,
     ParticipantMemberCountChanged,
     ParticipantMembersChanged,
+    ParticipantOrganizationChanged,
     ParticipantRemoved,
     PayerRecorded,
     PaymentReceiptRemoved,
@@ -124,6 +125,7 @@ from .exceptions import (
     InvalidBirthDateError,
     InvalidCollectiveMemberError,
     InvalidParticipantMemberCountError,
+    InvalidParticipantOrganizationError,
     InvalidPersonNameError,
     MissingRequiredConsentError,
     MissingRequiredServiceError,
@@ -302,6 +304,11 @@ _MAX_MEMBER_NAME_LENGTH: Final = 200
 #: individual diplomas in one publication.
 _MAX_COLLECTIVE_MEMBERS: Final = 200
 
+#: Longest institution name an entry may carry. Same generosity as a member's ФИО and
+#: for the same reason: «Детская школа искусств №1 имени ...» is printed in full on a
+#: diploma, and the registry's own column allows 255.
+_MAX_ORGANIZATION_NAME_LENGTH: Final = 255
+
 
 # ===========================================================================
 # Child entities
@@ -334,6 +341,16 @@ class Participant:
     :meth:`_normalize_members`. The roster is optional and exists for one purpose:
     the applicant who fills it in gets an individual diploma per named person on top
     of the collective's own.
+
+    :attr:`organization_name` is the performer's institution **as this festival's
+    paperwork should read it**, and it is normally ``None``. The institution itself
+    lives in the applicant's own Participant Registry, and everything that prints one
+    - the processing card, the programme, the protocol, the diploma - resolves it
+    from there. This field overrides that resolution for this entry alone, and only
+    when an organizer has deliberately corrected it: ``None`` does not mean "no
+    institution", it means "nobody corrected it here, keep reading the registry". That
+    is what lets the field be added to entries already submitted without touching a
+    single one of them.
     """
 
     _id: ParticipantId
@@ -344,6 +361,7 @@ class Participant:
     _registry_participant_id: RegistryParticipantId | None = None
     _member_count: int = 1
     _members: tuple[str, ...] = ()
+    _organization_name: str | None = None
 
     @classmethod
     def create(
@@ -357,6 +375,7 @@ class Participant:
         registry_participant_id: RegistryParticipantId | None = None,
         member_count: int = 1,
         members: Sequence[str] = (),
+        organization_name: str | None = None,
     ) -> Participant:
         resolved = cls._resolve_display_name(display_name, name)
         return cls(
@@ -368,6 +387,7 @@ class Participant:
             _registry_participant_id=registry_participant_id,
             _member_count=cls._validate_member_count(member_count),
             _members=cls._normalize_members(members),
+            _organization_name=cls._normalize_organization(organization_name),
         )
 
     @classmethod
@@ -382,6 +402,7 @@ class Participant:
         registry_participant_id: RegistryParticipantId | None = None,
         member_count: int = 1,
         members: Sequence[str] = (),
+        organization_name: str | None = None,
     ) -> Participant:
         return cls(
             _id=participant_id,
@@ -392,6 +413,7 @@ class Participant:
             _registry_participant_id=registry_participant_id,
             _member_count=cls._validate_member_count(member_count),
             _members=cls._normalize_members(members),
+            _organization_name=cls._normalize_organization(organization_name),
         )
 
     @staticmethod
@@ -427,6 +449,35 @@ class Participant:
         if len(roster) > _MAX_COLLECTIVE_MEMBERS:
             raise InvalidCollectiveMemberError(f"A collective may name at most {_MAX_COLLECTIVE_MEMBERS} members, got {len(roster)}.")
         return tuple(roster)
+
+    @staticmethod
+    def _normalize_organization(organization_name: str | None) -> str | None:
+        """The institution as it will be printed, or ``None`` for "ask the registry".
+
+        Blank and absent collapse to the same thing on purpose: an organizer who
+        clears the field is not asserting that the performer has no school, they are
+        withdrawing their correction, and the entry goes back to following the
+        applicant's registry.
+        """
+        if organization_name is None:
+            return None
+        cleaned = " ".join(str(organization_name).split())
+        if not cleaned:
+            return None
+        if len(cleaned) > _MAX_ORGANIZATION_NAME_LENGTH:
+            raise InvalidParticipantOrganizationError(
+                f"Institution name must be at most {_MAX_ORGANIZATION_NAME_LENGTH} characters, got {len(cleaned)}."
+            )
+        return cleaned
+
+    def with_organization_name(self, organization_name: str | None) -> None:
+        """Replace the institution in place (aggregate-internal; the root calls this).
+
+        In place for the same reason as :meth:`with_members`: correcting which school
+        a performer is from does not make them a different performer, so the id the
+        client holds survives it.
+        """
+        self._organization_name = self._normalize_organization(organization_name)
 
     def with_member_count(self, member_count: int) -> None:
         """Replace the headcount in place (aggregate-internal; the root calls this).
@@ -490,6 +541,15 @@ class Participant:
         individual documents - naming the roster is what asks for them.
         """
         return self._members
+
+    @property
+    def organization_name(self) -> str | None:
+        """The institution this festival's paperwork should print, or ``None``.
+
+        ``None`` is the ordinary answer and means "resolve it from the registry", not
+        "there is none" — see the class docstring.
+        """
+        return self._organization_name
 
     @property
     def wants_individual_documents(self) -> bool:
@@ -962,6 +1022,7 @@ class Submission:
         registry_participant_id: RegistryParticipantId | None = None,
         member_count: int = 1,
         members: Sequence[str] = (),
+        organization_name: str | None = None,
         now: datetime,
     ) -> list[DomainEvent]:
         """Add a participant (a Participant Registry snapshot: solo or collective).
@@ -988,6 +1049,7 @@ class Submission:
             registry_participant_id=registry_participant_id,
             member_count=member_count,
             members=members,
+            organization_name=organization_name,
         )
         if any(p.identity_key == candidate.identity_key for p in self._participants.values()):
             raise DuplicateParticipantError(f"Участник «{candidate.display_name}» уже добавлен в выступление.")
@@ -1031,6 +1093,25 @@ class Submission:
         participant.with_member_count(member_count)
         self._touch(now)
         return [ParticipantMemberCountChanged(aggregate_id=self._id.value, participant_id=participant_id)]
+
+    def set_participant_organization(self, *, participant_id: ParticipantId, organization_name: str | None, now: datetime) -> list[DomainEvent]:
+        """Pin the institution this entry prints for one performer, or unpin it.
+
+        The only correction here that overrides another context rather than editing
+        this one: the institution is the registry's, and every reader resolves it from
+        there. Pinning says "for this entry, print this instead"; passing ``None`` (or
+        a blank) unpins and lets the registry speak again.
+
+        Changes the performer rather than replacing them — see
+        :meth:`Participant.with_organization_name`.
+        """
+        self._ensure_editable()
+        participant = self._participants.get(participant_id)
+        if participant is None:
+            raise ParticipantNotFoundError(f"No participant {participant_id} in this submission.")
+        participant.with_organization_name(organization_name)
+        self._touch(now)
+        return [ParticipantOrganizationChanged(aggregate_id=self._id.value, participant_id=participant_id)]
 
     def remove_participant(self, *, participant_id: ParticipantId, now: datetime) -> list[DomainEvent]:
         """Remove a participant.

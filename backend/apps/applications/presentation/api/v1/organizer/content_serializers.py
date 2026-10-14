@@ -17,6 +17,10 @@ _GENDERS = ("MALE", "FEMALE", "OTHER")
 #: runaway list here keeps a mistyped paste from reaching the domain as 10 000 rows.
 _MAX_MEMBERS = 200
 
+#: The aggregate's own ceiling on an institution name, mirrored here so a paste that
+#: could never be stored is refused at the edge with a field error rather than a 422.
+_MAX_ORGANIZATION_NAME = 255
+
 
 class OrganizerPerformanceSerializer(serializers.Serializer[dict[str, object]]):
     """The number as the organizer wants it to read."""
@@ -53,6 +57,16 @@ class OrganizerParticipantSerializer(serializers.Serializer[dict[str, object]]):
         required=False,
         default=list,
         max_length=_MAX_MEMBERS,
+    )
+    #: The institution to print for this performer on this entry. Blank withdraws the
+    #: correction rather than asserting there is none — see
+    #: :class:`~apps.applications.application.dto.commands.OrganizerParticipantInput`.
+    organizationName = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        default=None,
+        max_length=_MAX_ORGANIZATION_NAME,
     )
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:

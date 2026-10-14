@@ -172,6 +172,11 @@ class SubmissionMapper:
             # each. Absent on rows written before the roster existed, which reads back
             # as "not asked for" — exactly what it was.
             "members": list(participant.members),
+            # The institution the organizer pinned for this entry, if they pinned one.
+            # Absent on every row written before this existed — and absent is not
+            # "no institution", it is "resolve it from the registry as before", which
+            # is why no backfill was needed for entries already submitted.
+            "organization_name": participant.organization_name,
         }
 
     @staticmethod
@@ -191,6 +196,7 @@ class SubmissionMapper:
             registry_participant_id=RegistryParticipantId.from_string(registry_raw) if registry_raw else None,
             member_count=int(data.get("member_count", 1)),
             members=[str(row) for row in data.get("members") or [] if str(row).strip()],
+            organization_name=data.get("organization_name"),
         )
 
     @staticmethod

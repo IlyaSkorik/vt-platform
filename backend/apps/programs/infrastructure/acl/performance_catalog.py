@@ -348,20 +348,32 @@ class DjangoPerformanceCatalog:
 
     @staticmethod
     def _organizations(models: list[SubmissionModel]) -> dict[str, str]:
-        """Submission id → the lead participant's primary educational organization.
+        """Submission id → the lead participant's educational organization.
 
-        The link is the ``registry_participant_id`` a submission denormalizes, resolved
-        through the Participants context in a single query for the whole batch.
+        Normally the registry's: the link is the ``registry_participant_id`` a
+        submission denormalizes, resolved through the Participants context in a single
+        query for the whole batch. An entry whose institution an organizer corrected
+        carries that correction on the participant row itself and is answered from
+        there without a lookup.
         """
+        pinned_by_submission: dict[str, str] = {}
         registry_by_submission: dict[str, str] = {}
         for model in models:
             for entry in model.participants or []:
+                # An institution the organizer corrected on the entry itself wins over
+                # the registry, and only for this entry: that is what the correction
+                # asked for. Absent — the ordinary case, and the case for every entry
+                # submitted before the field existed — the registry answers as before.
+                pinned = _clean(entry.get("organization_name"))
+                if pinned:
+                    pinned_by_submission[str(model.id)] = pinned
+                    break
                 registry_id = _clean(entry.get("registry_participant_id"))
                 if registry_id:
                     registry_by_submission[str(model.id)] = registry_id
                     break
         if not registry_by_submission:
-            return {}
+            return pinned_by_submission
         memberships = (
             ParticipantOrganizationMembershipModel.objects.filter(
                 participant_id__in=list(set(registry_by_submission.values())),
@@ -373,8 +385,10 @@ class DjangoPerformanceCatalog:
         by_participant: dict[str, str] = {}
         for membership in memberships:
             by_participant.setdefault(str(membership.participant_id), str(membership.organization.name))
-        return {
+        resolved = {
             submission_id: by_participant[registry_id]
             for submission_id, registry_id in registry_by_submission.items()
             if registry_id in by_participant
         }
+        resolved.update(pinned_by_submission)
+        return resolved

@@ -452,6 +452,11 @@ class OrganizerParticipantInput:
     ``id`` names an entry already on the submission; absent, the entry is a new one
     the organizer is adding. A solo carries the name parts, a collective only
     ``display_name`` plus its headcount and (optionally) the people in it.
+
+    ``organization_name`` is the institution to print for this performer *on this
+    entry*. ``None`` (or blank) is not "no institution" — it withdraws any pin and
+    lets the applicant's Participant Registry answer again, which is what every
+    uncorrected entry does.
     """
 
     id: str | None = None
@@ -463,6 +468,7 @@ class OrganizerParticipantInput:
     gender: str | None = None
     member_count: int = 1
     members: tuple[str, ...] = ()
+    organization_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
