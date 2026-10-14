@@ -31,7 +31,16 @@ export type SubmissionTaxonomy = {
   participationFormats: TaxonomyOption[];
 };
 
-/** Выступающий так, как он лежит в заявке: солист — частями имени, коллектив — названием. */
+/**
+ * Выступающий так, как он лежит в заявке: солист — частями имени, коллектив — названием.
+ *
+ * Учреждение приходит двумя полями, и путать их нельзя.
+ * `organizationName` — исправленное организатором в самой заявке; у подавляющего
+ * большинства выступающих его нет (`null`), и это значит «никто не правил», а не
+ * «учреждения нет». `resolvedOrganizationName` — то, что печатается сейчас:
+ * исправленное, если оно есть, иначе из реестра участника в кабинете заявителя.
+ * Форма открывается на втором, а отправляет первое — см. `correctionOrganization`.
+ */
 export type CorrectablePerformer = {
   id: string;
   displayName?: string | null;
@@ -42,6 +51,8 @@ export type CorrectablePerformer = {
   gender?: string | null;
   memberCount: number;
   members?: string[];
+  organizationName?: string | null;
+  resolvedOrganizationName?: string | null;
 };
 
 export type CorrectableTeacher = {
@@ -93,6 +104,7 @@ export type CorrectionPayload = {
     gender?: string | null;
     memberCount: number;
     members: string[];
+    organizationName: string | null;
   }>;
   teachers: Array<{
     id?: string;
@@ -103,6 +115,33 @@ export type CorrectionPayload = {
   }>;
   comment: string;
 };
+
+/**
+ * Что отправить в `organizationName` для одного выступающего.
+ *
+ * Пустое поле — это «брать из реестра», а не «учреждения нет»: организатор, который
+ * его стёр, отменяет правку, а не утверждает, что участник ниоткуда.
+ *
+ * И главное: значение, совпавшее с тем, что и так печаталось, не закрепляется. Форма
+ * открыта на реестровом учреждении, и если его не трогали — отправляется `null`.
+ * Иначе каждое сохранение любой другой правки молча отвязывало бы заявку от реестра,
+ * и заявка, поданная год назад, перестала бы следовать за переименованием школы.
+ */
+export function correctionOrganization(
+  typed: string,
+  performer: Pick<CorrectablePerformer, "organizationName" | "resolvedOrganizationName">,
+): string | null {
+  const value = typed.trim();
+  if (!value) {
+    return null;
+  }
+  const pinned = (performer.organizationName ?? "").trim();
+  const resolved = (performer.resolvedOrganizationName ?? "").trim();
+  if (!pinned && value === resolved) {
+    return null;
+  }
+  return value;
+}
 
 /** Что сервер посчитал изменённым — теми же словами, что уйдут участнику в письме. */
 export type CorrectionResult = { id: string; status: string; changes: string[] };

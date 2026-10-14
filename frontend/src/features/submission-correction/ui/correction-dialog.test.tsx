@@ -67,6 +67,19 @@ function aPerformance(overrides: Partial<CorrectablePerformance> = {}): Correcta
   };
 }
 
+/** Солистка из `aPerformance`, с переопределённым учреждением. */
+function withOrganization(pinned: string | null, resolved: string | null): CorrectablePerformance {
+  const performance = aPerformance();
+  return {
+    ...performance,
+    participants: (performance.participants ?? []).map((performer) => ({
+      ...performer,
+      organizationName: pinned,
+      resolvedOrganizationName: resolved,
+    })),
+  };
+}
+
 function renderFor(performance: CorrectablePerformance = aPerformance()) {
   const onOpenChange = vi.fn();
   render(
@@ -174,6 +187,57 @@ describe("SubmissionCorrectionDialog", () => {
       memberCount: 8,
       members: ["Иванова Анна", "Петров Пётр"],
       lastName: null,
+    });
+  });
+
+  describe("учреждение", () => {
+    it("opens on the institution that is printed today, not on an empty field", async () => {
+      // Пустое поле там, где учреждение есть, читается как «его нет» — и первое же
+      // сохранение сделало бы это правдой.
+      renderFor(withOrganization(null, "ДШИ №1"));
+
+      expect(await section("Участники").findByLabelText("Учреждение")).toHaveValue("ДШИ №1");
+    });
+
+    it("pins nothing when the organizer did not touch the institution", async () => {
+      // Иначе любая правка фамилии молча отвязывала бы заявку от реестра, и заявка,
+      // поданная год назад, перестала бы следовать за переименованием школы.
+      const user = userEvent.setup();
+      renderFor(withOrganization(null, "ДШИ №1"));
+
+      const surname = section("Участники").getByLabelText("Фамилия");
+      await user.clear(surname);
+      await user.type(surname, "Иванова");
+      await user.click(screen.getByRole("button", { name: "Сохранить исправление" }));
+
+      await waitFor(() => expect(save).toHaveBeenCalled());
+      expect(save.mock.calls[0]?.[0].payload.participants[0].organizationName).toBeNull();
+    });
+
+    it("pins the institution the organizer typed over the registry's", async () => {
+      const user = userEvent.setup();
+      renderFor(withOrganization(null, "ДШИ №1"));
+
+      const organization = await section("Участники").findByLabelText("Учреждение");
+      await user.clear(organization);
+      await user.type(organization, "ДШИ №2");
+      await user.click(screen.getByRole("button", { name: "Сохранить исправление" }));
+
+      await waitFor(() => expect(save).toHaveBeenCalled());
+      expect(save.mock.calls[0]?.[0].payload.participants[0].organizationName).toBe("ДШИ №2");
+    });
+
+    it("clearing the field hands the performer back to the registry", async () => {
+      // Пустое поле — «брать из реестра», а не «учреждения нет»: организатор
+      // отменяет свою правку, а не утверждает, что участник ниоткуда.
+      const user = userEvent.setup();
+      renderFor(withOrganization("ДШИ №2", "ДШИ №2"));
+
+      await user.clear(await section("Участники").findByLabelText("Учреждение"));
+      await user.click(screen.getByRole("button", { name: "Сохранить исправление" }));
+
+      await waitFor(() => expect(save).toHaveBeenCalled());
+      expect(save.mock.calls[0]?.[0].payload.participants[0].organizationName).toBeNull();
     });
   });
 

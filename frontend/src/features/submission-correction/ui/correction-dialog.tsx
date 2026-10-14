@@ -30,6 +30,7 @@ import {
 import {
   type CorrectablePerformance,
   type CorrectionPayload,
+  correctionOrganization,
   type SubmissionTaxonomy,
   useCorrectSubmission,
 } from "../api/hooks";
@@ -49,6 +50,11 @@ type PerformerDraft = {
   memberCount: string;
   /** Состав коллектива — по имени в строке: так его и вносят, копируя из списка. */
   members: string;
+  /** Учреждение в поле — открывается тем, что печатается сейчас. */
+  organization: string;
+  /** Что в заявке закреплено и что из неё печатается — чтобы знать, правили ли поле. */
+  pinnedOrganization: string | null;
+  resolvedOrganization: string | null;
 };
 
 type TeacherDraft = {
@@ -82,6 +88,12 @@ function performerDrafts(performance: CorrectablePerformance): PerformerDraft[] 
       gender: performer.gender ?? "",
       memberCount: String(performer.memberCount ?? 1),
       members: (performer.members ?? []).join("\n"),
+      // Поле открыто на том, что печатается, а не на том, что закреплено: пустая
+      // строка там, где учреждение на самом деле есть, читается как «его нет» —
+      // и первое же сохранение сделало бы это правдой.
+      organization: performer.resolvedOrganizationName ?? "",
+      pinnedOrganization: performer.organizationName ?? null,
+      resolvedOrganization: performer.resolvedOrganizationName ?? null,
     };
   });
 }
@@ -98,6 +110,43 @@ function teacherDrafts(performance: CorrectablePerformance): TeacherDraft[] {
 
 function options(rows: Array<{ id: string; name: string }>) {
   return rows.map((row) => ({ value: row.id, label: row.name }));
+}
+
+/**
+ * «Учреждение» — единственное поле этой формы, которое правит не саму заявку.
+ *
+ * Школа участника лежит не в заявке, а в реестре участников кабинета заявителя, и
+ * оттуда её читают все, кто её печатает: рабочая карточка, программа, протокол,
+ * диплом. Здесь она правится **для бумаг этого фестиваля**: заполненное поле
+ * закрепляется в самой заявке и перекрывает реестр для этого выступающего, не трогая
+ * ни кабинет заявителя, ни его другие заявки, ни прошлые фестивали.
+ *
+ * Поэтому и подпись такая: пустое поле — не «учреждения нет», а «берём из реестра».
+ * Это же и ответ на вопрос, что будет с уже поданными заявками: у них поле пусто,
+ * они продолжают следовать за реестром, и появление этого поля их не изменило.
+ */
+function OrganizationField({
+  row,
+  index,
+  onPatch,
+}: {
+  row: PerformerDraft;
+  index: number;
+  onPatch: (index: number, patch: Partial<PerformerDraft>) => void;
+}): React.JSX.Element {
+  return (
+    <Input
+      label="Учреждение"
+      placeholder="Школа, студия, центр"
+      description={
+        row.pinnedOrganization
+          ? "Исправлено для этой заявки. Очистите поле, чтобы снова брать из реестра участника."
+          : "Берётся из реестра участника. Впишите другое — и в этой заявке будет печататься оно."
+      }
+      value={row.organization}
+      onChange={(e) => onPatch(index, { organization: e.target.value })}
+    />
+  );
 }
 
 export type SubmissionCorrectionDialogProps = {
@@ -244,6 +293,10 @@ export function SubmissionCorrectionDialog({
               .map((name) => name.trim())
               .filter(Boolean)
           : [],
+        organizationName: correctionOrganization(row.organization, {
+          organizationName: row.pinnedOrganization,
+          resolvedOrganizationName: row.resolvedOrganization,
+        }),
       })),
       teachers: teachers.map((row) => ({
         ...(row.id ? { id: row.id } : {}),
@@ -387,6 +440,9 @@ export function SubmissionCorrectionDialog({
                       gender: "",
                       memberCount: "1",
                       members: "",
+                      organization: "",
+                      pinnedOrganization: null,
+                      resolvedOrganization: null,
                     },
                   ])
                 }
@@ -446,6 +502,7 @@ export function SubmissionCorrectionDialog({
                       onChange={(e) => patchPerformer(index, { members: e.target.value })}
                       placeholder="Состав коллектива — по одному ФИО в строке (нужен для именных дипломов)"
                     />
+                    <OrganizationField row={row} index={index} onPatch={patchPerformer} />
                   </div>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -479,6 +536,7 @@ export function SubmissionCorrectionDialog({
                       }
                       options={GENDERS}
                     />
+                    <OrganizationField row={row} index={index} onPatch={patchPerformer} />
                   </div>
                 )}
               </div>
