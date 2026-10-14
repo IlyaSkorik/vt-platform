@@ -291,15 +291,19 @@ class TestPublicLinks:
         assert repository.slug_taken("Temp23456") is True
         assert ProgramShareModel.objects.get(id=share.id).deleted_at is not None
 
-    def test_deleting_the_program_takes_its_links_down(self) -> None:
+    def test_deleting_the_program_takes_its_revoked_links_down(self) -> None:
+        """The order the aggregate enforces: revoke, then delete — see ``Program.delete``."""
         repository = DjangoProgramRepository()
         program = _program()
-        program.add_share(share_id=uuid.uuid4(), name=ShareName("Экран"), slug=PublicSlug("Screen234"), now=NOW)
+        share = program.add_share(share_id=uuid.uuid4(), name=ShareName("Экран"), slug=PublicSlug("Screen234"), now=NOW)
         repository.save(program)
+        program.remove_share(share.id, now=NOW)
         program.delete(now=NOW)
         repository.save(program)
 
         assert repository.get_by_slug("Screen234") is None
+        # The slug stays claimed: a printed link must never start pointing elsewhere.
+        assert repository.slug_taken("Screen234") is True
 
     def test_a_free_slug_is_not_reported_as_taken(self) -> None:
         assert DjangoProgramRepository().slug_taken("Nobody234") is False

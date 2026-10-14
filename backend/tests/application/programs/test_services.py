@@ -34,6 +34,7 @@ from apps.programs.domain.exceptions import (
     InvalidProgramDataError,
     PerformanceAlreadyInProgramError,
     PerformanceNotAvailableError,
+    ProgramHasSharesError,
     ProgramNotFoundError,
     ProgramNumbersFrozenError,
     ReorderMismatchError,
@@ -746,11 +747,23 @@ class TestPublicRead:
     def test_an_unknown_link_resolves_to_nothing(self) -> None:
         assert Env().service.public_program("NoSuchSlug") is None
 
-    def test_a_deleted_program_takes_its_links_down(self) -> None:
+    def test_a_published_program_refuses_to_be_deleted(self) -> None:
+        """A link out is somebody reading, and they are not told when it goes away."""
         env = Env(_act("A", 200))
         program_id = env.program()
         env.service.fill_from_scope(program_id)
         _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Экран"))
+
+        with pytest.raises(ProgramHasSharesError):
+            env.service.delete_program(program_id)
+        assert env.service.public_program(share.slug) is not None
+
+    def test_deleting_after_the_links_are_revoked_takes_them_down_for_good(self) -> None:
+        env = Env(_act("A", 200))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Экран"))
+        env.service.remove_share(program_id=program_id, share_id=share.id)
         env.service.delete_program(program_id)
         assert env.service.public_program(share.slug) is None
 

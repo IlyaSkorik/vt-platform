@@ -380,7 +380,11 @@ class ProgramService:
         raise AssertionError("unreachable")  # pragma: no cover - the loop always returns or raises
 
     def delete_program(self, program_id: str) -> None:
-        """Soft-delete a program; every public link into it stops resolving."""
+        """Soft-delete a program — refused while it still has public links.
+
+        The guard lives in the aggregate (:meth:`Program.delete`), so the rule holds
+        whoever asks; this edge only has to carry the refusal back out.
+        """
         program = self._load(program_id)
         program.delete(now=self._clock.utcnow())
         self._programs.save(program)

@@ -18,6 +18,7 @@ from apps.programs.domain.exceptions import (
     ItemNotInProgramError,
     PerformanceAlreadyInProgramError,
     ProgramColumnNotFoundError,
+    ProgramHasSharesError,
     ProgramItemNotFoundError,
     ProgramShareNotFoundError,
     ReorderMismatchError,
@@ -414,6 +415,18 @@ class TestPublicEditions:
         assert program.shares == ()
         with pytest.raises(ProgramShareNotFoundError):
             program.share(share.id)
+
+    def test_a_live_edition_keeps_the_programme_from_being_deleted(self) -> None:
+        """The link is somebody's open tab, and deleting would close it without a word."""
+        program = _program()
+        share = program.add_share(share_id=uuid.uuid4(), name=ShareName("Экран"), slug=PublicSlug("Screen234"), now=NOW)
+        with pytest.raises(ProgramHasSharesError):
+            program.delete(now=NOW)
+        assert program.deleted_at is None
+
+        program.remove_share(share.id, now=NOW)
+        program.delete(now=NOW)
+        assert program.deleted_at == NOW
 
     def test_many_editions_of_one_program_coexist(self) -> None:
         program = _program()

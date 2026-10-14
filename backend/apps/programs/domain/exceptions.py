@@ -16,6 +16,7 @@ __all__ = [
     "ProgramColumnNotFoundError",
     "ProgramConcurrencyError",
     "ProgramError",
+    "ProgramHasSharesError",
     "ProgramItemNotFoundError",
     "ProgramNotFoundError",
     "ProgramNumbersFrozenError",
@@ -59,6 +60,22 @@ class ProgramNotFoundError(ProgramError):
     """Raised when a referenced program does not exist (or was deleted)."""
 
     code = "program_not_found"
+
+
+class ProgramHasSharesError(ProgramError):
+    """Raised when a program is asked to delete itself while public links still lead to it.
+
+    Deleting takes every edition down with it, and an edition is the copy somebody is
+    already working from — the sound desk has it open, the host is running the day off
+    it, a participant was mailed it. The link does not fail loudly for them; it simply
+    stops resolving, mid-festival, with nothing on screen to say why.
+
+    So the links are revoked first, one at a time, by the organizer who knows who holds
+    which. That is one extra deliberate step before an irreversible one, and it is the
+    whole point: a program with no links out is a program nobody is reading.
+    """
+
+    code = "program_has_shares"
 
 
 class ProgramItemNotFoundError(ProgramError):

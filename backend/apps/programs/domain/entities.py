@@ -34,6 +34,7 @@ from .exceptions import (
     ItemNotInProgramError,
     PerformanceAlreadyInProgramError,
     ProgramColumnNotFoundError,
+    ProgramHasSharesError,
     ProgramItemNotFoundError,
     ProgramNumbersFrozenError,
     ProgramShareNotFoundError,
@@ -957,7 +958,15 @@ class Program:
     # ------------------------------------------------------------------
 
     def delete(self, *, now: datetime) -> None:
-        """Soft-delete the program (and with it every public link into it)."""
+        """Soft-delete the program, provided no public link still leads into it.
+
+        Refused while any edition is published: deleting would take the sound desk's
+        copy, the host's copy and the one mailed to participants down with it, each of
+        them silently (see :class:`ProgramHasSharesError`). Revoking the links first is
+        the organizer's own confirmation that nobody is reading this any more.
+        """
+        if self._shares:
+            raise ProgramHasSharesError(f"Программа «{self._name}» опубликована по {len(self._shares)} ссылке(ам) — сначала отзовите их.")
         self._deleted_at = now
         self._touch(now)
 
