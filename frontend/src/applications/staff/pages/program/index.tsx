@@ -53,6 +53,7 @@ import {
   useArrangeProgram,
   useCreateProgram,
   useCreateShare,
+  useDeleteProgram,
   useEditItem,
   useFillCells,
   useFillProgram,
@@ -235,7 +236,7 @@ export function StaffProgramPage(): React.JSX.Element {
                 </div>
               )}
               {programId ? (
-                <ProgramWorkspace programId={programId} />
+                <ProgramWorkspace programId={programId} onDeleted={() => setProgramId(null)} />
               ) : (
                 <EmptyState
                   title="Программа не выбрана"
@@ -366,19 +367,31 @@ function CreateProgramCard({
   );
 }
 
-function ProgramWorkspace({ programId }: { programId: string }): React.JSX.Element {
+function ProgramWorkspace({
+  programId,
+  onDeleted,
+}: {
+  programId: string;
+  onDeleted: () => void;
+}): React.JSX.Element {
   const { data: program, isLoading } = useProgram(programId);
   if (isLoading || !program) {
     return <LoadingState label="Загружаем программу…" size="sm" />;
   }
-  return <ProgramWorkspaceInner key={programId} program={program} />;
+  return <ProgramWorkspaceInner key={programId} program={program} onDeleted={onDeleted} />;
 }
 
-function ProgramWorkspaceInner({ program }: { program: Program }): React.JSX.Element {
+function ProgramWorkspaceInner({
+  program,
+  onDeleted,
+}: {
+  program: Program;
+  onDeleted: () => void;
+}): React.JSX.Element {
   return (
     // `min-w-0` all the way down to the scroll container, or the table's width wins.
     <div className="flex min-w-0 flex-col gap-4">
-      <ProgramSettings program={program} />
+      <ProgramSettings program={program} onDeleted={onDeleted} />
       <Divider />
       <RunningOrder program={program} />
       <Divider />
@@ -391,7 +404,13 @@ function ProgramWorkspaceInner({ program }: { program: Program }): React.JSX.Ele
   );
 }
 
-function ProgramSettings({ program }: { program: Program }): React.JSX.Element {
+function ProgramSettings({
+  program,
+  onDeleted,
+}: {
+  program: Program;
+  onDeleted: () => void;
+}): React.JSX.Element {
   const update = useUpdateProgram(program.id);
   const setBuffer = (bufferSeconds: number) =>
     update.mutate({ bufferSeconds }, { onError: () => toast.error("Не удалось изменить буфер") });
@@ -399,10 +418,13 @@ function ProgramSettings({ program }: { program: Program }): React.JSX.Element {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-semibold text-lg">{program.name}</h2>
-        <p className="text-muted-foreground text-sm">
-          {formatClock(program.startsAt)} – {formatClock(program.endsAt)} ·{" "}
-          {formatSpan(program.totalSeconds)}
-        </p>
+        <div className="flex flex-wrap items-baseline gap-3">
+          <p className="text-muted-foreground text-sm">
+            {formatClock(program.startsAt)} – {formatClock(program.endsAt)} ·{" "}
+            {formatSpan(program.totalSeconds)}
+          </p>
+          <DeleteProgram program={program} onDeleted={onDeleted} />
+        </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:max-w-xl">
         <Select
@@ -418,6 +440,87 @@ function ProgramSettings({ program }: { program: Program }): React.JSX.Element {
         <ProgramStart program={program} />
       </div>
     </div>
+  );
+}
+
+/**
+ * «Удалить программу» — и то, что стоит между кнопкой и удалением.
+ *
+ * Две вещи сразу, потому что по отдельности ни одна не работает.
+ *
+ * **Публичные ссылки держат программу.** Ссылка — это чья-то открытая вкладка:
+ * у звукорежиссёра за пультом, у ведущего, у участника в письме. Удаление уносит
+ * их все, и уносит молча — страница просто перестаёт открываться посреди
+ * фестиваля. Поэтому пока ссылки живы, кнопка не нажимается, и рядом написано,
+ * сколько их и что с ними делать: отозвать по одной внизу страницы — это и есть
+ * то решение организатора, которого здесь не хватает, он один знает, у кого какая.
+ *
+ * **Диалог, а не «вы уверены?».** Удаление необратимо и стоит рядом с обычными
+ * настройками, по которым кликают не глядя, поэтому подтверждение называет
+ * программу по имени и говорит, сколько в ней пунктов: «Вокал, 1 отделение» и
+ * «37 пунктов» — это то, по чему человек узнаёт, что держит не ту программу.
+ * Сами выступления остаются в заявках: удаляется расстановка, а не фестиваль.
+ */
+function DeleteProgram({
+  program,
+  onDeleted,
+}: {
+  program: Program;
+  onDeleted: () => void;
+}): React.JSX.Element {
+  const remove = useDeleteProgram();
+  const [open, setOpen] = useState(false);
+  const shares = program.shares.length;
+  const blocked = shares > 0;
+
+  const confirm = () => {
+    remove.mutate(program.id, {
+      onSuccess: () => {
+        setOpen(false);
+        onDeleted();
+        toast.success("Программа удалена");
+      },
+      // Сервер проверяет то же правило: ссылку могли создать в соседнем окне,
+      // пока это открыто, и его отказ точнее того, что здесь на экране.
+      onError: (error) => toast.error(error.message || "Не удалось удалить программу"),
+    });
+  };
+
+  return (
+    <>
+      {/* `outline`, не `ghost`: удаление ищут глазами, а призрачная кнопка —
+          текст до наведения, и на тач-экране наведения не бывает вовсе. */}
+      <Button variant="outline" size="xs" disabled={blocked} onClick={() => setOpen(true)}>
+        <Trash2 className="size-4" /> Удалить программу
+      </Button>
+      {/* Причина отказа — на экране, а не в `title`: выключенная кнопка не ловит
+          курсор (`disabled:pointer-events-none`), и подсказка к ней не всплывёт. */}
+      {blocked ? (
+        <p className="text-muted-foreground text-xs">
+          Сначала отзовите публичные ссылки ({shares}) — по ним программу читают прямо сейчас.
+        </p>
+      ) : null}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Удалить программу «{program.name}»?</DialogTitle>
+            <DialogDescription>
+              Пунктов в программе: {program.items.length}. Расстановка и перерывы будут удалены без
+              возможности восстановить. Сами заявки и выступления останутся — их можно будет
+              расставить заново в новой программе.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Отмена
+            </Button>
+            <Button variant="danger" loading={remove.isPending} onClick={confirm}>
+              Удалить программу
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

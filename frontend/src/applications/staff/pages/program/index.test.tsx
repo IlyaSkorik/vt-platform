@@ -19,6 +19,7 @@ import {
   useArrangeProgram,
   useCreateProgram,
   useCreateShare,
+  useDeleteProgram,
   useEditItem,
   useFillCells,
   useFillProgram,
@@ -55,6 +56,7 @@ vi.mock("@/features/program-builder", async (importOriginal) => ({
   useReorderItems: vi.fn(),
   useRenumberItems: vi.fn(),
   useCreateShare: vi.fn(),
+  useDeleteProgram: vi.fn(),
   useAnnounceShare: vi.fn(),
   useRemoveShare: vi.fn(),
   useAddColumn: vi.fn(),
@@ -117,6 +119,7 @@ const fillProgram = vi.fn();
 const arrangeProgram = vi.fn();
 const removeItem = vi.fn();
 const removeShare = vi.fn();
+const deleteProgram = vi.fn();
 const announceShare = vi.fn();
 const editItem = vi.fn();
 const createProgram = vi.fn();
@@ -259,6 +262,7 @@ function stub(
   vi.mocked(useRenumberItems).mockReturnValue(mutation(renumber));
   vi.mocked(useCreateShare).mockReturnValue(mutation(createShare));
   vi.mocked(useRemoveShare).mockReturnValue(mutation(removeShare));
+  vi.mocked(useDeleteProgram).mockReturnValue(mutation(deleteProgram));
   vi.mocked(useAnnounceShare).mockReturnValue(mutation(announceShare));
   vi.mocked(useAddColumn).mockReturnValue(mutation(addColumn));
   vi.mocked(useRenameColumn).mockReturnValue(mutation(renameColumn));
@@ -290,6 +294,7 @@ beforeEach(() => {
     arrangeProgram,
     removeItem,
     removeShare,
+    deleteProgram,
     editItem,
     createProgram,
     addColumn,
@@ -1623,5 +1628,47 @@ describe("StaffProgramPage — автосоставление", () => {
 
     expect(screen.getByRole("button", { name: /Собрать программу/ })).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Пересобрать" })).not.toBeInTheDocument();
+  });
+});
+
+describe("StaffProgramPage — удаление программы", () => {
+  const A_SHARE = {
+    id: "share-1",
+    name: "Программа звукорежиссёра",
+    slug: "Sound2345",
+    path: "/program/Sound2345",
+    columns: [{ key: "TIME" as const, label: "Время", custom: false }],
+    itemCount: 2,
+    coversWholeProgram: true,
+    controlsRunningOrder: false,
+    createdAt: "2026-08-01T09:00:00Z",
+  };
+
+  it("публичная ссылка держит программу, и видно почему", async () => {
+    // Ссылка — это чья-то открытая вкладка за пультом; удаление закрыло бы её молча.
+    stub(aProgram({ shares: [A_SHARE] }));
+    await renderPage();
+
+    expect(screen.getByRole("button", { name: /Удалить программу/ })).toBeDisabled();
+    expect(screen.getByText(/Сначала отзовите публичные ссылки \(1\)/)).toBeInTheDocument();
+  });
+
+  it("без ссылок удаляет — но только после подтверждения", async () => {
+    stub(aProgram({ shares: [] }));
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Удалить программу/ }));
+    // Первый клик только открывает диалог: удаление необратимо и стоит рядом с
+    // обычными настройками, по которым кликают не глядя.
+    expect(deleteProgram).not.toHaveBeenCalled();
+
+    const dialog = within(await screen.findByRole("dialog"));
+    expect(
+      screen.getByRole("heading", { name: /Удалить программу «Вокал, 1 отделение»/ }),
+    ).toBeInTheDocument();
+    await userEvent.click(dialog.getByRole("button", { name: "Удалить программу" }));
+
+    expect(deleteProgram).toHaveBeenCalledTimes(1);
+    expect(deleteProgram.mock.calls[0]?.[0]).toBe(PROGRAM_ID);
   });
 });
