@@ -475,7 +475,9 @@ export function itemCell(
     case "TIME":
       return format.clock(item.schedule.startsAt);
     case "PARTICIPANT":
-      return item.leadParticipant ?? "";
+      // Everyone the entry listed, not just the first of them — a duet is two performer
+      // rows and both names belong here. The headcount has its own column.
+      return item.participants.join(", ");
     case "TITLE":
       return item.title;
     case "DURATION":

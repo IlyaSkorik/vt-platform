@@ -2003,7 +2003,9 @@ function CandidateList({ program }: { program: Program }): React.JSX.Element {
           <div className="min-w-0">
             <p className="font-medium text-sm">{candidate.title}</p>
             <p className="text-muted-foreground text-xs">
-              {[candidate.participants[0], candidate.organization].filter(Boolean).join(" · ")}
+              {[candidate.participants.join(", "), candidate.organization]
+                .filter(Boolean)
+                .join(" · ")}
             </p>
             {/* The composition and the age band decide where an act can go in the day,
                 so they belong on the card the organizer picks from — not one click away. */}

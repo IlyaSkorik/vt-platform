@@ -8,6 +8,7 @@ read one back through its link.
 from __future__ import annotations
 
 import uuid
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -324,6 +325,17 @@ class TestMusicArchive:
             "01 — Иванова Анна — Катюша/a.mp3",
             "01 — Иванова Анна — Катюша/b.wav",
         ]
+
+    def test_a_folder_is_named_after_every_performer_of_the_act(self) -> None:
+        # Half a duet's name on the folder is a folder the sound desk cannot match to
+        # the pair standing in front of it.
+        act = replace(_act("Катюша", 200), participants=("Иванова Анна", "Петров Пётр"))
+        env = Env(act, music={act.submission_id: ("uploads/a.mp3",)})
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        archive = env.service.music_archive(program_id=program_id)
+        assert archive.files[0].filename == "01 — Иванова Анна, Петров Пётр — Катюша/a.mp3"
 
     def test_a_slash_in_a_title_does_not_invent_a_nested_folder(self) -> None:
         # There is one folder per act by design; a slash in the title must not turn it into
@@ -713,6 +725,19 @@ class TestPublicRead:
         assert cells["TEACHERS"] == "Петрова Мария"
         assert cells["ORGANIZATION"] == "Школа №1"
         assert cells["COMMENT"] == "Нужен микрофон"
+
+    def test_every_performer_of_an_entry_is_named_in_the_participant_column(self) -> None:
+        # An entry with two performers is a duet, and a programme that names only the
+        # first of them tells the hall the wrong thing about who is on stage.
+        duet = replace(_act("Катюша", 200), participants=("Иванова Анна", "Петров Пётр"))
+        env = Env(duet)
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        _detail, share = env.service.create_share(CreateShareCommand(program_id=program_id, name="Сцена", columns=("PARTICIPANT",)))
+
+        public = env.service.public_program(share.slug)
+        assert public is not None
+        assert public.rows[0].cells == ("Иванова Анна, Петров Пётр",)
 
     def test_an_unknown_column_is_refused(self) -> None:
         env = Env(_act("Катюша", 200))

@@ -149,10 +149,14 @@ def _safe(text: str) -> str:
 
 
 def _act_label(number: int, performance: CatalogPerformance | None) -> str:
-    """``01 — Иванова Анна — Вальс``: the number first, because that is what is cued."""
+    """``01 — Иванова Анна — Вальс``: the number first, because that is what is cued.
+
+    Every performer the entry listed, not just the first: a folder named after one half
+    of a duet is a folder the sound desk cannot match to the act in front of it.
+    """
     title = performance.title if performance is not None else ""
-    lead = performance.lead_participant if performance is not None else None
-    parts = [f"{number:02d}", *(part for part in (lead, title) if part)]
+    performers = ", ".join(performance.participants) if performance is not None else ""
+    parts = [f"{number:02d}", *(part for part in (performers, title) if part)]
     return _safe(" — ".join(parts))
 
 
@@ -1045,7 +1049,10 @@ class ProgramService:
             case ProgramColumn.TIME:
                 return _clock(starts_at)
             case ProgramColumn.PARTICIPANT:
-                return performance.lead_participant or "" if performance is not None else ""
+                # Everyone the entry listed, not just the first of them: a duet is two
+                # performer rows and both names belong in «Участник». How many people a
+                # collective puts on stage is a different fact, with its own column.
+                return ", ".join(performance.participants) if performance is not None else ""
             case ProgramColumn.TITLE:
                 return self._item_title(item, performance)
             case ProgramColumn.DURATION:
@@ -1143,7 +1150,6 @@ class ProgramService:
                 ends_at=entry.ends_at,
             ),
             submission_id=str(item.submission_id) if item.submission_id is not None else None,
-            lead_participant=performance.lead_participant if performance is not None else None,
             participants=performance.participants if performance is not None else (),
             participant_count=performance.participant_count if performance is not None else 0,
             teachers=performance.teachers if performance is not None else (),
