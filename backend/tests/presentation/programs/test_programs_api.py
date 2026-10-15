@@ -225,7 +225,7 @@ class TestBuildingFromANomination:
         item = response.data["data"]["items"][0]
         assert item["kind"] == "PERFORMANCE"
         assert item["title"] == "Катюша"
-        assert item["leadParticipant"] == "Иванов Иван"
+        assert item["participants"] == ["Иванов Иван"]
         assert item["comment"] == "Выход с точки 3"
         assert item["teachers"] == ["Иванова Мария"]
 
@@ -503,7 +503,7 @@ class TestTheProgrammeTable:
 
         item = filled.data["data"]["items"][0]
         assert item["title"] == "Катюша"
-        assert item["leadParticipant"] == "Иванов Иван"
+        assert item["participants"] == ["Иванов Иван"]
         assert item["teachers"] == ["Иванова Мария"]
         assert item["comment"] == "Выход с точки 3"
         # Every taxonomy column the table offers is resolved, not just the ids.

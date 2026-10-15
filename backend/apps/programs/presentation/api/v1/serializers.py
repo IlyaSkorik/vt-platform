@@ -244,7 +244,6 @@ class ProgramItemResourceSerializer(serializers.Serializer[dict[str, object]]):
     durationSeconds = serializers.IntegerField()
     schedule = _SchedulePositionSerializer()
     submissionId = serializers.UUIDField(allow_null=True)
-    leadParticipant = serializers.CharField(allow_null=True)
     participants = serializers.ListField(child=serializers.CharField())
     #: The headcount on stage, not the number of performer rows.
     participantCount = serializers.IntegerField()

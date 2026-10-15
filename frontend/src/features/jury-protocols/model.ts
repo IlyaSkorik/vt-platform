@@ -80,7 +80,6 @@ export interface ProtocolRow {
   award: AwardKind | null;
   /** The wording for {@link award}, straight from the backend. */
   awardLabel: string | null;
-  leadParticipant: string | null;
   participants: string[];
   teachers: string[];
   nomination: string | null;

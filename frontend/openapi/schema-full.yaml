@@ -17641,10 +17641,6 @@ components:
           - string
           - 'null'
           format: uuid
-        leadParticipant:
-          type:
-          - string
-          - 'null'
         participants:
           type: array
           items:
@@ -17704,7 +17700,6 @@ components:
       - durationSeconds
       - id
       - kind
-      - leadParticipant
       - missingPerformance
       - nomination
       - number
@@ -18127,10 +18122,6 @@ components:
           type:
           - string
           - 'null'
-        leadParticipant:
-          type:
-          - string
-          - 'null'
         participants:
           type: array
           items:
@@ -18171,7 +18162,6 @@ components:
       - awardLabel
       - discipline
       - id
-      - leadParticipant
       - missingPerformance
       - nomination
       - number

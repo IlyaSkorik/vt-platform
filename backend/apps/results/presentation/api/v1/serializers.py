@@ -170,7 +170,6 @@ class ProtocolRowResourceSerializer(serializers.Serializer[dict[str, object]]):
     title = serializers.CharField()
     award = serializers.CharField(max_length=_AWARD_CODE_MAX, allow_null=True)
     awardLabel = serializers.CharField(allow_null=True)
-    leadParticipant = serializers.CharField(allow_null=True)
     participants = serializers.ListField(child=serializers.CharField())
     teachers = serializers.ListField(child=serializers.CharField())
     nomination = serializers.CharField(allow_null=True)

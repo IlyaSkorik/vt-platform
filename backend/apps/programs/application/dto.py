@@ -78,7 +78,6 @@ class ProgramItemView:
     duration_seconds: int
     schedule: SchedulePosition
     submission_id: str | None = None
-    lead_participant: str | None = None
     participants: tuple[str, ...] = ()
     #: How many people stand on stage - a collective's own headcount, not the length of
     #: :attr:`participants`. ``0`` for a block, which puts nobody on stage.

@@ -94,7 +94,6 @@ export interface ProgramItem {
   durationSeconds: number;
   schedule: SchedulePosition;
   submissionId: string | null;
-  leadParticipant: string | null;
   participants: string[];
   /**
    * How many people stand on stage — the headcount, not `participants.length`.

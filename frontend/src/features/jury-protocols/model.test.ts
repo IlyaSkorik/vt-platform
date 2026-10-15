@@ -17,7 +17,6 @@ function aRow(overrides: Partial<ProtocolRow> = {}): ProtocolRow {
     title: "Катюша",
     award: "LAUREATE_II",
     awardLabel: "Лауреат II степени",
-    leadParticipant: "Иванов Иван",
     participants: ["Иванов Иван"],
     teachers: ["Петрова Мария", "Сидорова Анна"],
     nomination: "Вокал",

@@ -143,7 +143,6 @@ def _item_json(item: dto.ProgramItemView) -> dict[str, Any]:
             "endsAt": item.schedule.ends_at,
         },
         "submissionId": item.submission_id,
-        "leadParticipant": item.lead_participant,
         "participants": list(item.participants),
         "participantCount": item.participant_count,
         "teachers": list(item.teachers),

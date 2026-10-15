@@ -87,11 +87,6 @@ class CatalogPerformance:
     comment: str | None = None
     status: str = ""
 
-    @property
-    def lead_participant(self) -> str | None:
-        """The name a program line is headed with."""
-        return self.participants[0] if self.participants else None
-
 
 class ProgramRepository(Protocol):
     """Persistence port for the :class:`Program` aggregate."""

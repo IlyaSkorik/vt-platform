@@ -87,11 +87,6 @@ class CatalogPerformance:
     teachers: tuple[str, ...] = ()
     organization: str | None = None
 
-    @property
-    def lead_participant(self) -> str | None:
-        """The name a protocol line is headed with."""
-        return self.participants[0] if self.participants else None
-
 
 @dataclass(frozen=True, slots=True)
 class RunningOrderEntry:

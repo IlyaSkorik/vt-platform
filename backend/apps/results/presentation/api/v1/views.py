@@ -89,7 +89,6 @@ def _row_json(row: dto.ProtocolRowView) -> dict[str, Any]:
         "title": row.title,
         "award": row.award,
         "awardLabel": row.award_label,
-        "leadParticipant": row.lead_participant,
         "participants": list(row.participants),
         "teachers": list(row.teachers),
         "nomination": row.nomination,
