@@ -13,9 +13,10 @@ cannot be produced (no source row, empty field, or a source not wired yet such a
 awards) resolves to :data:`MISSING` (an empty string, so the field renders nothing),
 never raising.
 
-`participant.display_name` is the performer's single display name — the
-individual's full name for a solo entry or the ensemble's name for a collective
-— exactly the unified field the editor binds to.
+`participant.display_name` is the performer the sheet is made out to — the
+individual's full name for a solo entry, the ensemble's name for a collective, and
+every name joined for an entry that listed several participants, since one diploma
+is issued per entry. It is the unified field the editor binds to.
 """
 
 from __future__ import annotations
@@ -110,7 +111,14 @@ def _lead_participant(submission: SubmissionModel) -> dict[str, Any]:
 
 
 def _performer_name(submission: SubmissionModel) -> str:
-    return _clean(_lead_participant(submission).get("display_name"))
+    """Every participant the entry named, joined.
+
+    A diploma is issued once, for the entry, so a duet's sheet carries both names. The
+    fields beside it (age, organization) still come from the lead row: they belong to one
+    person and cannot be joined.
+    """
+    rows = [row for row in submission.participants or [] if isinstance(row, dict)]
+    return ", ".join(name for row in rows if (name := _clean(row.get("display_name"))))
 
 
 def _age_of(participant: dict[str, Any]) -> str:
@@ -253,7 +261,7 @@ def resolve_preview_bindings(application_id: str, *, document_type: str = "DIPLO
 
     values: dict[str, str] = dict.fromkeys(BINDINGS, MISSING)
 
-    values[PARTICIPANT_DISPLAY_NAME] = _clean(lead.get("display_name")) or MISSING
+    values[PARTICIPANT_DISPLAY_NAME] = _performer_name(submission) or MISSING
     values[PARTICIPANT_AGE] = _age_of(lead)
     # The first person the applicant named in this collective — the editor is showing
     # what one member's sheet will say, and every other one differs only here.

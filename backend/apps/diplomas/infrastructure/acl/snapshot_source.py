@@ -79,6 +79,18 @@ def _lead_participant(submission: SubmissionModel) -> dict[str, Any]:
     return participants[0] if participants else {}
 
 
+def _performers(submission: SubmissionModel) -> str:
+    """Every participant the entry named, in the order the applicant added them.
+
+    An entry may carry more than one participant row — a duet is two of them — and a
+    diploma is issued once, for the entry, so the sheet has to name all of them. The
+    single-valued fields beside the name (age, organization, a collective's roster) still
+    come from the lead row: they belong to one person and cannot be joined.
+    """
+    rows = [row for row in submission.participants or [] if isinstance(row, dict)]
+    return ", ".join(name for row in rows if (name := _clean(row.get("display_name"))))
+
+
 def _age(participant: dict[str, Any]) -> int | None:
     raw = _clean(participant.get("birth_date"))
     if raw is None:
@@ -238,7 +250,7 @@ class DjangoDiplomaSnapshotSource:
 
         snapshot = DiplomaSnapshot(
             participant=ParticipantSnapshot(
-                display_name=_clean(lead.get("display_name")) or "",
+                display_name=_performers(submission),
                 age=_age(lead),
             ),
             teachers=_teachers(submission),
