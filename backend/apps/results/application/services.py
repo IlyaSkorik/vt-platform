@@ -707,7 +707,10 @@ class ProtocolService:
             case ProtocolColumn.POSITION:
                 return str(number)
             case ProtocolColumn.PARTICIPANT:
-                return (performance.lead_participant or "") if performance is not None else ""
+                # Everyone the entry listed, not just the first of them: a duet wins its
+                # award together, and a protocol naming one of the two is wrong about who
+                # it was awarded to.
+                return ", ".join(performance.participants) if performance is not None else ""
             case ProtocolColumn.TITLE:
                 if performance is not None:
                     return performance.title
@@ -786,7 +789,6 @@ class ProtocolService:
             title=performance.title if performance is not None else "Выступление удалено",
             award=row.award,
             award_label=cls._label_for(row.award, labels),
-            lead_participant=performance.lead_participant if performance is not None else None,
             participants=performance.participants if performance is not None else (),
             teachers=performance.teachers if performance is not None else (),
             nomination=performance.nomination if performance is not None else None,

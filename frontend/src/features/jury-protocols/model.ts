@@ -245,7 +245,9 @@ export function rowCell(row: ProtocolRow, column: ProtocolColumnKey): string {
     case "POSITION":
       return String(row.number);
     case "PARTICIPANT":
-      return row.leadParticipant ?? "";
+      // Everyone the entry listed, not just the first of them — a duet wins its award
+      // together, and naming one of the two is wrong about who it went to.
+      return row.participants.join(", ");
     case "TITLE":
       return row.title;
     case "AWARD":

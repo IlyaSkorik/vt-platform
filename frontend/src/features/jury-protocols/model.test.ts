@@ -75,6 +75,13 @@ describe("rowCell", () => {
     expect(rowCell(aRow(), "TEACHERS")).toBe("Петрова Мария, Сидорова Анна");
   });
 
+  it("names every performer of an entry, not just the first", () => {
+    // A duet wins its award together, and naming one of the two is wrong about who it
+    // went to — the same join the backend applies to the published protocol.
+    const duet = aRow({ participants: ["Иванова Анна", "Петров Пётр"] });
+    expect(rowCell(duet, "PARTICIPANT")).toBe("Иванова Анна, Петров Пётр");
+  });
+
   it("renders a missing optional value as blank rather than as text", () => {
     expect(rowCell(aRow({ organization: null }), "ORGANIZATION")).toBe("");
   });

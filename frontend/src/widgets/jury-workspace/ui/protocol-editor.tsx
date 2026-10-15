@@ -251,7 +251,9 @@ export function ProtocolEditor({ protocol }: ProtocolEditorProps): React.JSX.Ele
                 <tr key={row.id} className="border-border border-b last:border-b-0">
                   <td className="px-3 py-2 text-muted-foreground tabular-nums">{row.number}</td>
                   <td className="px-3 py-2">
-                    <span className="block truncate font-medium">{row.leadParticipant ?? "—"}</span>
+                    <span className="block truncate font-medium">
+                      {row.participants.join(", ") || "—"}
+                    </span>
                     {/* The act, and the school after it: two facts that identify one line and
                         neither of which needs a column of its own here. */}
                     <span className="block truncate text-muted-foreground text-xs">

@@ -9,6 +9,7 @@ publish again, which is the path that most needs to be exactly right.
 from __future__ import annotations
 
 import uuid
+from dataclasses import replace
 
 import pytest
 
@@ -442,6 +443,16 @@ class TestPublicReads:
         # Two columns published, two cells rendered: a hidden column produces no cell at
         # all, so it cannot be read off the response.
         assert page.rows[0].cells == ("1", "Лауреат I степени")
+
+    def test_every_performer_of_an_entry_is_named_in_the_participant_column(self) -> None:
+        # A duet wins its award together: a protocol that names one of the two is wrong
+        # about who it went to, and the diploma that follows it reads the same way.
+        duet = replace(_act("Песня А"), participants=("Иванова Анна", "Петров Пётр"))
+        env = Env(duet)
+        self._publish(env, columns=(ProtocolColumn.PARTICIPANT.value,))
+        page = env.service.public_protocol("Vokas2345")
+        assert page is not None
+        assert page.rows[0].cells == ("Иванова Анна, Петров Пётр",)
 
     def test_an_unknown_slug_resolves_to_nothing(self) -> None:
         assert Env().service.public_protocol("Nobody234") is None
