@@ -13,9 +13,11 @@ import uuid
 import pytest
 
 from apps.competitions.infrastructure.models import CompetitionModel
+from apps.competitions.infrastructure.models.taxonomy import CategoryModel, DisciplineModel
 from apps.diplomas.domain.exceptions import (
     AssignmentConflictError,
     AssignmentNotFoundError,
+    NominationNotFoundError,
     TemplateNotFoundError,
 )
 from apps.diplomas.infrastructure.models import TemplateModel
@@ -371,3 +373,97 @@ def test_template_usage_count() -> None:
 
     by_id = {item["id"]: item for item in composition.list_templates(scope=_SCOPE)}
     assert by_id[str(template.id)]["usageCount"] == 1
+
+
+def _taxonomy(competition_id: str, genre: str = "Вокал", nomination: str = "Эстрадный вокал") -> tuple[str, str]:
+    """A genre and one nomination inside it, as Competitions stores them."""
+    category = CategoryModel.objects.create(competition_id=uuid.UUID(competition_id), name=genre)
+    discipline = DisciplineModel.objects.create(competition_id=uuid.UUID(competition_id), category_id=category.id, name=nomination)
+    return str(category.id), str(discipline.id)
+
+
+class TestAssigningToOneNomination:
+    """A genre's nominations may be judged by different juries, so each may carry a
+    template of its own alongside — not instead of — the genre's default."""
+
+    def test_a_nomination_carries_its_own_template_beside_the_genres(self) -> None:
+        template = _template()
+        own = _template("Эстрада A4")
+        competition_id = _competition()
+        category_id, discipline_id = _taxonomy(competition_id)
+        composition.create_assignment(competition_id=competition_id, category_id=category_id, template_id=str(template.id), scope=_SCOPE)
+
+        created = composition.create_assignments(
+            competition_id=competition_id,
+            discipline_ids=[discipline_id],
+            template_id=str(own.id),
+            scope=_SCOPE,
+        )
+
+        # The genre is read from Competitions rather than taken from the request.
+        assert created[0]["categoryId"] == category_id
+        assert created[0]["disciplineId"] == discipline_id
+        assert created[0]["discipline"] == "Эстрадный вокал"
+        # Both rows live: the default for the rest of the genre, the override for one.
+        levels = {(item["disciplineId"], item["templateId"]) for item in composition.list_assignments(scope=_SCOPE)}
+        assert levels == {(None, str(template.id)), (discipline_id, str(own.id))}
+
+    def test_the_same_nomination_twice_raises_conflict(self) -> None:
+        template = _template()
+        competition_id = _competition()
+        _, discipline_id = _taxonomy(competition_id)
+        composition.create_assignments(
+            competition_id=competition_id,
+            discipline_ids=[discipline_id],
+            template_id=str(template.id),
+            scope=_SCOPE,
+        )
+
+        with pytest.raises(AssignmentConflictError):
+            composition.create_assignments(
+                competition_id=competition_id,
+                discipline_ids=[discipline_id],
+                template_id=str(template.id),
+                scope=_SCOPE,
+            )
+
+    def test_a_nomination_of_another_festival_is_refused(self) -> None:
+        template = _template()
+        _, foreign_discipline = _taxonomy(_competition("Другой фестиваль"))
+
+        with pytest.raises(NominationNotFoundError):
+            composition.create_assignments(
+                competition_id=_competition(),
+                discipline_ids=[foreign_discipline],
+                template_id=str(template.id),
+                scope=_SCOPE,
+            )
+
+    def test_a_request_may_set_both_levels_at_once(self) -> None:
+        """«Весь Вокал на этот шаблон, и эстрадный тоже» is one decision."""
+        template = _template()
+        competition_id = _competition()
+        category_id, discipline_id = _taxonomy(competition_id)
+
+        created = composition.create_assignments(
+            competition_id=competition_id,
+            category_ids=[category_id],
+            discipline_ids=[discipline_id],
+            template_id=str(template.id),
+            scope=_SCOPE,
+        )
+
+        assert [item["disciplineId"] for item in created] == [None, discipline_id]
+
+    def test_deleting_the_override_leaves_the_genres_default(self) -> None:
+        template = _template()
+        competition_id = _competition()
+        category_id, discipline_id = _taxonomy(competition_id)
+        default = composition.create_assignment(competition_id=competition_id, category_id=category_id, template_id=str(template.id), scope=_SCOPE)
+        override = composition.create_assignments(
+            competition_id=competition_id, discipline_ids=[discipline_id], template_id=str(template.id), scope=_SCOPE
+        )[0]
+
+        composition.delete_assignment(override["id"], scope=_SCOPE)
+
+        assert [item["id"] for item in composition.list_assignments(scope=_SCOPE)] == [default["id"]]

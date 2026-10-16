@@ -194,17 +194,28 @@ class CreateTemplateRequestSerializer(serializers.Serializer[dict[str, object]])
 
 
 class CreateAssignmentRequestSerializer(serializers.Serializer[dict[str, object]]):
-    """Body for assigning one template to one or more nominations.
+    """Body for assigning one template to genres and/or single nominations.
 
-    Which slot of each nomination the assignment fills is derived from the
-    template's own ``type``, so a mismatch is not expressible. ``categoryIds`` is a
-    list because a competition's nominations usually share a design; a single
-    nomination is a list of one.
+    Which slot the assignment fills is derived from the template's own ``type``, so
+    a mismatch is not expressible. Both id lists are lists because a competition's
+    genres usually share a design; a single one is a list of one.
+
+    ``categoryIds`` files the template as a genre's default. ``disciplineIds`` files
+    it against single nominations, which print on it instead of their genre's
+    default — that is how a festival whose nominations are judged by different
+    juries gives each the sheet its jury signs. At least one of the two must be
+    non-empty; a request naming neither assigns nothing.
     """
 
     competitionId = serializers.UUIDField()
-    categoryIds = serializers.ListField(child=serializers.UUIDField(), allow_empty=False)
+    categoryIds = serializers.ListField(child=serializers.UUIDField(), required=False, default=list)
+    disciplineIds = serializers.ListField(child=serializers.UUIDField(), required=False, default=list)
     templateId = serializers.UUIDField()
+
+    def validate(self, attrs: dict[str, object]) -> dict[str, object]:
+        if not attrs.get("categoryIds") and not attrs.get("disciplineIds"):
+            raise serializers.ValidationError({"categoryIds": "Выберите хотя бы один жанр или номинацию."})
+        return attrs
 
 
 class TemplateResponseSerializer(serializers.Serializer[dict[str, object]]):
@@ -220,13 +231,17 @@ class TemplateResponseSerializer(serializers.Serializer[dict[str, object]]):
 
 
 class AssignmentResponseSerializer(serializers.Serializer[dict[str, object]]):
-    """A template assignment (competition + nomination + kind -> template)."""
+    """A template assignment (competition + genre [+ nomination] + kind -> template)."""
 
     id = serializers.UUIDField()
     competitionId = serializers.UUIDField()
     competition = serializers.CharField(allow_null=True)
     categoryId = serializers.UUIDField()
     nomination = serializers.CharField(allow_null=True)
+    #: The single nomination this assignment is narrowed to; null means the whole
+    #: genre, which is what every assignment was before nominations could carry one.
+    disciplineId = serializers.UUIDField(allow_null=True)
+    discipline = serializers.CharField(allow_null=True)
     templateId = serializers.UUIDField()
     templateName = serializers.CharField()
     #: Which document slot of the nomination this assignment fills.

@@ -25,12 +25,13 @@ from django.db.models import Count, F, Q
 from django.utils import timezone
 
 from apps.competitions.infrastructure.models.competition import CompetitionModel
-from apps.competitions.infrastructure.models.taxonomy import CategoryModel
+from apps.competitions.infrastructure.models.taxonomy import CategoryModel, DisciplineModel
 from apps.diplomas.domain.document_types import DocumentType, policy_for
 from apps.diplomas.domain.exceptions import (
     AssignmentConflictError,
     AssignmentNotFoundError,
     FieldTypeNotAllowedError,
+    NominationNotFoundError,
     TemplateNotFoundError,
 )
 from apps.diplomas.infrastructure.models import (
@@ -262,10 +263,12 @@ def list_assignments(*, scope: Scope) -> list[dict[str, Any]]:
     rows = list(query.select_related("template").order_by("-created_at"))
     competition_ids = {row.competition_id for row in rows}
     category_ids = {row.category_id for row in rows}
+    discipline_ids = {row.discipline_id for row in rows if row.discipline_id is not None}
     competition_title = {
         str(item["id"]): str(item["title"]) for item in CompetitionModel.objects.filter(id__in=competition_ids).values("id", "title")
     }
     category_name = {str(item["id"]): str(item["name"]) for item in CategoryModel.objects.filter(id__in=category_ids).values("id", "name")}
+    discipline_name = {str(item["id"]): str(item["name"]) for item in DisciplineModel.objects.filter(id__in=discipline_ids).values("id", "name")}
     return [
         {
             "id": str(row.id),
@@ -273,6 +276,10 @@ def list_assignments(*, scope: Scope) -> list[dict[str, Any]]:
             "competition": competition_title.get(str(row.competition_id)),
             "categoryId": str(row.category_id),
             "nomination": category_name.get(str(row.category_id)),
+            # Null for a genre-wide assignment — the row then covers every nomination
+            # of the genre that does not name a template of its own.
+            "disciplineId": str(row.discipline_id) if row.discipline_id is not None else None,
+            "discipline": discipline_name.get(str(row.discipline_id)) if row.discipline_id is not None else None,
             "templateId": str(row.template_id),
             "templateName": row.template.name,
             "documentType": row.document_type,
@@ -284,7 +291,7 @@ def list_assignments(*, scope: Scope) -> list[dict[str, Any]]:
 
 
 def create_assignment(*, competition_id: str, category_id: str, template_id: str, scope: Scope) -> dict[str, Any]:
-    """Bind a template to one document slot of a (competition, nomination) pair.
+    """Bind a template to one document slot of a (competition, genre) pair.
 
     A batch of one: see :func:`create_assignments` for the slot derivation and the
     errors raised.
@@ -292,11 +299,46 @@ def create_assignment(*, competition_id: str, category_id: str, template_id: str
     return create_assignments(competition_id=competition_id, category_ids=[category_id], template_id=template_id, scope=scope)[0]
 
 
-def create_assignments(*, competition_id: str, category_ids: list[str], template_id: str, scope: Scope) -> list[dict[str, Any]]:
-    """Bind one template to the same slot of several nominations at once.
+def _categories_of_disciplines(competition_id: str, discipline_ids: list[str]) -> dict[str, str]:
+    """discipline id -> the genre it belongs to, for this competition only.
 
-    The organizer's real unit of work: a competition's nominations usually share a
+    The genre is read here rather than taken from the request because Competitions
+    owns it: a nomination belongs to exactly one genre, so letting a caller state
+    both would make it possible to file a nomination under a genre it is not in.
+    Raises :class:`NominationNotFoundError` for an id this competition does not have.
+    """
+    found = {
+        str(row["id"]): str(row["category_id"])
+        for row in DisciplineModel.objects.filter(
+            id__in=discipline_ids,
+            competition_id=uuid.UUID(competition_id),
+            deleted_at__isnull=True,
+        ).values("id", "category_id")
+    }
+    if missing := [discipline_id for discipline_id in discipline_ids if discipline_id not in found]:
+        raise NominationNotFoundError(f"Номинация не найдена в этом фестивале: {missing[0]}.")
+    return found
+
+
+def create_assignments(
+    *,
+    competition_id: str,
+    category_ids: list[str] | None = None,
+    discipline_ids: list[str] | None = None,
+    template_id: str,
+    scope: Scope,
+) -> list[dict[str, Any]]:
+    """Bind one template to the same slot of several genres or nominations at once.
+
+    The organizer's real unit of work: a competition's genres usually share a
     diploma design, and assigning it one at a time is the same decision repeated.
+
+    **Two levels, and a request names one of them.** ``category_ids`` files the
+    template as a genre's default — every entry of the genre prints on it.
+    ``discipline_ids`` files it against single nominations, which then print on it
+    instead of their genre's default; their genre is read from Competitions rather
+    than passed in. A request may carry both, and often does: «весь Вокал на этот
+    шаблон, кроме эстрадного» is one decision made in two halves.
 
     Which slot the batch fills is **derived from the template's own type** rather
     than passed in: a ``THANK_YOU`` template can only ever be a nomination's
@@ -308,9 +350,11 @@ def create_assignments(*, competition_id: str, category_ids: list[str], template
     went through. Duplicate ids in one request are collapsed rather than rejected —
     naming a nomination twice means what naming it once means.
 
-    Raises :class:`TemplateNotFound` for an unknown template and
-    :class:`AssignmentConflict` for the first nomination that already has a template
-    of that kind — a diploma assignment therefore does not block a thank-you one.
+    Raises :class:`TemplateNotFound` for an unknown template,
+    :class:`NominationNotFound` for a nomination this competition does not have, and
+    :class:`AssignmentConflict` for the first genre or nomination that already has a
+    template of that kind — a diploma assignment therefore does not block a
+    thank-you one, and a genre's default does not block its nominations' own.
 
     The template lookup is scoped even though the view has already refused a
     cross-organization template with a 403. Not redundancy for its own sake: this is
@@ -322,18 +366,25 @@ def create_assignments(*, competition_id: str, category_ids: list[str], template
     if template is None:
         raise TemplateNotFoundError("Шаблон не найден.")
     document_type = template.type
-    wanted = list(dict.fromkeys(category_ids))
+    genres = list(dict.fromkeys(category_ids or []))
+    nominations = list(dict.fromkeys(discipline_ids or []))
+    category_of = _categories_of_disciplines(competition_id, nominations) if nominations else {}
+    # (category, discipline) pairs — the genre's default keys on None, exactly as
+    # the column stores it, so the conflict check and the insert speak one language.
+    wanted: list[tuple[str, str | None]] = [(category_id, None) for category_id in genres]
+    wanted += [(category_of[discipline_id], discipline_id) for discipline_id in nominations]
 
     with transaction.atomic():
-        taken = set(
-            AssignmentModel.objects.filter(
+        taken = {
+            (str(row["category_id"]), str(row["discipline_id"]) if row["discipline_id"] is not None else None)
+            for row in AssignmentModel.objects.filter(
                 competition_id=competition_id,
-                category_id__in=wanted,
+                category_id__in={category_id for category_id, _ in wanted},
                 document_type=document_type,
                 deleted_at__isnull=True,
-            ).values_list("category_id", flat=True)
-        )
-        if taken:
+            ).values("category_id", "discipline_id")
+        }
+        if taken & set(wanted):
             raise AssignmentConflictError("Для этой номинации уже назначен шаблон такого типа.")
         try:
             rows = AssignmentModel.objects.bulk_create(
@@ -341,10 +392,11 @@ def create_assignments(*, competition_id: str, category_ids: list[str], template
                     AssignmentModel(
                         competition_id=competition_id,
                         category_id=category_id,
+                        discipline_id=discipline_id,
                         template_id=template_id,
                         document_type=document_type,
                     )
-                    for category_id in wanted
+                    for category_id, discipline_id in wanted
                 ]
             )
         except IntegrityError as exc:  # pragma: no cover - unique race

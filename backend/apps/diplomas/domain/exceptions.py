@@ -14,6 +14,7 @@ __all__ = [
     "DiplomaNotFoundError",
     "DuplicateDiplomaError",
     "FieldTypeNotAllowedError",
+    "NominationNotFoundError",
     "PrintJobNotFoundError",
     "PrintTemplateNotReadyError",
     "SubmissionNotFoundError",
@@ -39,6 +40,17 @@ class AssignmentNotFoundError(DiplomaError):
     """Raised when a referenced assignment does not exist."""
 
     code = "assignment_not_found"
+
+
+class NominationNotFoundError(DiplomaError):
+    """Raised when an assignment names a nomination the competition does not have.
+
+    Its own error rather than a validation failure: the id is well-formed and the
+    caller holds it legitimately — it simply belongs to another festival, or to a
+    nomination that has since been removed.
+    """
+
+    code = "nomination_not_found"
 
 
 class AssignmentConflictError(DiplomaError):

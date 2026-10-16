@@ -376,7 +376,8 @@ class DiplomaAssignmentsView(_StaffView):
         try:
             assignments = composition.create_assignments(
                 competition_id=str(data["competitionId"]),
-                category_ids=[str(category_id) for category_id in data["categoryIds"]],
+                category_ids=[str(category_id) for category_id in data.get("categoryIds") or []],
+                discipline_ids=[str(discipline_id) for discipline_id in data.get("disciplineIds") or []],
                 template_id=str(data["templateId"]),
                 scope=callers_scope(request),
             )
