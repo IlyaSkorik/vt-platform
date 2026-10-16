@@ -152,9 +152,12 @@ export function GenerationSection(): React.JSX.Element {
         bundle: forPrint,
         publish: !forPrint,
       });
-      const skipped = summary.withoutRecipient
-        ? ` Заявок без педагога: ${summary.withoutRecipient}.`
-        : "";
+      const skipped =
+        (summary.withoutRecipient ? ` Заявок без педагога: ${summary.withoutRecipient}.` : "") +
+        // Entries in a nomination that assigns no letter template, inside a genre
+        // that has no default either. Named rather than quietly missing from the
+        // count: the organizer is the only one who can assign the template.
+        (summary.withoutTemplate ? ` Заявок без шаблона: ${summary.withoutTemplate}.` : "");
       if (forPrint) {
         setThanksZipUrl(summary.zipUrl);
         toast.success(
@@ -471,12 +474,16 @@ function NominationTable({
 }
 
 /**
- * One nomination's template and forecast for a single kind of document.
+ * One genre's template and forecast for a single kind of document.
  *
  * `atPublication` marks a kind no run on this page issues: individual diplomas are
  * created when the protocol is published, so the forecast is what that publication will
  * produce rather than what a button here would. Saying so is the difference between a
  * count an organizer can act on and one they wait for in vain.
+ *
+ * A genre whose nominations print on templates of their own shows them under its
+ * own, and says how many entries nothing can be printed for — a single genre-wide
+ * template name would otherwise promise sheets for nominations that have none.
  */
 function SlotCell({
   slot,
@@ -485,20 +492,48 @@ function SlotCell({
   slot: DocumentSlot;
   atPublication?: boolean;
 }): React.JSX.Element {
-  if (slot.templateId == null) {
-    return <span className="text-warning">шаблон не назначен</span>;
+  const perNomination =
+    slot.disciplines.length > 0 ? (
+      <span className="text-muted-foreground text-xs">
+        {slot.disciplines
+          .map(
+            (item) =>
+              `${item.discipline ?? "номинация"} · ${item.templateName}${item.ready ? "" : " (PDF не загружен)"}`,
+          )
+          .join(" · ")}
+      </span>
+    ) : null;
+
+  if (slot.templateId == null && !slot.ready) {
+    return (
+      <div className="flex flex-col">
+        <span className="text-warning">шаблон не назначен</span>
+        {perNomination}
+      </div>
+    );
   }
-  if (!slot.ready) {
-    return <span className="text-warning">{slot.templateName} · PDF не загружен</span>;
+  if (slot.templateId != null && !slot.ready) {
+    return (
+      <div className="flex flex-col">
+        <span className="text-warning">{slot.templateName} · PDF не загружен</span>
+        {perNomination}
+      </div>
+    );
   }
   return (
     <div className="flex flex-col">
-      <span className="text-foreground">{slot.templateName}</span>
+      <span className="text-foreground">{slot.templateName ?? "по номинациям"}</span>
+      {perNomination}
       <span className="text-muted-foreground text-xs tabular-nums">
         {atPublication ? "при публикации: " : "будет создано: "}
         {slot.willCreate} · уже есть: {slot.existing}
         {slot.withoutRecipient > 0 ? ` · без педагога: ${slot.withoutRecipient}` : ""}
       </span>
+      {slot.withoutTemplate > 0 ? (
+        <span className="text-warning text-xs tabular-nums">
+          без шаблона: {slot.withoutTemplate}
+        </span>
+      ) : null}
     </div>
   );
 }

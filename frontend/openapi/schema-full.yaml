@@ -13640,7 +13640,8 @@ components:
       - categoryIds
     AssignmentResponse:
       type: object
-      description: A template assignment (competition + nomination + kind -> template).
+      description: A template assignment (competition + genre [+ nomination] + kind
+        -> template).
       properties:
         id:
           type: string
@@ -13656,6 +13657,15 @@ components:
           type: string
           format: uuid
         nomination:
+          type:
+          - string
+          - 'null'
+        disciplineId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        discipline:
           type:
           - string
           - 'null'
@@ -13677,6 +13687,8 @@ components:
       - competition
       - competitionId
       - createdAt
+      - discipline
+      - disciplineId
       - documentType
       - id
       - nomination
@@ -14327,12 +14339,17 @@ components:
     CreateAssignmentRequest:
       type: object
       description: |-
-        Body for assigning one template to one or more nominations.
+        Body for assigning one template to genres and/or single nominations.
 
-        Which slot of each nomination the assignment fills is derived from the
-        template's own ``type``, so a mismatch is not expressible. ``categoryIds`` is a
-        list because a competition's nominations usually share a design; a single
-        nomination is a list of one.
+        Which slot the assignment fills is derived from the template's own ``type``, so
+        a mismatch is not expressible. Both id lists are lists because a competition's
+        genres usually share a design; a single one is a list of one.
+
+        ``categoryIds`` files the template as a genre's default. ``disciplineIds`` files
+        it against single nominations, which print on it instead of their genre's
+        default — that is how a festival whose nominations are judged by different
+        juries gives each the sheet its jury signs. At least one of the two must be
+        non-empty; a request naming neither assigns nothing.
       properties:
         competitionId:
           type: string
@@ -14342,11 +14359,15 @@ components:
           items:
             type: string
             format: uuid
+        disciplineIds:
+          type: array
+          items:
+            type: string
+            format: uuid
         templateId:
           type: string
           format: uuid
       required:
-      - categoryIds
       - competitionId
       - templateId
     CreateBallotRequest:
@@ -14944,7 +14965,7 @@ components:
       - requestId
     DocumentSlot:
       type: object
-      description: One nomination's readiness and forecast for a single document type.
+      description: One genre's readiness and forecast for a single document type.
       properties:
         templateId:
           type:
@@ -14963,13 +14984,21 @@ components:
           type: integer
         withoutRecipient:
           type: integer
+        withoutTemplate:
+          type: integer
+        disciplines:
+          type: array
+          items:
+            $ref: '#/components/schemas/SlotDiscipline'
       required:
+      - disciplines
       - existing
       - ready
       - templateId
       - templateName
       - willCreate
       - withoutRecipient
+      - withoutTemplate
     DocumentTypeEnum:
       enum:
       - DIPLOMA
@@ -15220,6 +15249,8 @@ components:
           type: integer
         withoutRecipient:
           type: integer
+        withoutTemplate:
+          type: integer
         nominations:
           type: integer
         documents:
@@ -15238,6 +15269,7 @@ components:
       - published
       - regenerated
       - withoutRecipient
+      - withoutTemplate
       - zipUrl
     GenerationRunResponse:
       type: object
@@ -17373,10 +17405,10 @@ components:
     PrintPackageNomination:
       type: object
       description: |-
-        One nomination's stats, with a slot per document type.
+        One genre's stats, with a slot per document type.
 
-        Readiness is per type because assignment is: a nomination can be ready to
-        print diplomas and have no thank-you template at all.
+        Readiness is per type because assignment is: a genre can be ready to print
+        diplomas and have no thank-you template at all.
       properties:
         categoryId:
           type: string
@@ -20206,6 +20238,30 @@ components:
           $ref: '#/components/schemas/ProgressEnum'
       required:
       - progress
+    SlotDiscipline:
+      type: object
+      description: One nomination that prints this kind on a template of its own.
+      properties:
+        disciplineId:
+          type: string
+          format: uuid
+        discipline:
+          type:
+          - string
+          - 'null'
+        templateId:
+          type: string
+          format: uuid
+        templateName:
+          type: string
+        ready:
+          type: boolean
+      required:
+      - discipline
+      - disciplineId
+      - ready
+      - templateId
+      - templateName
     SourceEnum:
       enum:
       - BUNDLED

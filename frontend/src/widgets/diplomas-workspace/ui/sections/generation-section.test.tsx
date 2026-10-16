@@ -40,6 +40,8 @@ function slot(overrides: Partial<DocumentSlot> = {}): DocumentSlot {
     existing: 0,
     willCreate: 1,
     withoutRecipient: 0,
+    withoutTemplate: 0,
+    disciplines: [],
     ...overrides,
   };
 }
@@ -51,6 +53,8 @@ const EMPTY_SLOT: DocumentSlot = {
   existing: 0,
   willCreate: 0,
   withoutRecipient: 0,
+  withoutTemplate: 0,
+  disciplines: [],
 };
 
 /**

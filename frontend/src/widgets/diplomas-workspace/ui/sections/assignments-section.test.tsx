@@ -33,6 +33,9 @@ const COMPETITION_ID = "01900000-0000-7000-8000-0000000000c0";
 const VOCALS = "01900000-0000-7000-8000-000000000001";
 const DANCE = "01900000-0000-7000-8000-000000000002";
 const THEATRE = "01900000-0000-7000-8000-000000000003";
+/** Two nominations inside «Вокал» — the level below the genre. */
+const POP_VOCALS = "01900000-0000-7000-8000-000000000011";
+const FOLK_VOCALS = "01900000-0000-7000-8000-000000000012";
 const DIPLOMA_TEMPLATE = "01900000-0000-7000-8000-0000000000d1";
 
 /** «Вокал» already has a diploma template; the other two are free. */
@@ -42,6 +45,8 @@ const ASSIGNED_VOCALS: DiplomaAssignment = {
   competition: "Восходящие таланты",
   categoryId: VOCALS,
   nomination: "Вокал",
+  disciplineId: null,
+  discipline: null,
   templateId: DIPLOMA_TEMPLATE,
   templateName: "Диплом A4",
   documentType: "DIPLOMA",
@@ -77,6 +82,10 @@ function setup(assignments: DiplomaAssignment[] = [ASSIGNED_VOCALS]): {
         { id: VOCALS, name: "Вокал" },
         { id: DANCE, name: "Танец" },
         { id: THEATRE, name: "Театр" },
+      ],
+      disciplines: [
+        { id: POP_VOCALS, categoryId: VOCALS, name: "Эстрадный вокал", sortOrder: 0 },
+        { id: FOLK_VOCALS, categoryId: VOCALS, name: "Народный вокал", sortOrder: 1 },
       ],
     },
     isLoading: false,
@@ -231,5 +240,96 @@ describe("CreateAssignmentDialog", () => {
 
     expect(screen.getByText(/уже назначен шаблон диплома/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Создать" })).toBeDisabled();
+  });
+});
+
+/** Switch the open dialog to the per-nomination level. */
+async function chooseNominationLevel(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await user.click(screen.getByRole("combobox", { name: "Кому назначить" }));
+  await user.click(await screen.findByRole("option", { name: "Отдельные номинации" }));
+}
+
+describe("CreateAssignmentDialog — отдельные номинации", () => {
+  it("offers a competition's nominations grouped by their genre", async () => {
+    setup();
+    render(<AssignmentsSection />);
+    const user = await openDialogForCompetition();
+    await chooseNominationLevel(user);
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("checkbox", { name: "Эстрадный вокал" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("checkbox", { name: "Народный вокал" })).toBeInTheDocument();
+    // The genre heading is what tells two festivals' «Соло» apart.
+    expect(within(dialog).getByText("Вокал")).toBeInTheDocument();
+    // A genre is not a nomination: the genre list is gone at this level.
+    expect(within(dialog).queryByRole("checkbox", { name: "Танец" })).not.toBeInTheDocument();
+  });
+
+  it("sends the nominations, not their genres", async () => {
+    const { createAssignment } = setup();
+    render(<AssignmentsSection />);
+    const user = await openDialogForCompetition();
+    await chooseNominationLevel(user);
+
+    await user.click(screen.getByRole("checkbox", { name: "Эстрадный вокал" }));
+    await user.click(screen.getByRole("combobox", { name: "Шаблон диплома" }));
+    await user.click(await screen.findByRole("option", { name: "Диплом A4" }));
+    await user.click(screen.getByRole("button", { name: "Создать" }));
+
+    expect(createAssignment).toHaveBeenCalledWith({
+      competitionId: COMPETITION_ID,
+      disciplineIds: [POP_VOCALS],
+      templateId: DIPLOMA_TEMPLATE,
+    });
+  });
+
+  it("offers a nomination whose genre already has a template", async () => {
+    // «Вокал» holds a genre-wide diploma template. Its nominations are still free:
+    // a nomination's own template is what overrides the genre's, so this is the
+    // combination the level exists for.
+    setup();
+    render(<AssignmentsSection />);
+    const user = await openDialogForCompetition();
+    await chooseNominationLevel(user);
+
+    expect(screen.getByRole("checkbox", { name: "Эстрадный вокал" })).toBeInTheDocument();
+  });
+
+  it("hides a nomination that already has a template of that kind", async () => {
+    setup([
+      ASSIGNED_VOCALS,
+      {
+        ...ASSIGNED_VOCALS,
+        id: "01900000-0000-7000-8000-0000000000a2",
+        disciplineId: POP_VOCALS,
+        discipline: "Эстрадный вокал",
+      },
+    ]);
+    render(<AssignmentsSection />);
+    const user = await openDialogForCompetition();
+    await chooseNominationLevel(user);
+
+    const dialog = screen.getByRole("dialog");
+    expect(
+      within(dialog).queryByRole("checkbox", { name: "Эстрадный вокал" }),
+    ).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("checkbox", { name: "Народный вокал" })).toBeInTheDocument();
+  });
+
+  it("tells a genre-wide assignment from a nomination's in the table", async () => {
+    setup([
+      ASSIGNED_VOCALS,
+      {
+        ...ASSIGNED_VOCALS,
+        id: "01900000-0000-7000-8000-0000000000a2",
+        disciplineId: POP_VOCALS,
+        discipline: "Эстрадный вокал",
+      },
+    ]);
+    render(<AssignmentsSection />);
+    await chooseCompetition();
+
+    expect(screen.getByText("Все номинации")).toBeInTheDocument();
+    expect(screen.getByText("Эстрадный вокал")).toBeInTheDocument();
   });
 });

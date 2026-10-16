@@ -2,6 +2,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useCompetitionDetail, useCompetitionsList } from "@/features/competitions";
 import {
+  type CreateAssignmentPayload,
   type DiplomaAssignment,
   DOCUMENT_TYPE_OPTIONS,
   type DocumentType,
@@ -32,14 +33,38 @@ import {
 } from "@/shared/ui";
 import { formatDate } from "../../lib/format";
 
-/** A nomination offered for assignment, with the name the organizer knows it by. */
-interface FreeNomination {
+/**
+ * Which level of the taxonomy an assignment is filed against.
+ *
+ * `GENRE` is the default every festival starts from — one design for the whole
+ * genre. `NOMINATION` exists because a genre's nominations are often judged by
+ * different juries: the signatures on the sheet differ, so the sheet does too.
+ * A nomination's own template wins over its genre's; the genre's keeps covering
+ * everything that does not name one.
+ */
+type AssignmentLevel = "GENRE" | "NOMINATION";
+
+const LEVEL_OPTIONS: SelectOption[] = [
+  { value: "GENRE", label: "Весь жанр" },
+  { value: "NOMINATION", label: "Отдельные номинации" },
+];
+
+/** One assignable target — a genre, or a nomination inside one. */
+interface FreeTarget {
   id: string;
   name: string;
 }
 
+/** Targets offered under a heading: the genre they belong to, or nothing. */
+interface TargetGroup {
+  key: string;
+  label: string | null;
+  items: FreeTarget[];
+}
+
 /**
- * Assign a template to nominations of the competition already chosen in the section.
+ * Assign a template to genres (or single nominations) of the competition already
+ * chosen in the section.
  *
  * The competition is the section's context rather than the dialog's first field: an
  * organizer works on one competition at a time, and picking it inside every dialog
@@ -48,7 +73,8 @@ interface FreeNomination {
  */
 function CreateAssignmentDialog({ competitionId }: { competitionId: string }): React.JSX.Element {
   const [open, setOpen] = useState(false);
-  const [categoryIds, setCategoryIds] = useState<Set<string>>(new Set());
+  const [level, setLevel] = useState<AssignmentLevel>("GENRE");
+  const [targetIds, setTargetIds] = useState<Set<string>>(new Set());
   const [documentType, setDocumentType] = useState<DocumentType>("DIPLOMA");
   const [templateId, setTemplateId] = useState("");
 
@@ -58,24 +84,61 @@ function CreateAssignmentDialog({ competitionId }: { competitionId: string }): R
   const createAssignment = useCreateAssignmentMutation();
 
   /**
-   * The nominations whose slot of this kind is still empty.
+   * What this competition already has of this kind, split by level.
    *
-   * An assigned nomination is left out rather than shown and rejected: the slot is
+   * Split rather than merged: a genre's default says nothing about whether one of
+   * its nominations has a template of its own, and that is exactly the combination
+   * this dialog exists to create.
+   */
+  const taken = useMemo(() => {
+    const genres = new Set<string>();
+    const nominations = new Set<string>();
+    for (const item of assignmentsQuery.data ?? []) {
+      if (item.competitionId !== competitionId || item.documentType !== documentType) {
+        continue;
+      }
+      if (item.disciplineId) {
+        nominations.add(item.disciplineId);
+      } else {
+        genres.add(item.categoryId);
+      }
+    }
+    return { genres, nominations };
+  }, [assignmentsQuery.data, competitionId, documentType]);
+
+  /**
+   * The targets whose slot of this kind is still empty.
+   *
+   * An assigned target is left out rather than shown and rejected: the slot is
    * already taken, so offering it could only produce a conflict. Its diploma slot
    * being full says nothing about its thank-you slot, hence the filter is per kind.
    */
-  const freeNominations: FreeNomination[] = useMemo(() => {
-    const taken = new Set(
-      (assignmentsQuery.data ?? [])
-        .filter(
-          (item) => item.competitionId === competitionId && item.documentType === documentType,
-        )
-        .map((item) => item.categoryId),
-    );
-    return (competitionDetailQuery.data?.categories ?? [])
-      .filter((category) => !taken.has(category.id))
-      .map((category) => ({ id: category.id, name: category.name }));
-  }, [assignmentsQuery.data, competitionDetailQuery.data, competitionId, documentType]);
+  const groups: TargetGroup[] = useMemo(() => {
+    const categories = competitionDetailQuery.data?.categories ?? [];
+    if (level === "GENRE") {
+      const items = categories
+        .filter((category) => !taken.genres.has(category.id))
+        .map((category) => ({ id: category.id, name: category.name }));
+      return items.length > 0 ? [{ key: "all", label: null, items }] : [];
+    }
+    const disciplines = competitionDetailQuery.data?.disciplines ?? [];
+    return categories
+      .map((category) => ({
+        key: category.id,
+        // Named by its genre, because two festivals' «Соло» are different things
+        // and so are two genres' — the heading is what tells them apart.
+        label: category.name,
+        items: disciplines
+          .filter(
+            (discipline) =>
+              discipline.categoryId === category.id && !taken.nominations.has(discipline.id),
+          )
+          .map((discipline) => ({ id: discipline.id, name: discipline.name })),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [competitionDetailQuery.data, level, taken]);
+
+  const offered = useMemo(() => groups.flatMap((group) => group.items), [groups]);
 
   // Only templates of the chosen kind can fill that slot — the backend derives the
   // slot from the template's own type, so offering the others would be a trap.
@@ -90,7 +153,8 @@ function CreateAssignmentDialog({ competitionId }: { competitionId: string }): R
   function reset(): void {
     // The competition is not reset: it belongs to the section, and an organizer who
     // just assigned a diploma template usually assigns the thank-you one next.
-    setCategoryIds(new Set());
+    setLevel("GENRE");
+    setTargetIds(new Set());
     setDocumentType("DIPLOMA");
     setTemplateId("");
   }
@@ -102,37 +166,40 @@ function CreateAssignmentDialog({ competitionId }: { competitionId: string }): R
     }
   }
 
-  function toggleNomination(id: string, on: boolean): void {
-    const next = new Set(categoryIds);
+  function toggleTarget(id: string, on: boolean): void {
+    const next = new Set(targetIds);
     if (on) {
       next.add(id);
     } else {
       next.delete(id);
     }
-    setCategoryIds(next);
+    setTargetIds(next);
   }
 
   async function handleSubmit(): Promise<void> {
-    const picked = [...categoryIds];
+    const picked = [...targetIds];
     if (!competitionId || picked.length === 0 || !templateId) {
       return;
     }
+    // One list or the other, never both: the dialog files one decision at a time,
+    // and the level is what says which column the rows carry.
+    const payload: CreateAssignmentPayload =
+      level === "GENRE"
+        ? { competitionId, categoryIds: picked, templateId }
+        : { competitionId, disciplineIds: picked, templateId };
     try {
-      await createAssignment.mutateAsync({
-        competitionId,
-        categoryIds: picked,
-        templateId,
-      });
+      await createAssignment.mutateAsync(payload);
       toast.success(
         picked.length === 1 ? "Назначение создано" : `Назначений создано: ${picked.length}`,
       );
       handleOpenChange(false);
     } catch (error) {
       if (error instanceof ApiError && error.isConflict) {
-        // The picker hides assigned nominations, so this means the list went stale —
+        // The picker hides assigned targets, so this means the list went stale —
         // nothing was created, and a refetch will show what changed.
         const slot = documentTypeConfig(documentType).slotLabel.toLocaleLowerCase("ru-RU");
-        toast.error(`Для одного из жанров уже назначен ${slot}. Обновите список.`);
+        const subject = level === "GENRE" ? "жанров" : "номинаций";
+        toast.error(`Для одной из ${subject} уже назначен ${slot}. Обновите список.`);
         return;
       }
       const message =
@@ -144,7 +211,7 @@ function CreateAssignmentDialog({ competitionId }: { competitionId: string }): R
   }
 
   const canSubmit =
-    Boolean(competitionId && categoryIds.size > 0 && templateId) && !createAssignment.isPending;
+    Boolean(competitionId && targetIds.size > 0 && templateId) && !createAssignment.isPending;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -159,9 +226,9 @@ function CreateAssignmentDialog({ competitionId }: { competitionId: string }): R
           <DialogTitle>Новое назначение</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
-          {/* The slot the assignment fills. A nomination has one of each, so this
+          {/* The slot the assignment fills. A genre has one of each, so this
               chooses which of its slots is being set — and therefore which
-              nominations are still free below. */}
+              targets are still free below. */}
           <Select
             label="Тип документа"
             required
@@ -170,20 +237,34 @@ function CreateAssignmentDialog({ competitionId }: { competitionId: string }): R
             onValueChange={(value) => {
               setDocumentType(value as DocumentType);
               // A template of the previous kind cannot fill this slot, and the free
-              // nominations differ per kind.
+              // targets differ per kind.
               setTemplateId("");
-              setCategoryIds(new Set());
+              setTargetIds(new Set());
             }}
           />
-          <NominationPicker
-            nominations={freeNominations}
-            selected={categoryIds}
+          <Select
+            label="Кому назначить"
+            required
+            options={LEVEL_OPTIONS}
+            value={level}
+            description="Шаблон номинации применяется вместо шаблона её жанра — например, когда номинации судит отдельное жюри."
+            onValueChange={(value) => {
+              setLevel(value as AssignmentLevel);
+              // Genre ids and nomination ids are different things; carrying a
+              // selection across the switch could only submit the wrong one.
+              setTargetIds(new Set());
+            }}
+          />
+          <TargetPicker
+            level={level}
+            groups={groups}
+            selected={targetIds}
             competitionChosen={Boolean(competitionId)}
             loading={competitionDetailQuery.isLoading || assignmentsQuery.isLoading}
             slotLabel={documentTypeConfig(documentType).slotLabel.toLocaleLowerCase("ru-RU")}
-            onToggle={toggleNomination}
+            onToggle={toggleTarget}
             onToggleAll={(on) =>
-              setCategoryIds(on ? new Set(freeNominations.map((item) => item.id)) : new Set())
+              setTargetIds(on ? new Set(offered.map((item) => item.id)) : new Set())
             }
           />
           <Select
@@ -214,14 +295,15 @@ function CreateAssignmentDialog({ competitionId }: { competitionId: string }): R
 }
 
 /**
- * Pick any number of nominations to assign the template to.
+ * Pick any number of genres — or of nominations, grouped by their genre — to
+ * assign the template to.
  *
- * A checkbox list rather than a select: the whole point is seeing which
- * nominations are still free and ticking several, which a single-value control
- * cannot express.
+ * A checkbox list rather than a select: the whole point is seeing which targets
+ * are still free and ticking several, which a single-value control cannot express.
  */
-function NominationPicker({
-  nominations,
+function TargetPicker({
+  level,
+  groups,
   selected,
   competitionChosen,
   loading,
@@ -229,7 +311,8 @@ function NominationPicker({
   onToggle,
   onToggleAll,
 }: {
-  nominations: FreeNomination[];
+  level: AssignmentLevel;
+  groups: TargetGroup[];
   selected: Set<string>;
   competitionChosen: boolean;
   loading: boolean;
@@ -237,18 +320,20 @@ function NominationPicker({
   onToggle: (id: string, on: boolean) => void;
   onToggleAll: (on: boolean) => void;
 }): React.JSX.Element {
-  const allSelected = nominations.length > 0 && nominations.every((item) => selected.has(item.id));
+  const items = groups.flatMap((group) => group.items);
+  const allSelected = items.length > 0 && items.every((item) => selected.has(item.id));
+  const genres = level === "GENRE";
 
   return (
     <fieldset className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-2">
         <legend className="font-medium text-foreground text-sm">
-          Жанры
+          {genres ? "Жанры" : "Номинации"}
           <span className="ml-0.5 text-danger" aria-hidden="true">
             *
           </span>
         </legend>
-        {nominations.length > 1 ? (
+        {items.length > 1 ? (
           <Button variant="ghost" size="sm" onClick={() => onToggleAll(!allSelected)}>
             {allSelected ? "Снять все" : "Выбрать все"}
           </Button>
@@ -258,21 +343,33 @@ function NominationPicker({
       {!competitionChosen ? (
         <p className="text-muted-foreground text-sm">Сначала выберите фестиваль.</p>
       ) : loading ? (
-        <p className="text-muted-foreground text-sm">Загружаем жанры…</p>
-      ) : nominations.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          У каждого жанра этого фестиваля уже назначен {slotLabel}. Освободите слот, удалив
-          назначение в таблице.
+          {genres ? "Загружаем жанры…" : "Загружаем номинации…"}
+        </p>
+      ) : items.length === 0 ? (
+        <p className="text-muted-foreground text-sm">
+          {genres
+            ? `У каждого жанра этого фестиваля уже назначен ${slotLabel}. Освободите слот, удалив назначение в таблице.`
+            : `У каждой номинации этого фестиваля уже назначен свой ${slotLabel} — или номинаций ещё нет. Их заводят в разделе «Жанры и номинации».`}
         </p>
       ) : (
-        <div className="flex max-h-56 flex-col gap-2 overflow-y-auto rounded-lg border border-border p-3">
-          {nominations.map((nomination) => (
-            <Checkbox
-              key={nomination.id}
-              label={nomination.name}
-              checked={selected.has(nomination.id)}
-              onCheckedChange={(checked) => onToggle(nomination.id, checked === true)}
-            />
+        <div className="flex max-h-56 flex-col gap-3 overflow-y-auto rounded-lg border border-border p-3">
+          {groups.map((group) => (
+            <div key={group.key} className="flex flex-col gap-2">
+              {group.label ? (
+                <p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                  {group.label}
+                </p>
+              ) : null}
+              {group.items.map((item) => (
+                <Checkbox
+                  key={item.id}
+                  label={item.name}
+                  checked={selected.has(item.id)}
+                  onCheckedChange={(checked) => onToggle(item.id, checked === true)}
+                />
+              ))}
+            </div>
           ))}
         </div>
       )}
@@ -328,6 +425,19 @@ export function AssignmentsSection(): React.JSX.Element {
         cell: ({ row }) => row.original.nomination ?? "—",
       },
       {
+        accessorKey: "discipline",
+        header: "Номинация",
+        // An assignment with no nomination covers the whole genre — which is what
+        // it meant before nominations could carry one, so it is said plainly rather
+        // than left as a dash the organizer has to interpret.
+        cell: ({ row }) =>
+          row.original.disciplineId ? (
+            (row.original.discipline ?? "—")
+          ) : (
+            <span className="text-muted-foreground">Все номинации</span>
+          ),
+      },
+      {
         accessorKey: "documentType",
         header: "Тип документа",
         cell: ({ row }) => {
@@ -365,7 +475,11 @@ export function AssignmentsSection(): React.JSX.Element {
               size="sm"
               onClick={() => void handleDelete(row.original)}
               disabled={deleteAssignment.isPending}
-              aria-label={`Удалить назначение для жанра ${row.original.nomination ?? ""}`}
+              aria-label={
+                row.original.disciplineId
+                  ? `Удалить назначение для номинации ${row.original.discipline ?? ""}`
+                  : `Удалить назначение для жанра ${row.original.nomination ?? ""}`
+              }
             >
               <Trash2 className="size-4" aria-hidden="true" />
             </Button>
@@ -397,8 +511,9 @@ export function AssignmentsSection(): React.JSX.Element {
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-2">
             <p className="text-muted-foreground text-sm">
-              Каждый жанр имеет отдельный шаблон диплома и шаблон благодарности — так у разных
-              жанров могут быть разные дизайны.
+              У каждого жанра свой шаблон диплома и шаблон благодарности. Отдельной номинации можно
+              назначить свой шаблон — он применяется вместо шаблона жанра, например когда номинацию
+              судит другое жюри.
             </p>
             <CreateAssignmentDialog competitionId={competitionId} />
           </div>
@@ -409,7 +524,7 @@ export function AssignmentsSection(): React.JSX.Element {
             emptyContent={
               <EmptyState
                 title="Назначений пока нет"
-                description="Создайте первое назначение, чтобы связать шаблон с жанром этого фестиваля."
+                description="Создайте первое назначение, чтобы связать шаблон с жанром или номинацией этого фестиваля."
               />
             }
           />
