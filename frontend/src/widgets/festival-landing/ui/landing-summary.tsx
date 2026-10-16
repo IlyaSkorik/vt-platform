@@ -114,7 +114,19 @@ export function LandingSummary({ festival, applyPath }: LandingSummaryProps): Re
   const maps = venue.googleMapsUrl || venue.yandexMapsUrl;
 
   return (
-    <div className="flex flex-col gap-6 md:gap-2.5">
+    /* The card follows the reader down the registration column and stops at the
+       rule. From `lg` — the width where the page actually has two columns —
+       it sticks 80px below the top, clearing the tallest of the two bars that
+       can be above it (the workspace header's 64, the public band's 60) with a
+       little air left over. Below `lg` the columns are stacked and there is
+       nothing beside the card to scroll past, so it stays in the flow.
+
+       `self-start` is what makes this work rather than decoration: a stretched
+       grid item is exactly as tall as its grid area and has nowhere to slide.
+       The grid already aligns its items to the start — this says it again here,
+       next to the `sticky` that depends on it. The travel ends with the grid
+       row, which ends at the horizontal rule under both columns. */
+    <div className="flex flex-col gap-6 md:gap-2.5 lg:sticky lg:top-20 lg:self-start">
       {/* `bg-background`, not `bg-card`: the frame fills the panel with `свет`
           — the page's own colour — and lets the two-pixel «тёмный акцент»
           outline be the whole of what separates it from the page. */}
