@@ -284,6 +284,9 @@ class GenerateDocumentsResponseSerializer(serializers.Serializer[dict[str, objec
     regenerated = serializers.IntegerField()
     #: Entries that named nobody to address, so nothing was issued for them.
     withoutRecipient = serializers.IntegerField()
+    #: Entries skipped because neither their nomination nor their genre assigns a
+    #: template of this kind.
+    withoutTemplate = serializers.IntegerField()
     nominations = serializers.IntegerField()
     #: Documents the chosen nominations now hold — what a bundle would contain,
     #: which is more than ``created + regenerated`` on a repeat run.

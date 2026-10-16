@@ -39,6 +39,7 @@ from apps.diplomas.application.interfaces import (
     DiplomaSnapshotSource,
     IssuedDocumentRepository,
     PrintPackageWorkspace,
+    TemplateAssets,
     TemplateAssignments,
 )
 from apps.diplomas.domain.document_types import DocumentPolicy, DocumentType, policy_for
@@ -72,6 +73,10 @@ class IssuedDocumentResult:
     #: Entries a per-teacher kind could not address because no teacher is named.
     without_recipient: int
     document_type: DocumentType
+    #: Entries skipped because neither their nomination nor their genre assigns a
+    #: template of this kind. Non-zero only for a genre that has no default and
+    #: covers some of its nominations — see the loop in ``generate_for_nomination``.
+    without_template: int = 0
     #: Documents this run made visible to participants. Zero for a print-only run,
     #: and the only non-zero count when publishing what an earlier print run left
     #: rendered but unpublished.
@@ -169,11 +174,12 @@ class IssuedDocumentGenerationService:
         force: bool = False,
         publish: bool = True,
     ) -> IssuedDocumentResult:
-        """Render this kind of document for every performance in the nomination.
+        """Render this kind of document for every performance in the genre.
 
-        Uses the template the nomination assigns to *this kind* — so «Вокал» may
-        print a blue thank-you while «Хореография» prints a gold one. Documents
-        that already have a PDF are left alone unless ``force`` re-renders them.
+        Uses the template assigned to *this kind* — so «Вокал» may print a blue
+        thank-you while «Хореография» prints a gold one, and a nomination inside
+        «Вокал» may print its own instead of the genre's. Documents that already
+        have a PDF are left alone unless ``force`` re-renders them.
 
         ``publish`` decides whether the run also shows its documents to the
         participants. Off, the documents are generated and stored but stay out of
@@ -183,11 +189,13 @@ class IssuedDocumentGenerationService:
         a step of its own, not a side effect of rendering. Nothing is ever
         *un*published.
 
-        Raises :class:`TemplateNotAssignedError` when the nomination has no
-        template of this kind, :class:`TemplateTypeMismatchError` when the assigned
-        template was authored for a different kind, and
-        :class:`PrintTemplateNotReadyError` when it has no backing PDF — all
-        checked before anything is written, so a run is never half-done.
+        Raises :class:`TemplateNotAssignedError` when neither the genre nor any of
+        its nominations has a template of this kind,
+        :class:`TemplateTypeMismatchError` when one of them was authored for a
+        different kind, and :class:`PrintTemplateNotReadyError` when one has no
+        backing PDF — all checked before anything is written, so a run is never
+        half-done. An entry whose nomination resolves to no template at all is
+        skipped and counted (``without_template``) rather than failing the run.
         """
         policy = policy_for(document_type)
         if policy.is_registry_document:
@@ -200,25 +208,43 @@ class IssuedDocumentGenerationService:
             # source injected here and a prefix of its own.
             raise TemplateTypeMismatchError("Этот документ нумеруется и выпускается через печать дипломов.")
 
-        assigned = self._assignments.for_nomination(competition_id=competition_id, category_id=category_id, document_type=document_type)
-        if assigned is None:
-            raise TemplateNotAssignedError("Для этой номинации не назначен шаблон такого типа.")
-        if assigned.template_type is not document_type:
-            raise TemplateTypeMismatchError("Назначенный шаблон сделан для другого типа документа.")
+        resolved = self._assignments.for_category(competition_id=competition_id, category_id=category_id, document_type=document_type)
+        if resolved.is_empty:
+            raise TemplateNotAssignedError("Для этого жанра не назначен шаблон такого типа.")
 
-        assets = self._workspace.load_template(assigned.template_id)
-        if assets is None:
-            raise PrintTemplateNotReadyError("У выбранного шаблона нет PDF-подложки для печати.")
-
-        # Prepared once for the whole run rather than per document.
-        printable = replace(assets, fields=_prepare_layout(assets.fields, policy))
+        # Every template the genre can print this kind on is validated and prepared
+        # before a single document is written — the same "never half-done" rule as
+        # before, now over the genre's default and its nominations' own templates.
+        printable: dict[uuid.UUID, TemplateAssets] = {}
+        for candidate in resolved.templates():
+            if candidate.template_type is not document_type:
+                raise TemplateTypeMismatchError("Назначенный шаблон сделан для другого типа документа.")
+            assets = self._workspace.load_template(candidate.template_id)
+            if assets is None:
+                raise PrintTemplateNotReadyError("У выбранного шаблона нет PDF-подложки для печати.")
+            # Prepared once per template rather than per document.
+            printable[candidate.template_id] = replace(assets, fields=_prepare_layout(assets.fields, policy))
 
         created = 0
         regenerated = 0
         without_recipient = 0
+        without_template = 0
         published = 0
         items: list[tuple[str, str]] = []
-        for submission_id in self._snapshots.list_submission_ids(competition_id, category_id=category_id):
+        entries = self._snapshots.list_submission_ids(competition_id, category_id=category_id)
+        # One lookup for the whole genre: which nomination each entry performs in
+        # decides which of the genre's templates its sheet is printed on.
+        discipline_of = self._snapshots.discipline_ids(entries)
+        for submission_id in entries:
+            assigned = resolved.for_discipline(discipline_of.get(submission_id))
+            if assigned is None:
+                # The genre has no default and this entry's nomination assigns no
+                # template of its own. Counted rather than raised: an organizer who
+                # designed a sheet for one nomination has not thereby promised one
+                # for the rest, and the run still does everything it was asked for.
+                without_template += 1
+                continue
+
             built = self._snapshots.build(submission_id)
             if built is None:
                 continue
@@ -262,7 +288,7 @@ class IssuedDocumentGenerationService:
                 # No number and no token: an unnumbered, unverifiable document. The
                 # renderer draws neither, because neither resolves to a value.
                 data = self._workspace.render(
-                    assets=printable,
+                    assets=printable[assigned.template_id],
                     snapshot=document.snapshot,
                     number="",
                     verification_token="",
@@ -284,6 +310,7 @@ class IssuedDocumentGenerationService:
             created=created,
             regenerated=regenerated,
             without_recipient=without_recipient,
+            without_template=without_template,
             document_type=document_type,
             published=published,
             items=tuple(items),

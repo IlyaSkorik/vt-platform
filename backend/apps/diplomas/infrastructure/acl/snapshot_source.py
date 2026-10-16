@@ -14,6 +14,7 @@ for: see :data:`COMPETING_SUBMISSION_STATUSES`.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from datetime import date
 from typing import Any, Final
 
@@ -207,8 +208,15 @@ class DjangoDiplomaSnapshotSource:
     def template_exists(self, template_id: uuid.UUID) -> bool:
         return TemplateModel.objects.filter(id=template_id, deleted_at__isnull=True).exists()
 
-    def list_submission_ids(self, competition_id: uuid.UUID, *, category_id: uuid.UUID | None = None) -> list[uuid.UUID]:
-        """The entries a document is due for, narrowed to one nomination if asked.
+    def list_submission_ids(
+        self,
+        competition_id: uuid.UUID,
+        *,
+        category_id: uuid.UUID | None = None,
+        discipline_id: uuid.UUID | None = None,
+        exclude_discipline_ids: Sequence[uuid.UUID] = (),
+    ) -> list[uuid.UUID]:
+        """The entries a document is due for, narrowed to a genre/nomination if asked.
 
         Only entries actually in the competition — see
         :data:`COMPETING_SUBMISSION_STATUSES`. A cancelled or still-under-review
@@ -220,9 +228,45 @@ class DjangoDiplomaSnapshotSource:
             status__in=COMPETING_SUBMISSION_STATUSES,
         )
         if category_id is not None:
-            # nomination == performance.nomination_id (Applications embeds it as JSON).
+            # genre == performance.nomination_id (Applications embeds it as JSON).
             rows = rows.filter(performance__nomination_id=str(category_id))
-        return list(rows.order_by("created_at").values_list("id", flat=True))
+        ordered = rows.order_by("created_at")
+        if discipline_id is None and not exclude_discipline_ids:
+            return list(ordered.values_list("id", flat=True))
+
+        # Narrowing by nomination is done here rather than in SQL, because the
+        # exclusion cannot be: `performance` is a JSON column, and excluding on a
+        # key an entry does not carry evaluates to NULL — which drops every entry
+        # that names no nomination along with the ones that were meant to go. Those
+        # entries are exactly the ones the genre's default template is for, so the
+        # bug would silently leave most of a festival unprinted.
+        wanted = str(discipline_id) if discipline_id is not None else None
+        excluded = {str(item) for item in exclude_discipline_ids}
+        selected: list[uuid.UUID] = []
+        for row in ordered.values("id", "performance"):
+            entry_discipline = str((row["performance"] or {}).get("discipline_id") or "")
+            if wanted is not None:
+                if entry_discipline == wanted:
+                    selected.append(row["id"])
+            elif entry_discipline not in excluded:
+                selected.append(row["id"])
+        return selected
+
+    def discipline_ids(self, submission_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, uuid.UUID | None]:
+        """The nomination each of these entries performs in, by submission id."""
+        if not submission_ids:
+            return {}
+        found: dict[uuid.UUID, uuid.UUID | None] = {}
+        for row in SubmissionModel.objects.filter(id__in=list(submission_ids), deleted_at__isnull=True).values("id", "performance"):
+            raw = _clean((row["performance"] or {}).get("discipline_id"))
+            try:
+                found[row["id"]] = uuid.UUID(raw) if raw else None
+            except ValueError:
+                # A stored id that is not a UUID reads as "no nomination": the entry
+                # then prints on its genre's template, which is what it did before
+                # nominations could carry one of their own.
+                found[row["id"]] = None
+        return found
 
     def build(self, submission_id: uuid.UUID) -> SnapshotBuild | None:
         submission = SubmissionModel.objects.filter(id=submission_id, deleted_at__isnull=True).first()

@@ -37,10 +37,12 @@ def generate_documents(
 ) -> dict[str, Any]:
     """Generate one kind of document across the chosen nominations.
 
-    Each nomination is generated from **its own** assigned template, so the run
-    honours per-nomination designs rather than one competition-wide letter. May
-    raise a ``DiplomaError`` (unassigned nomination, wrong template kind, template
-    with no PDF) — the first failing nomination aborts the run.
+    Each genre is generated from **its own** assigned template, and each of its
+    nominations from theirs where they have one — so the run honours per-genre and
+    per-nomination designs rather than one competition-wide letter. May raise a
+    ``DiplomaError`` (genre with no template at all, wrong template kind, template
+    with no PDF) — the first failing genre aborts the run. Entries whose nomination
+    resolves to no template are counted in ``withoutTemplate``, not raised over.
 
     Two independent switches, because the organizer's two intents are independent:
     ``publish`` shows the documents to the participants, ``bundle`` hands back a ZIP
@@ -55,6 +57,7 @@ def generate_documents(
     created = 0
     regenerated = 0
     without_recipient = 0
+    without_template = 0
     published = 0
     items: list[tuple[str, str]] = []
     for category_id in category_ids:
@@ -69,6 +72,7 @@ def generate_documents(
         created += result.created
         regenerated += result.regenerated
         without_recipient += result.without_recipient
+        without_template += result.without_template
         published += result.published
         items.extend(result.items)
 
@@ -94,6 +98,7 @@ def generate_documents(
         "created": created,
         "regenerated": regenerated,
         "withoutRecipient": without_recipient,
+        "withoutTemplate": without_template,
         "nominations": len(category_ids),
         "documents": len(items),
         "published": published,

@@ -7,8 +7,8 @@ Django; the concrete adapters live in ``apps.diplomas.infrastructure``.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Sequence
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from apps.diplomas.domain.document_types import DocumentType
@@ -22,6 +22,7 @@ __all__ = [
     "DiplomaRepository",
     "DiplomaSnapshotSource",
     "IssuedDocumentRepository",
+    "NominationTemplates",
     "PrintPackageWorkspace",
     "SnapshotBuild",
     "TemplateAssets",
@@ -115,9 +116,32 @@ class DiplomaSnapshotSource(Protocol):
         ``award.degree`` is left ``None`` — the jury result is filled in later."""
         ...
 
-    def list_submission_ids(self, competition_id: uuid.UUID, *, category_id: uuid.UUID | None = None) -> list[uuid.UUID]:
-        """Live submission ids of a competition — one performance each. Narrowed to
-        a nomination (category) when ``category_id`` is given."""
+    def list_submission_ids(
+        self,
+        competition_id: uuid.UUID,
+        *,
+        category_id: uuid.UUID | None = None,
+        discipline_id: uuid.UUID | None = None,
+        exclude_discipline_ids: Sequence[uuid.UUID] = (),
+    ) -> list[uuid.UUID]:
+        """Live submission ids of a competition — one performance each.
+
+        Narrowed to a genre (``category_id``) and, inside it, either to one
+        nomination (``discipline_id``) or to everything *but* a set of them
+        (``exclude_discipline_ids``). The exclusion is what lets a genre's default
+        template cover "the rest": the nominations that assign a template of their
+        own are generated from theirs, and the default must not print them twice.
+        """
+        ...
+
+    def discipline_ids(self, submission_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, uuid.UUID | None]:
+        """Each entry's nomination, by submission id — ``None`` when it names none.
+
+        A lookup rather than a field of :class:`SnapshotBuild`, because the caller
+        that needs it (awarding) is handed submission ids by the Results context and
+        must resolve each one's template *before* deciding whether a snapshot has to
+        be built at all. Ids absent from the mapping are entries that are gone.
+        """
         ...
 
 
@@ -133,15 +157,53 @@ class AssignedTemplate:
     template_type: DocumentType
 
 
+@dataclass(frozen=True, slots=True)
+class NominationTemplates:
+    """One genre's templates of a single kind: its default and its overrides.
+
+    The whole genre is resolved in one read because generation walks a genre's
+    entries and each may land on a different sheet — asking per entry would be the
+    same query repeated once per performance.
+    """
+
+    #: The genre's own template, printed by every nomination that has no other.
+    default: AssignedTemplate | None = None
+    #: discipline id -> the template that nomination prints on instead.
+    by_discipline: Mapping[uuid.UUID, AssignedTemplate] = field(default_factory=dict)
+
+    def for_discipline(self, discipline_id: uuid.UUID | None) -> AssignedTemplate | None:
+        """The template an entry of this nomination prints on, or None.
+
+        The nomination's own template wins over the genre's; an entry that names no
+        nomination can only ever have the genre's.
+        """
+        if discipline_id is not None and (override := self.by_discipline.get(discipline_id)) is not None:
+            return override
+        return self.default
+
+    @property
+    def is_empty(self) -> bool:
+        """Whether the genre has no template of this kind at either level."""
+        return self.default is None and not self.by_discipline
+
+    def templates(self) -> list[AssignedTemplate]:
+        """Every distinct template this genre can print this kind on."""
+        seen: dict[uuid.UUID, AssignedTemplate] = {}
+        for assigned in ([self.default] if self.default is not None else []) + list(self.by_discipline.values()):
+            seen.setdefault(assigned.template_id, assigned)
+        return list(seen.values())
+
+
 class TemplateAssignments(Protocol):
     """Read port over the assignment table, narrowed to one document kind.
 
     Keeps the generation service free of the assignment's persistence shape: it
-    asks "which template fills this nomination's thank-you slot?" and gets an id.
+    asks "which template does this genre print its thank-you letters on?" and gets
+    the genre's default plus whatever its nominations override it with.
     """
 
-    def for_nomination(self, *, competition_id: uuid.UUID, category_id: uuid.UUID, document_type: DocumentType) -> AssignedTemplate | None:
-        """The template assigned to this nomination for this kind, or None."""
+    def for_category(self, *, competition_id: uuid.UUID, category_id: uuid.UUID, document_type: DocumentType) -> NominationTemplates:
+        """This genre's templates of one kind — the default and the per-nomination ones."""
         ...
 
 

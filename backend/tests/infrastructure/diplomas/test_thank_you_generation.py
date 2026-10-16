@@ -26,7 +26,7 @@ from reportlab.pdfgen import canvas
 
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.competitions.infrastructure.models.competition import CompetitionModel
-from apps.competitions.infrastructure.models.taxonomy import CategoryModel
+from apps.competitions.infrastructure.models.taxonomy import CategoryModel, DisciplineModel
 from apps.diplomas.composition import build_issued_document_generation_service
 from apps.diplomas.domain.document_types import DocumentType
 from apps.diplomas.domain.exceptions import (
@@ -145,17 +145,21 @@ def _submission(
     *,
     teachers: list[dict[str, str]] | None = None,
     status: str = "ACCEPTED",
+    discipline: DisciplineModel | None = None,
 ) -> SubmissionModel:
     """One entry. A thank-you letter is addressed to a teacher, so the default
     names one — an entry with no teacher yields no letters at all. ``ACCEPTED`` by
     default: only entries taken into the competition are issued documents."""
+    performance: dict[str, Any] = {"title": "Этюд", "nomination_id": str(category.id)}
+    if discipline is not None:
+        performance["discipline_id"] = str(discipline.id)
     return SubmissionModel.objects.create(
         competition_id=competition.id,
         applicant_id=uuid.uuid4(),
         status=status,
         participants=[{"display_name": name, "member_count": 1}],
         teachers=[{"first_name": "Ольга", "last_name": "Петрова", "role": "Педагог"}] if teachers is None else teachers,
-        performance={"title": "Этюд", "nomination_id": str(category.id)},
+        performance=performance,
     )
 
 
@@ -705,3 +709,62 @@ class TestPreconditions:
                 document_type=DocumentType.DIPLOMA,
                 now=_NOW,
             )
+
+
+class TestNominationLevelTemplates:
+    """A nomination inside a genre may be thanked on a sheet of its own — the jury
+    that signs it is not the genre's."""
+
+    def _nomination(self, competition: CompetitionModel, category: CategoryModel, name: str) -> DisciplineModel:
+        return DisciplineModel.objects.create(competition=competition, category_id=category.id, name=name)
+
+    def _assign_nomination(self, competition: CompetitionModel, discipline: DisciplineModel, template: TemplateModel) -> None:
+        composition.create_assignments(
+            competition_id=str(competition.id),
+            discipline_ids=[str(discipline.id)],
+            template_id=str(template.id),
+            scope=_SCOPE,
+        )
+
+    def test_the_nominations_template_wins_over_the_genres(self) -> None:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        pop = self._nomination(competition, vocals, "Эстрадный вокал")
+        blue = _template("Благодарность синяя", "THANK_YOU")
+        gold = _template("Благодарность золотая", "THANK_YOU")
+        _assign(competition, vocals, blue)
+        self._assign_nomination(competition, pop, gold)
+        _submission(competition, vocals, "Иванов Иван")
+        _submission(competition, vocals, "Петров Пётр", discipline=pop)
+
+        result = _generate(competition, vocals)
+
+        assert result.created == 2
+        by_template = {str(row.template_id): row.snapshot["participant"]["display_name"] for row in IssuedDocumentModel.objects.all()}
+        assert by_template[str(blue.id)] == "Иванов Иван"
+        assert by_template[str(gold.id)] == "Петров Пётр"
+
+    def test_a_genre_with_no_default_counts_what_it_cannot_print(self) -> None:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        pop = self._nomination(competition, vocals, "Эстрадный вокал")
+        self._assign_nomination(competition, pop, _template("Благодарность золотая", "THANK_YOU"))
+        _submission(competition, vocals, "Иванов Иван")
+        _submission(competition, vocals, "Петров Пётр", discipline=pop)
+
+        result = _generate(competition, vocals)
+
+        assert result.created == 1
+        # The entry outside the covered nomination is reported, not silently dropped
+        # and not raised over: assigning one nomination a sheet promises nothing for
+        # the others.
+        assert result.without_template == 1
+        assert IssuedDocumentModel.objects.count() == 1
+
+    def test_a_genre_with_nothing_assigned_at_either_level_still_raises(self) -> None:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        _submission(competition, vocals, "Иванов Иван")
+
+        with pytest.raises(TemplateNotAssignedError):
+            _generate(competition, vocals)
