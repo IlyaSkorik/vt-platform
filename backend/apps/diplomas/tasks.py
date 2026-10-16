@@ -19,7 +19,7 @@ def generate_print_package(job_id: str) -> None:
     from apps.diplomas.presentation.api.v1.diplomas import archive
     from apps.diplomas.presentation.api.v1.diplomas.print_package import (
         build_batch_service,
-        resolve_targets,
+        printable_targets,
     )
 
     job = PrintJobModel.objects.filter(id=job_id).first()
@@ -31,7 +31,7 @@ def generate_print_package(job_id: str) -> None:
     job.save(update_fields=["status", "updated_at"])
 
     try:
-        targets = resolve_targets(job.competition_id, job.category_ids or [])
+        targets = printable_targets(job.competition_id, job.category_ids or [])
         result = build_batch_service(job.competition_id).generate_print_package(
             competition_id=job.competition_id,
             targets=targets,

@@ -1,12 +1,13 @@
 """Mass print-package generation.
 
-A competition assigns a template **per nomination**, so generation runs per
-nomination: for each requested nomination, the caller supplies its assigned
-template, and the service creates a diploma for every performance in that
-nomination that lacks one (snapshot + number + verification token, no degree),
-renders each pre-ceremony PDF, and bundles them all into one ZIP the organizer
-prints from. Existing diplomas are skipped; any still missing a print PDF is
-rendered so the ZIP is a complete printable set.
+A competition assigns a template per genre, and a genre's nomination may assign
+one of its own, so generation runs per *target*: the caller resolves each slice of
+the competition to the template it prints on (see :class:`NominationTarget`), and
+the service creates a diploma for every performance in that slice that lacks one
+(snapshot + number + verification token, no degree), renders each pre-ceremony
+PDF, and bundles them all into one ZIP the organizer prints from. Existing
+diplomas are skipped; any still missing a print PDF is rendered so the ZIP is a
+complete printable set.
 
 The ZIP also carries a ``МЕСТА`` folder — see :data:`PLACE_SHEETS_DIR`.
 """
@@ -57,10 +58,21 @@ def _arc_component(name: str, *, fallback: str) -> str:
 
 @dataclass(frozen=True, slots=True)
 class NominationTarget:
-    """One nomination to generate for, with its assigned template."""
+    """One slice of a genre to generate for, with the template it prints on.
+
+    A genre is one target while all of it prints on one sheet. Once a nomination
+    assigns a template of its own it becomes a target too — ``discipline_id`` names
+    it — and the genre's remaining target lists it in ``excluded_discipline_ids``
+    so the two cover the genre exactly once between them.
+    """
 
     category_id: uuid.UUID
     template_id: uuid.UUID
+    #: The one nomination this target prints, or None for "the rest of the genre".
+    discipline_id: uuid.UUID | None = None
+    #: Nominations of this genre that print on a template of their own. Only ever
+    #: set on the genre-wide target, which is the one that must skip them.
+    excluded_discipline_ids: tuple[uuid.UUID, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,7 +121,8 @@ class DiplomaBatchGenerationService:
         :class:`PrintTemplateNotReadyError` if any target's template has no PDF
         (checked up front so nothing is half-generated).
         """
-        # Load (and validate) each nomination's template once.
+        # Load (and validate) each target's template once — two targets of one genre
+        # often share it.
         assets_by_template: dict[uuid.UUID, TemplateAssets] = {}
         for target in targets:
             if target.template_id in assets_by_template:
@@ -125,7 +138,13 @@ class DiplomaBatchGenerationService:
 
         for target in targets:
             assets = assets_by_template[target.template_id]
-            for submission_id in self._snapshots.list_submission_ids(competition_id, category_id=target.category_id):
+            entries = self._snapshots.list_submission_ids(
+                competition_id,
+                category_id=target.category_id,
+                discipline_id=target.discipline_id,
+                exclude_discipline_ids=target.excluded_discipline_ids,
+            )
+            for submission_id in entries:
                 diploma = self._repository.get_by_submission(submission_id)
                 if diploma is None:
                     built = self._snapshots.build(submission_id)

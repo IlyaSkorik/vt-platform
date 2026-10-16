@@ -32,6 +32,7 @@ __all__ = [
     "PrintPackageRequestSerializer",
     "PrintPackageSummaryResponseSerializer",
     "SaveLayoutRequestSerializer",
+    "SlotDisciplineSerializer",
     "TemplateDocumentResponseSerializer",
     "TemplateFieldResponseSerializer",
     "TemplateResponseSerializer",
@@ -426,24 +427,42 @@ class PrintJobResponseSerializer(serializers.Serializer[dict[str, object]]):
     updatedAt = serializers.DateTimeField()
 
 
-class DocumentSlotSerializer(serializers.Serializer[dict[str, object]]):
-    """One nomination's readiness and forecast for a single document type."""
+class SlotDisciplineSerializer(serializers.Serializer[dict[str, object]]):
+    """One nomination that prints this kind on a template of its own."""
 
+    disciplineId = serializers.UUIDField()
+    discipline = serializers.CharField(allow_null=True)
+    templateId = serializers.UUIDField()
+    templateName = serializers.CharField()
+    # True when that template also has an uploaded PDF.
+    ready = serializers.BooleanField()
+
+
+class DocumentSlotSerializer(serializers.Serializer[dict[str, object]]):
+    """One genre's readiness and forecast for a single document type."""
+
+    #: The genre's default template; null when only its nominations assign one.
     templateId = serializers.UUIDField(allow_null=True)
     templateName = serializers.CharField(allow_null=True)
-    # True when a template of this type is assigned AND it has an uploaded PDF.
+    # True when a template of this type is assigned at either level AND it has an
+    # uploaded PDF.
     ready = serializers.BooleanField()
     existing = serializers.IntegerField()
     willCreate = serializers.IntegerField()
     # Entries a per-teacher type cannot address (no teacher named); else 0.
     withoutRecipient = serializers.IntegerField()
+    #: Entries this kind cannot be printed for: their nomination resolves to no
+    #: template, or to one with no PDF behind it.
+    withoutTemplate = serializers.IntegerField()
+    #: The nominations printing on something other than the genre's default.
+    disciplines = SlotDisciplineSerializer(many=True)
 
 
 class PrintPackageNominationSerializer(serializers.Serializer[dict[str, object]]):
-    """One nomination's stats, with a slot per document type.
+    """One genre's stats, with a slot per document type.
 
-    Readiness is per type because assignment is: a nomination can be ready to
-    print diplomas and have no thank-you template at all.
+    Readiness is per type because assignment is: a genre can be ready to print
+    diplomas and have no thank-you template at all.
     """
 
     categoryId = serializers.UUIDField()

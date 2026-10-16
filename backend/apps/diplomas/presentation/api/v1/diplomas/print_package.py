@@ -1,10 +1,12 @@
-"""Print-package composition: per-nomination summary, target resolution, jobs.
+"""Print-package composition: per-genre summary, target resolution, jobs.
 
-A competition assigns a template per nomination **per document type**, so
-generation is scoped to nominations: the summary reports every type's template +
-counts for each nomination, and a run targets all assigned nominations or a chosen
-subset. The summary serves both generation actions; the run here is the numbered
-print package, so it resolves diploma assignments only. Keeps the views thin.
+A competition assigns a template per genre **per document type**, and a genre's
+nomination may assign one of its own, so generation is scoped to genres and
+resolved inside them: the summary reports every type's template + counts for each
+genre (and names the nominations that print on something else), while a run turns
+the chosen genres into one target per template. The summary serves both generation
+actions; the run here is the numbered print package, so it resolves diploma
+assignments only. Keeps the views thin.
 """
 
 from __future__ import annotations
@@ -13,7 +15,7 @@ import uuid
 from collections import Counter
 from typing import Any
 
-from apps.competitions.infrastructure.models.taxonomy import CategoryModel
+from apps.competitions.infrastructure.models.taxonomy import CategoryModel, DisciplineModel
 from apps.diplomas.application.batch_services import DiplomaBatchGenerationService, NominationTarget
 from apps.diplomas.application.numbering import DiplomaNumberService
 from apps.diplomas.domain.document_types import DocumentType, policy_for
@@ -38,6 +40,7 @@ __all__ = [
     "build_batch_service",
     "get_print_job",
     "print_package_summary",
+    "printable_targets",
     "resolve_targets",
     "start_print_package",
 ]
@@ -54,45 +57,103 @@ def build_batch_service(competition_id: uuid.UUID | None = None) -> DiplomaBatch
     )
 
 
-def _assignments_by_category(competition_id: uuid.UUID, document_type: DocumentType) -> dict[str, dict[str, Any]]:
-    """category_id -> assignment, for **one** document type of the competition.
+#: One genre's assignments of a single kind: ``None`` keys the genre's default,
+#: a discipline id keys the nomination that prints on a template of its own.
+type GenreSlots = dict[str | None, dict[str, Any]]
+
+
+def _assignments_by_category(competition_id: uuid.UUID, document_type: DocumentType) -> dict[str, GenreSlots]:
+    """category_id -> its assignments, for **one** document type of the competition.
 
     The type filter is load-bearing, not a convenience. Since document types
     landed, a nomination holds one assignment *per type*, so keying by category
     alone silently collapses its diploma and thank-you templates into whichever
     row happened to come last — and the survivor could be either kind.
+
+    The second level keys by discipline for the same reason: a genre now holds a
+    default *and* one row per nomination that overrides it, and flattening them
+    would make which sheet an entry prints on depend on row order.
     """
     wanted = document_type.value
-    return {
-        item["categoryId"]: item
-        # Unscoped, and narrowed to `competition_id` on the next line instead. The
-        # caller's right to this competition was settled at the edge, and half the
-        # callers are Celery tasks with no request to scope by.
-        for item in composition.list_assignments(scope=Scope.already_authorized())
-        if item["competitionId"] == str(competition_id) and item["documentType"] == wanted
-    }
+    by_category: dict[str, GenreSlots] = {}
+    # Unscoped, and narrowed to `competition_id` below instead. The caller's right
+    # to this competition was settled at the edge, and half the callers are Celery
+    # tasks with no request to scope by.
+    for item in composition.list_assignments(scope=Scope.already_authorized()):
+        if item["competitionId"] != str(competition_id) or item["documentType"] != wanted:
+            continue
+        by_category.setdefault(str(item["categoryId"]), {})[item["disciplineId"]] = item
+    return by_category
+
+
+def _resolve_slot(slots: GenreSlots, discipline_id: str | None) -> dict[str, Any] | None:
+    """The assignment an entry of this nomination prints on — its own, else the genre's."""
+    if discipline_id is not None and (override := slots.get(discipline_id)) is not None:
+        return override
+    return slots.get(None)
 
 
 def resolve_targets(competition_id: uuid.UUID, category_ids: list[str]) -> list[NominationTarget]:
-    """Turn requested nominations into (category, template) targets.
+    """Turn requested genres into the targets a print run walks.
 
-    Empty ``category_ids`` means every nomination with an assigned template.
-    Nominations without an assignment are dropped. Diplomas only: a nomination's
-    thank-you template is never a print-package target.
+    Empty ``category_ids`` means every genre with an assigned template. Genres
+    without an assignment are dropped. Diplomas only: a thank-you template is never
+    a print-package target.
+
+    A genre with per-nomination templates becomes several targets — one per such
+    nomination, plus one for the rest of the genre if it has a default. Between
+    them they cover each entry exactly once, which is what keeps a festival that
+    overrides one nomination from printing its diplomas twice.
     """
     assignments = _assignments_by_category(competition_id, DocumentType.DIPLOMA)
     selected = [str(cid) for cid in category_ids] if category_ids else list(assignments)
     targets: list[NominationTarget] = []
     for category_id in selected:
-        assignment = assignments.get(category_id)
-        if assignment is None:
+        slots = assignments.get(category_id)
+        if not slots:
             continue
-        targets.append(
-            NominationTarget(
-                category_id=uuid.UUID(category_id),
-                template_id=uuid.UUID(assignment["templateId"]),
+        overrides = {key: value for key, value in slots.items() if key is not None}
+        for discipline_id, assignment in overrides.items():
+            targets.append(
+                NominationTarget(
+                    category_id=uuid.UUID(category_id),
+                    template_id=uuid.UUID(assignment["templateId"]),
+                    discipline_id=uuid.UUID(discipline_id),
+                )
             )
-        )
+        default = slots.get(None)
+        if default is not None:
+            targets.append(
+                NominationTarget(
+                    category_id=uuid.UUID(category_id),
+                    template_id=uuid.UUID(default["templateId"]),
+                    excluded_discipline_ids=tuple(uuid.UUID(key) for key in overrides),
+                )
+            )
+    return targets
+
+
+def printable_targets(competition_id: uuid.UUID, category_ids: list[str]) -> list[NominationTarget]:
+    """The resolved targets a run can actually print, never an empty list.
+
+    Drops the targets whose template is gone or has no PDF behind it, and raises
+    :class:`PrintTemplateNotReadyError` only when that leaves nothing. A genre is
+    several targets now that a nomination may print on a template of its own, and
+    failing a festival's whole package because one nomination's sheet is unfinished
+    would hold the ready ones hostage to it — the summary reports per genre what is
+    not ready, so the gap is visible before the run rather than inferred after it.
+
+    Used by both the request that enqueues a job and the worker that runs it, so
+    the two cannot disagree about what the run covers.
+    """
+    targets = [
+        target
+        for target in resolve_targets(competition_id, category_ids)
+        if TemplateModel.objects.filter(id=target.template_id, deleted_at__isnull=True).exists()
+        and TemplateDocumentModel.objects.filter(template__id=target.template_id, deleted_at__isnull=True).exists()
+    ]
+    if not targets:
+        raise PrintTemplateNotReadyError("Нет ни одного жанра с назначенным шаблоном и загруженным PDF.")
     return targets
 
 
@@ -127,21 +188,27 @@ def _named_members(participants: Any) -> int:
 
 
 def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
-    """Per-nomination stats for **every** document type, one slot each.
+    """Per-genre stats for **every** document type, one slot each.
 
-    A nomination assigns a template per type, so readiness is per type too:
-    «Вокал» may be ready to print diplomas and have no thank-you template at all.
-    One merged flag cannot say that, and reporting one is what let the generation
-    page offer nominations for a kind they had no template for.
+    A genre assigns a template per type, so readiness is per type too: «Вокал» may
+    be ready to print diplomas and have no thank-you template at all. One merged
+    flag cannot say that, and reporting one is what let the generation page offer
+    genres for a kind they had no template for.
 
     Each slot's forecast follows its own policy. A diploma is issued per
     performance, a thank-you letter per named teacher, an individual diploma per named
     member of a collective — three different denominators over the same entries. A
     per-teacher kind also reports the entries it cannot address at all.
+
+    Counting happens **per nomination inside the genre**, because a nomination may
+    print on a template of its own: an entry is forecast only when the template it
+    would actually print on exists and has a PDF, and counted as ``withoutTemplate``
+    when it does not. A genre-wide count could not tell the two apart, and would
+    promise diplomas for nominations no run would produce.
     """
     assignments = {document_type: _assignments_by_category(competition_id, document_type) for document_type in DocumentType}
     # A slot is only "ready" to generate when its template also has a PDF.
-    assigned_template_ids = {item["templateId"] for slots in assignments.values() for item in slots.values()}
+    assigned_template_ids = {item["templateId"] for genre in assignments.values() for slots in genre.values() for item in slots.values()}
     templates_with_pdf = {
         str(template_id)
         for template_id in TemplateDocumentModel.objects.filter(template__id__in=assigned_template_ids, deleted_at__isnull=True).values_list(
@@ -152,14 +219,20 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
         str(row["id"]): str(row["name"])
         for row in CategoryModel.objects.filter(competition_id=competition_id, deleted_at__isnull=True).values("id", "name")
     }
+    discipline_names = {
+        str(row["id"]): str(row["name"])
+        for row in DisciplineModel.objects.filter(competition_id=competition_id, deleted_at__isnull=True).values("id", "name")
+    }
 
     from apps.applications.infrastructure.models.submission import SubmissionModel
 
     category_of: dict[str, str] = {}
-    submissions: Counter[str] = Counter()
-    recipients: Counter[str] = Counter()
-    unaddressable: Counter[str] = Counter()
-    members: Counter[str] = Counter()
+    # Keyed by (genre, nomination) — the pair that decides which template an entry
+    # prints on. The empty string stands for "names no nomination".
+    submissions: Counter[tuple[str, str]] = Counter()
+    recipients: Counter[tuple[str, str]] = Counter()
+    unaddressable: Counter[tuple[str, str]] = Counter()
+    members: Counter[tuple[str, str]] = Counter()
     # The same narrowing the generation pipeline applies, so «Выступлений» is the
     # number a run will actually walk rather than every entry ever filed.
     for row in SubmissionModel.objects.filter(
@@ -167,16 +240,18 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
         deleted_at__isnull=True,
         status__in=COMPETING_SUBMISSION_STATUSES,
     ).values("id", "performance", "teachers", "participants"):
-        category_id = str((row["performance"] or {}).get("nomination_id") or "")
+        performance = row["performance"] or {}
+        category_id = str(performance.get("nomination_id") or "")
         if not category_id:
             continue
+        bucket = (category_id, str(performance.get("discipline_id") or ""))
         category_of[str(row["id"])] = category_id
-        submissions[category_id] += 1
+        submissions[bucket] += 1
         named = _named_teachers(row["teachers"])
-        recipients[category_id] += named
+        recipients[bucket] += named
         if not named:
-            unaddressable[category_id] += 1
-        members[category_id] += _named_members(row["participants"])
+            unaddressable[bucket] += 1
+        members[bucket] += _named_members(row["participants"])
 
     existing: dict[DocumentType, Counter[str]] = {kind: Counter() for kind in DocumentType}
     for raw_type, submission_id in DiplomaModel.objects.filter(competition_id=competition_id, deleted_at__isnull=True).values_list(
@@ -203,41 +278,77 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
         except ValueError:  # pragma: no cover - a type the enum no longer knows
             continue
 
+    def buckets_of(category_id: str) -> list[str]:
+        """Every nomination of this genre that has entries, plus the genre's own rows."""
+        return sorted({discipline_id for (genre, discipline_id) in submissions if genre == category_id})
+
     def slot(document_type: DocumentType, category_id: str) -> dict[str, Any]:
-        assignment = assignments[document_type].get(category_id)
-        ready = assignment is not None and assignment["templateId"] in templates_with_pdf
+        slots = assignments[document_type].get(category_id, {})
+        default = slots.get(None)
         policy = policy_for(document_type)
         per_teacher = policy.per_teacher
-        if per_teacher:
-            total = recipients[category_id]
-        elif policy.per_member:
-            # One per person the applicants named, not one per entry: an ensemble that
-            # named nobody contributes nothing to this slot.
-            total = members[category_id]
-        else:
-            total = submissions[category_id]
+
+        def denominator(bucket: tuple[str, str]) -> int:
+            if per_teacher:
+                return recipients[bucket]
+            if policy.per_member:
+                # One per person the applicants named, not one per entry: an ensemble
+                # that named nobody contributes nothing to this slot.
+                return members[bucket]
+            return submissions[bucket]
+
+        total = 0
+        without_template = 0
+        for discipline_id in buckets_of(category_id):
+            bucket = (category_id, discipline_id)
+            assignment = _resolve_slot(slots, discipline_id or None)
+            if assignment is not None and assignment["templateId"] in templates_with_pdf:
+                total += denominator(bucket)
+            else:
+                # Nothing to print these on — no template, or one with no PDF behind
+                # it. Reported rather than folded into the forecast, so the number
+                # beside the button is what a run will actually produce.
+                without_template += denominator(bucket)
+
+        ready = any(item["templateId"] in templates_with_pdf for item in slots.values())
         done = existing[document_type][category_id]
         return {
-            "templateId": assignment["templateId"] if assignment else None,
-            "templateName": assignment["templateName"] if assignment else None,
+            "templateId": default["templateId"] if default else None,
+            "templateName": default["templateName"] if default else None,
             # Assigned but with no uploaded PDF yet — cannot generate.
             "ready": ready,
             "existing": done,
             "willCreate": max(0, total - done) if ready else 0,
             # Entries a per-teacher kind cannot address; always 0 for the rest.
-            "withoutRecipient": unaddressable[category_id] if per_teacher else 0,
+            "withoutRecipient": sum(unaddressable[(category_id, discipline_id)] for discipline_id in buckets_of(category_id)) if per_teacher else 0,
+            # Entries whose nomination resolves to no printable template.
+            "withoutTemplate": without_template,
+            # The nominations that print on something other than the genre's default.
+            "disciplines": [
+                {
+                    "disciplineId": discipline_id,
+                    "discipline": discipline_names.get(str(discipline_id)),
+                    "templateId": item["templateId"],
+                    "templateName": item["templateName"],
+                    "ready": item["templateId"] in templates_with_pdf,
+                }
+                for discipline_id, item in sorted(
+                    ((key, value) for key, value in slots.items() if key is not None),
+                    key=lambda pair: (discipline_names.get(str(pair[0])) or "").lower(),
+                )
+            ],
         }
 
-    # A nomination is listed when it has entries or a template of either kind.
-    listed = set(submissions)
-    for slots in assignments.values():
-        listed |= set(slots)
+    # A genre is listed when it has entries or a template of any kind at any level.
+    listed = {category_id for (category_id, _) in submissions}
+    for genre in assignments.values():
+        listed |= set(genre)
 
     nominations: list[dict[str, Any]] = [
         {
             "categoryId": category_id,
             "nomination": category_names.get(category_id),
-            "submissions": submissions[category_id],
+            "submissions": sum(submissions[(category_id, discipline_id)] for discipline_id in buckets_of(category_id)),
             "diploma": slot(DocumentType.DIPLOMA, category_id),
             "individualDiploma": slot(DocumentType.INDIVIDUAL_DIPLOMA, category_id),
             "thankYou": slot(DocumentType.THANK_YOU, category_id),
@@ -272,22 +383,24 @@ def start_print_package(
     actor_id: uuid.UUID | None = None,
     actor_label: str = "",
 ) -> dict[str, Any]:
-    """Create + enqueue a print-package job for the chosen nominations (or all).
+    """Create + enqueue a print-package job for the chosen genres (or all).
 
-    ``force`` re-renders print PDFs for diplomas that already have one. Validates
-    that the resolved nominations have a template with a PDF.
+    ``force`` re-renders print PDFs for diplomas that already have one.
+
+    Targets whose template is gone or has no PDF are **dropped**, and the run goes
+    ahead with the rest; only a selection where nothing is printable is refused.
+    That is a change the second level of assignment forces: a genre is now several
+    targets, and failing the whole festival's package because one nomination's own
+    sheet has no PDF yet would make the print run hostage to the least finished
+    layout in it. The summary says per genre what is and is not ready, so the
+    organizer is not learning it from a silent gap.
 
     The actor is recorded on the job because only the request knows who asked; the
     worker carries it into the generation archive once the run completes.
     """
-    targets = resolve_targets(competition_id, category_ids)
-    if not targets:
-        raise PrintTemplateNotReadyError("Нет ни одной номинации с назначенным шаблоном.")
-    for target in targets:
-        if not TemplateModel.objects.filter(id=target.template_id, deleted_at__isnull=True).exists():
-            raise PrintTemplateNotReadyError("Выбранный шаблон не найден.")
-        if not TemplateDocumentModel.objects.filter(template__id=target.template_id, deleted_at__isnull=True).exists():
-            raise PrintTemplateNotReadyError("У выбранного шаблона нет PDF-подложки для печати.")
+    # Resolved here only to refuse an impossible run up front; the worker resolves
+    # again when it starts, so a template uploaded in between is picked up.
+    printable_targets(competition_id, category_ids)
 
     job = PrintJobModel.objects.create(
         competition_id=competition_id,
