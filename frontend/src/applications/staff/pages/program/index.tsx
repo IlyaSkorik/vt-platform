@@ -7,6 +7,7 @@ import {
   Columns3,
   Copy,
   FileDown,
+  FileSpreadsheet,
   GripVertical,
   Link2,
   ListOrdered,
@@ -29,6 +30,7 @@ import {
   downloadProgramMedia,
   downloadProgramMusic,
   downloadProgramPdf,
+  downloadProgramXlsx,
   GROUPING_AXES,
   GROUPING_AXIS_LABELS,
   type GroupingAxis,
@@ -1820,6 +1822,7 @@ function ColumnOrderStrip({
 function ExportPanel({ program }: { program: Program }): React.JSX.Element {
   const [columns, setColumns] = useState<ColumnKey[]>(DEFAULT_EXPORT_COLUMNS);
   const [busy, setBusy] = useState(false);
+  const [sheetBusy, setSheetBusy] = useState(false);
   const [musicBusy, setMusicBusy] = useState(false);
   const [mediaBusy, setMediaBusy] = useState(false);
 
@@ -1852,6 +1855,23 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
       toast.error("Не удалось сформировать PDF");
     } finally {
       setBusy(false);
+    }
+  };
+
+  /**
+   * The same table, as a spreadsheet.
+   *
+   * Shares the column choice with the PDF on purpose: the organizer picks the cut of the
+   * programme once and then decides what to do with it — print it, or keep working on it.
+   */
+  const downloadSheet = async () => {
+    setSheetBusy(true);
+    try {
+      await downloadProgramXlsx(program.id, chosen, program.name);
+    } catch {
+      toast.error("Не удалось сформировать Excel");
+    } finally {
+      setSheetBusy(false);
     }
   };
 
@@ -1927,13 +1947,24 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
           >
             <FileDown className="size-4" /> Скачать PDF
           </Button>
+          {/* Рядом с PDF и на тех же колонках: это одна и та же таблица, вопрос только
+              в том, печатают её или продолжают с ней работать. */}
+          <Button
+            variant="outline"
+            size="sm"
+            loading={sheetBusy}
+            disabled={chosen.length === 0}
+            onClick={() => void downloadSheet()}
+          >
+            <FileSpreadsheet className="size-4" /> Скачать Excel
+          </Button>
         </div>
       </div>
 
       {/* `min-w-0`: a `fieldset` has a built-in `min-width: min-content` that ignores its
           container, so a row of column names can widen the layout unless it is overridden. */}
       <fieldset className="flex min-w-0 flex-wrap gap-x-4 gap-y-2 rounded-md border border-border p-3">
-        <legend className="px-1 text-muted-foreground text-xs">Колонки в PDF</legend>
+        <legend className="px-1 text-muted-foreground text-xs">Колонки в выгрузке</legend>
         {program.availableColumns.map((column) => (
           <Checkbox
             key={column.key}
@@ -1944,13 +1975,14 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
         ))}
       </fieldset>
       <ColumnOrderStrip
-        label="Порядок колонок в PDF"
+        label="Порядок колонок в выгрузке"
         chosen={chosen}
         labels={available}
         onShift={shift}
       />
       <p className="text-muted-foreground text-xs">
-        Таблица печатается на A4 в альбомной ориентации, заголовок повторяется на каждой странице.
+        PDF печатается на A4 в альбомной ориентации, заголовок повторяется на каждой странице. Excel
+        выгружается сплошником: одна строка на выступление, в порядке программы.
       </p>
     </div>
   );

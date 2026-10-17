@@ -10105,6 +10105,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProgramProblemDetail'
           description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/export.xlsx:
+    get:
+      operationId: programsExportXlsx
+      description: |-
+        ``GET`` the programme as one continuous .xlsx sheet of the chosen columns.
+
+        The PDF's sibling, and deliberately not a prettier version of it: a printed table
+        is laid out for a hall, while a spreadsheet is what the programme is *worked* in —
+        sorted, filtered, pasted into somebody else's template, sent to the sound desk with
+        a column added. So it is written flat: every row of the running order in order,
+        breaks and blocks included as the rows they are, with nothing merged, repeated or
+        split into sections. A grouped sheet looks tidier and sorts into nonsense.
+
+        Columns arrive the same way as the PDF's, so the two exports are one decision taken
+        twice rather than two settings to keep in step.
+      parameters:
+      - in: query
+        name: columns
+        schema:
+          type: string
+        description: Comma-separated column keys (built-in names or custom:<uuid>),
+          written left to right in the order given. Omit for all.
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      responses:
+        '200':
+          description: An .xlsx of the running order, one row per slot.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
   /api/v1/staff/programs/{program_id}/items:
     post:
       operationId: programsAddItem

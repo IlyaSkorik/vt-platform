@@ -8,6 +8,7 @@ import {
   downloadProgramMedia as downloadProgramMediaImpl,
   downloadProgramMusic as downloadProgramMusicImpl,
   downloadProgramPdf as downloadProgramPdfImpl,
+  downloadProgramXlsx as downloadProgramXlsxImpl,
   type Program,
   type ProgramCandidate,
   type ProgramColumn,
@@ -64,6 +65,7 @@ vi.mock("@/features/program-builder", async (importOriginal) => ({
   useRemoveColumn: vi.fn(),
   useFillCells: vi.fn(),
   downloadProgramPdf: vi.fn(),
+  downloadProgramXlsx: vi.fn(),
   downloadProgramMedia: vi.fn(),
   downloadProgramMusic: vi.fn(),
 }));
@@ -128,6 +130,7 @@ const renameColumn = vi.fn();
 const removeColumn = vi.fn();
 const fillCells = vi.fn();
 const downloadProgramPdf = vi.mocked(downloadProgramPdfImpl);
+const downloadProgramXlsx = vi.mocked(downloadProgramXlsxImpl);
 const downloadProgramMusic = vi.mocked(downloadProgramMusicImpl);
 const downloadProgramMedia = vi.mocked(downloadProgramMediaImpl);
 
@@ -337,7 +340,7 @@ describe("StaffProgramPage — the programme table", () => {
 
     expect(screen.queryByRole("columnheader", { name: "Организация" })).not.toBeInTheDocument();
     // The PDF panel still offers it, because it was never asked about.
-    const pdf = screen.getByRole("group", { name: "Колонки в PDF" });
+    const pdf = screen.getByRole("group", { name: "Колонки в выгрузке" });
     expect(within(pdf).getByRole("checkbox", { name: "Организация" })).toBeInTheDocument();
   });
 
@@ -823,7 +826,7 @@ describe("StaffProgramPage — printing the programme", () => {
     await renderPage();
 
     // Drop one default column and add one that is not.
-    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
     await userEvent.click(within(panel).getByRole("checkbox", { name: "Организация" }));
     await userEvent.click(within(panel).getByRole("checkbox", { name: "Педагог" }));
     await userEvent.click(screen.getByRole("button", { name: /Скачать PDF/ }));
@@ -839,11 +842,31 @@ describe("StaffProgramPage — printing the programme", () => {
     expect(fallback).toBe("Вокал, 1 отделение");
   });
 
+  it("downloads the same table as Excel, on the same columns", async () => {
+    stub();
+    await renderPage();
+
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
+    await userEvent.click(within(panel).getByRole("checkbox", { name: "Организация" }));
+    await userEvent.click(screen.getByRole("button", { name: /Скачать Excel/ }));
+
+    await waitFor(() => expect(downloadProgramXlsx).toHaveBeenCalled());
+    const [programId, columns, fallback] = downloadProgramXlsx.mock.calls[0] as [
+      string,
+      string[],
+      string,
+    ];
+    expect(programId).toBe(PROGRAM_ID);
+    // The PDF's selection, minus the column just unticked — one choice, two exports.
+    expect(columns).toEqual(["POSITION", "TIME", "PARTICIPANT", "TITLE", "DURATION"]);
+    expect(fallback).toBe("Вокал, 1 отделение");
+  });
+
   it("starts from the columns a printed running order usually wants", async () => {
     stub();
     await renderPage();
 
-    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
     for (const label of ["№", "Время", "Участник", "Номер", "Длительность", "Организация"]) {
       expect(within(panel).getByRole("checkbox", { name: label })).toBeChecked();
     }
@@ -861,7 +884,7 @@ describe("StaffProgramPage — printing the programme", () => {
     );
     await renderPage();
 
-    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
     expect(within(panel).getByRole("checkbox", { name: "Микрофон" })).toBeInTheDocument();
   });
 
@@ -895,7 +918,7 @@ describe("StaffProgramPage — printing the programme", () => {
     stub();
     await renderPage();
 
-    const strip = screen.getByRole("group", { name: /Порядок колонок в PDF/ });
+    const strip = screen.getByRole("group", { name: /Порядок колонок в выгрузке/ });
     expect(within(strip).getByRole("button", { name: "Левее: №" })).toBeDisabled();
     expect(within(strip).getByRole("button", { name: "Правее: Организация" })).toBeDisabled();
 
@@ -917,7 +940,7 @@ describe("StaffProgramPage — printing the programme", () => {
     stub();
     await renderPage();
 
-    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
     await userEvent.click(within(panel).getByRole("checkbox", { name: "Комментарий" }));
     await userEvent.click(screen.getByRole("button", { name: /Скачать PDF/ }));
 
@@ -929,19 +952,21 @@ describe("StaffProgramPage — printing the programme", () => {
     stub();
     await renderPage();
 
-    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
     for (const label of ["№", "Время", "Участник", "Длительность", "Организация"]) {
       await userEvent.click(within(panel).getByRole("checkbox", { name: label }));
     }
 
-    expect(screen.queryByRole("group", { name: /Порядок колонок в PDF/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", { name: /Порядок колонок в выгрузке/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("cannot export nothing at all", async () => {
     stub();
     await renderPage();
 
-    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
     for (const label of ["№", "Время", "Участник", "Номер", "Длительность", "Организация"]) {
       await userEvent.click(within(panel).getByRole("checkbox", { name: label }));
     }
@@ -975,7 +1000,7 @@ describe("StaffProgramPage — collecting the backing tracks", () => {
     stub();
     await renderPage();
 
-    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
     for (const label of ["№", "Время", "Участник", "Номер", "Длительность", "Организация"]) {
       await userEvent.click(within(panel).getByRole("checkbox", { name: label }));
     }

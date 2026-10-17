@@ -5,6 +5,7 @@ export {
   downloadProgramMedia,
   downloadProgramMusic,
   downloadProgramPdf,
+  downloadProgramXlsx,
   fetchCandidates,
   fetchProgram,
   fetchPrograms,

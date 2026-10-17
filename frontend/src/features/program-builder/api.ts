@@ -382,6 +382,25 @@ export async function downloadProgramPdf(
 }
 
 /**
+ * Download the programme as one flat .xlsx sheet of the chosen columns.
+ *
+ * The same table as the PDF and the same column choice, in the format the programme is
+ * actually worked in: sorted, filtered, pasted into somebody else's template. Written
+ * сплошником — every slot one row, in running order, nothing merged or grouped.
+ */
+export async function downloadProgramXlsx(
+  programId: string,
+  columns: ColumnKey[],
+  fallbackName: string,
+): Promise<void> {
+  const query = columns.length > 0 ? `?columns=${encodeURIComponent(columns.join(","))}` : "";
+  await saveAuthenticatedDownload(
+    `staff/programs/${programId}/export.xlsx${query}`,
+    `${fallbackName}.xlsx`,
+  );
+}
+
+/**
  * Download every backing track of the programme as one ZIP, named by number.
  *
  * What the sound desk is handed on the day. The archive is assembled per request from
