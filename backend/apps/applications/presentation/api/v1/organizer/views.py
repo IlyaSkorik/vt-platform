@@ -38,6 +38,7 @@ from apps.applications.presentation.api.v1 import problems
 from apps.applications.presentation.api.v1.files import file_url
 from apps.applications.presentation.api.v1.mail import queue_review_email
 from apps.applications.presentation.api.v1.submissions import composition
+from apps.competitions.domain.value_objects import CompetitionId as CompCompetitionId
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import (
     AgeCategoryModel,
@@ -46,6 +47,7 @@ from apps.competitions.infrastructure.models.taxonomy import (
     ParticipantGroupModel,
     ParticipationFormatModel,
 )
+from apps.competitions.infrastructure.repositories.django_competition_repository import DjangoCompetitionRepository
 from apps.emailing import render_transactional_email_html
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.infrastructure.models.user import UserModel
@@ -197,6 +199,33 @@ def _participant_card(participant: ParticipantView, registry_organizations: Mapp
         "members": list(participant.members),
         "organizationName": pinned,
         "resolvedOrganizationName": resolved,
+    }
+
+
+def _upload_requirements(competition_id: str) -> dict[str, dict[str, Any]]:
+    """Что фестиваль разрешает прикладывать к номеру — по форме участия.
+
+    Ровно та же проекция, по которой мастер подачи решает, показывать ли участнику
+    загрузку фонограмм и медиа, — и показывается она организатору по тому же правилу:
+    он догружает за участника то, что участник мог загрузить сам, не больше.
+
+    Берутся только *настроенные* формы участия. Форма, для которой организатор ничего
+    не настраивал, в мастере загрузок не просит — значит, и здесь их быть не должно.
+    """
+    competition = DjangoCompetitionRepository().get(CompCompetitionId.from_string(competition_id))
+    if competition is None:
+        return {}
+    return {
+        requirement.participation_format_id.json(): {
+            "musicRequired": requirement.music.require_upload,
+            "musicAllowedFormats": list(requirement.music.allowed_formats),
+            "musicMaxUploadSizeMb": requirement.music.max_upload_size_mb,
+            "mediaMode": requirement.media.mode.value,
+            "mediaRequired": requirement.media.require_upload,
+            "mediaAllowedFormats": list(requirement.media.allowed_formats),
+            "mediaMaxTotalSizeMb": requirement.media.max_total_size_mb,
+        }
+        for requirement in competition.settings.format_requirements
     }
 
 
@@ -704,6 +733,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 all_participants = [p for dto in related_dtos for p in dto.participants]
                 registry_organizations = _registry_organizations(all_participants)
                 participants = [_participant_card(p, registry_organizations) for p in all_participants]
+                upload_requirements = _upload_requirements(representative.competition_id)
                 teacher_views = [t for dto in related_dtos for t in dto.teachers]
                 teacher_phones = _directory_phones(teacher_views)
                 teachers = [_teacher_card(t, teacher_phones) for t in teacher_views]
@@ -825,7 +855,19 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                             "teachers": [_teacher_card(t, teacher_phones) for t in dto.teachers],
                             "priceAmount": dto.price.amount if dto.price else None,
                             "priceCurrency": dto.price.currency if dto.price else None,
-                            "attachments": [{"id": a.id, "type": a.type, "fileReference": file_url(a.file_reference)} for a in dto.attachments],
+                            "attachments": [
+                                {
+                                    "id": a.id,
+                                    "type": a.type,
+                                    "fileReference": file_url(a.file_reference),
+                                    "caption": a.caption,
+                                    "sizeBytes": a.size_bytes,
+                                }
+                                for a in dto.attachments
+                            ],
+                            # Что по этому номеру вообще принимают файлами — чтобы
+                            # организатор догружал ровно то же, что мог участник.
+                            "uploadRequirement": (upload_requirements.get(dto.performance.participation_format_id) if dto.performance else None),
                         }
                         for dto in related_dtos
                     ],

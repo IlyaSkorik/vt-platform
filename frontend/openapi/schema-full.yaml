@@ -6973,6 +6973,42 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/staff/applications/{submission_id}/attachments:
+    post:
+      operationId: staff_applications_attachments_create
+      description: '``POST staff/applications/{submission_id}/attachments`` — attach
+        a file.'
+      parameters:
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - staff
+      responses:
+        '200':
+          description: No response body
+  /api/v1/staff/applications/{submission_id}/attachments/{attachment_id}:
+    delete:
+      operationId: staff_applications_attachments_destroy
+      description: '``DELETE staff/applications/{submission_id}/attachments/{attachment_id}``.'
+      parameters:
+      - in: path
+        name: attachment_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - staff
+      responses:
+        '204':
+          description: No response body
   /api/v1/staff/applications/{submission_id}/content:
     put:
       operationId: staff_applications_content_update

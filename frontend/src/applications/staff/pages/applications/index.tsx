@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { resolveMediaUrl } from "@/features/competitions/lib/media-url";
 import {
+  type CorrectableAttachment,
   type CorrectablePerformer,
   type CorrectableTeacher,
+  type CorrectableUploadRequirement,
   SubmissionCorrectionDialog,
   type SubmissionTaxonomy,
 } from "@/features/submission-correction";
@@ -96,7 +98,14 @@ type Detail = {
     teachers?: Mentor[];
     priceAmount?: string | null;
     priceCurrency?: string | null;
-    attachments?: Array<{ id: string; type: string; fileReference: string }>;
+    attachments?: CorrectableAttachment[];
+    /**
+     * Что фестиваль принимает файлами по этому номеру — по его форме участия.
+     *
+     * `null` у формы участия, для которой организатор ничего не настраивал: раз
+     * файлов не просили у участника, их не предлагают загрузить и за него.
+     */
+    uploadRequirement?: CorrectableUploadRequirement | null;
   }>;
   price?: string | null;
   totalPriceAmount?: string | null;

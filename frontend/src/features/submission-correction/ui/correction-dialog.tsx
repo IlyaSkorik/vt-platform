@@ -34,6 +34,7 @@ import {
   type SubmissionTaxonomy,
   useCorrectSubmission,
 } from "../api/hooks";
+import { AttachmentsSection } from "./attachments-section";
 
 /** Одна строка формы участников. Локальная — в заявке такой формы нет. */
 type PerformerDraft = {
@@ -599,6 +600,12 @@ export function SubmissionCorrectionDialog({
               </div>
             ))}
           </section>
+
+          <AttachmentsSection
+            submissionId={performance.submissionId}
+            attachments={performance.attachments ?? []}
+            requirement={performance.uploadRequirement}
+          />
 
           <section className="space-y-2">
             <p className="text-sm font-medium">Комментарий участнику</p>

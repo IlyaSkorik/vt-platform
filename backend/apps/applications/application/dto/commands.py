@@ -31,6 +31,7 @@ __all__ = [
     "OrganizerPerformanceInput",
     "OrganizerTeacherInput",
     "PromoteWaitlistedSubmissionCommand",
+    "RemoveAttachmentByOrganizerCommand",
     "RemoveAttachmentCommand",
     "RemoveParticipantCommand",
     "RemoveTeacherCommand",
@@ -44,6 +45,7 @@ __all__ = [
     "UpdateParticipantCommand",
     "UpdatePerformanceCommand",
     "UpdateTeacherCommand",
+    "UploadAttachmentByOrganizerCommand",
     "UploadAttachmentCommand",
     "WithdrawCorrectionRequestCommand",
 ]
@@ -423,6 +425,36 @@ class UploadAttachmentCommand:
     content_type: str
     content: bytes
     caption: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class UploadAttachmentByOrganizerCommand:
+    """Upload and attach a file to a submission on the applicant's behalf (organizer).
+
+    The same upload as :class:`UploadAttachmentCommand` with the authority reversed:
+    the acting identity is an organizer of the festival rather than the owner of the
+    entry. It exists because a backing track regularly reaches the organizer by every
+    route except the form — a message, a flash drive at the rehearsal, an email the
+    morning of — and until now the only way to get it onto the entry was to ask the
+    applicant to log in and upload it themselves.
+    """
+
+    submission_id: str
+    reviewer_id: str
+    attachment_type: str
+    filename: str
+    content_type: str
+    content: bytes
+    caption: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RemoveAttachmentByOrganizerCommand:
+    """Take a file off a submission on the applicant's behalf (organizer)."""
+
+    submission_id: str
+    reviewer_id: str
+    attachment_id: str
 
 
 # ---------------------------------------------------------------------------
