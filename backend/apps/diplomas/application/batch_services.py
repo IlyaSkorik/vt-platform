@@ -7,7 +7,8 @@ the service creates a diploma for every performance in that slice that lacks one
 (snapshot + number + verification token, no degree), renders each pre-ceremony
 PDF, and bundles them all into one ZIP the organizer prints from. Existing
 diplomas are skipped; any still missing a print PDF is rendered so the ZIP is a
-complete printable set.
+complete printable set. Each sheet is filed under the name it will be handed out
+by — see :func:`_sheet_name`.
 
 The ZIP also carries a ``МЕСТА`` folder — see :data:`PLACE_SHEETS_DIR`.
 """
@@ -54,6 +55,25 @@ def _arc_component(name: str, *, fallback: str) -> str:
     """One safe path component of an archive entry, from a name a human typed."""
     cleaned = name.translate(_ARCNAME_SEPARATORS).strip().strip(".")
     return cleaned or fallback
+
+
+def _sheet_name(diploma: Diploma) -> str:
+    """What one diploma is called inside the print archive.
+
+    Whoever opens this archive is sorting a stack of paper into envelopes, and they
+    do it by who the sheet is for — so the collective's name (or the performer's
+    ФИО) leads. The number follows because two Ивановых Анны at one festival are
+    ordinary, and because the number is what the register is reconciled against: it
+    is the file's identity, just not the first thing a human needs to read.
+
+    An individual sheet inside a collective is named after that member — the
+    collective's own sheet carries no member, and then the performer's name is the
+    act's.
+    """
+    snapshot = diploma.snapshot
+    member = snapshot.member.full_name if snapshot.member is not None else ""
+    who = _arc_component(member or snapshot.participant.display_name, fallback="")
+    return f"{who} — {diploma.number}.pdf" if who else f"{diploma.number}.pdf"
 
 
 @dataclass(frozen=True, slots=True)
@@ -182,7 +202,7 @@ class DiplomaBatchGenerationService:
                     # skipping beats putting a null into the ZIP manifest: one
                     # unrenderable diploma must not fail the whole batch.
                     continue
-                items.append((f"{diploma.number}.pdf", pdf_path))
+                items.append((_sheet_name(diploma), pdf_path))
 
         zip_path = self._workspace.store_zip(
             competition_id=competition_id,

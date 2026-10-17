@@ -330,6 +330,12 @@ def test_zip_contains_a_pdf_per_generated_diploma() -> None:
     assert len(names) == 2
     for name in names:
         assert archive.read(name).startswith(b"%PDF")
+    # Named for whoever the sheet is handed to, with the register's number after it:
+    # the stack is sorted into envelopes by name, and reconciled by number.
+    assert sorted(name.split(" — ")[0] for name in names) == ["Иванов Иван", "Сидоров С"]
+    for name in names:
+        assert name.endswith(".pdf")
+        assert name.split(" — ")[1] != ".pdf"
 
 
 def _archive_of(job: dict[str, object]) -> zipfile.ZipFile:

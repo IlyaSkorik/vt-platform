@@ -337,10 +337,12 @@ class TestPrintPackageCycle:
             f"Проверить на {_HOST}",
         ]
 
-    def test_zip_still_bundles_the_diploma_under_its_number(self) -> None:
+    def test_zip_still_bundles_the_diploma_under_its_performer_and_number(self) -> None:
         diploma, job = self._generate()
 
         archive = zipfile.ZipFile(io.BytesIO(self._stored(job["zipUrl"])))
 
-        assert archive.namelist() == [f"{diploma.number}.pdf"]
-        assert archive.read(f"{diploma.number}.pdf").startswith(b"%PDF")
+        # Named for whoever the sheet is handed to; the register's number follows it.
+        name = f"Иванов Иван — {diploma.number}.pdf"
+        assert archive.namelist() == [name]
+        assert archive.read(name).startswith(b"%PDF")
