@@ -29,7 +29,6 @@ function page(overrides: Partial<PublicReviewPageData> = {}): PublicReviewPageDa
     slug: "AbX82Kqm9p",
     title: "Оставьте отзыв",
     intro: "",
-    organizationName: "Центр «Взлёт»",
     accepting: true,
     festivals: [],
     ...overrides,
@@ -64,11 +63,11 @@ beforeEach(() => {
 });
 
 describe("the review form", () => {
-  it("names whose page this is before anything is typed", () => {
-    show(page());
+  it("names the page itself before anything is typed", () => {
+    show(page({ intro: "Пара слов о фестивале" }));
 
-    expect(screen.getByText("Центр «Взлёт»")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Оставьте отзыв" })).toBeInTheDocument();
+    expect(screen.getByText("Пара слов о фестивале")).toBeInTheDocument();
   });
 
   it("sends the words, the accepted consent and nothing else when nothing else was filled", async () => {

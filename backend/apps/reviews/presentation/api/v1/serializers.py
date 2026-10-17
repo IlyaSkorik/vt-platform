@@ -107,7 +107,6 @@ class PublicPageSerializer(serializers.Serializer[dict[str, object]]):
     slug = serializers.CharField()
     title = serializers.CharField()
     intro = serializers.CharField(allow_blank=True)
-    organizationName = serializers.CharField(allow_blank=True)
     accepting = serializers.BooleanField()
     festivals = inline_serializer(
         name="ReviewFestivalOption",

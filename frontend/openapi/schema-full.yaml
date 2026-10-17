@@ -19085,8 +19085,6 @@ components:
           type: string
         intro:
           type: string
-        organizationName:
-          type: string
         accepting:
           type: boolean
         festivals:
@@ -19097,7 +19095,6 @@ components:
       - accepting
       - festivals
       - intro
-      - organizationName
       - slug
       - title
     PublicProgram:

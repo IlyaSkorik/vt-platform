@@ -47,6 +47,11 @@ class PublicPageView:
     side has, and shipping internal identifiers to a page that anyone can open is
     how they end up being guessed at somewhere else.
 
+    It does not name the organization either. The page is reached from a code on a
+    banner the organizer put up, so whoever is standing in front of it already
+    knows whose festival this is; printing a legal entity's name over the form only
+    turned a thank-you into correspondence with an institution.
+
     ``accepting`` false still renders — the banner is printed, and a link that
     explains itself beats one that 404s.
     """
@@ -54,7 +59,6 @@ class PublicPageView:
     slug: str
     title: str
     intro: str
-    organization_name: str
     accepting: bool
     festivals: Sequence[FestivalOption] = field(default_factory=tuple)
 

@@ -37,7 +37,6 @@ def public_page(view: PublicPageView) -> dict[str, Any]:
         "slug": view.slug,
         "title": view.title,
         "intro": view.intro,
-        "organizationName": view.organization_name,
         "accepting": view.accepting,
         "festivals": [{"id": option.id, "title": option.title} for option in view.festivals],
     }
