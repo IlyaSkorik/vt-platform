@@ -342,7 +342,8 @@ class TestPrintPackageCycle:
 
         archive = zipfile.ZipFile(io.BytesIO(self._stored(job["zipUrl"])))
 
-        # Named for whoever the sheet is handed to; the register's number follows it.
-        name = f"Иванов Иван — {diploma.number}.pdf"
+        # Filed under the template it prints on, named for whoever the sheet is
+        # handed to; the register's number follows that.
+        name = f"Вокал A4/Иванов Иван — {diploma.number}.pdf"
         assert archive.namelist() == [name]
         assert archive.read(name).startswith(b"%PDF")

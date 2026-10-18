@@ -330,10 +330,13 @@ def test_zip_contains_a_pdf_per_generated_diploma() -> None:
     assert len(names) == 2
     for name in names:
         assert archive.read(name).startswith(b"%PDF")
-    # Named for whoever the sheet is handed to, with the register's number after it:
-    # the stack is sorted into envelopes by name, and reconciled by number.
-    assert sorted(name.split(" — ")[0] for name in names) == ["Иванов Иван", "Сидоров С"]
+    # Filed under the template they print on — that folder is one print session,
+    # one stack of blanks in the tray — and named for whoever the sheet is handed
+    # to, with the register's number after it: the stack is sorted into envelopes
+    # by name and reconciled by number.
+    assert sorted(name.removeprefix("Вокал A4/").split(" — ")[0] for name in names) == ["Иванов Иван", "Сидоров С"]
     for name in names:
+        assert name.startswith("Вокал A4/")
         assert name.endswith(".pdf")
         assert name.split(" — ")[1] != ".pdf"
 
@@ -345,12 +348,13 @@ def _archive_of(job: dict[str, object]) -> zipfile.ZipFile:
 
 
 class TestPlaceSheets:
-    """The «МЕСТА» folder: a blank overprint sheet per degree, per template.
+    """Each template folder's «МЕСТА» subfolder: a blank overprint sheet per degree.
 
     The package is printed before the ceremony, so its diplomas carry no degree.
     The degree reaches the printed sheet afterwards by being run over it, which
     needs a page that is blank apart from the degree — placed exactly where that
-    template's Степень field is.
+    template's Степень field is. The sheets sit beside the diplomas they overprint,
+    inside the same template folder, because they are only ever run over those.
     """
 
     def test_archive_carries_a_sheet_per_degree(self) -> None:
@@ -360,23 +364,24 @@ class TestPlaceSheets:
         _submission(competition, "Иванов Иван", vocals)
 
         archive = _archive_of(print_package.start_print_package(competition_id=competition.id, category_ids=[]))
-        sheets = sorted(name for name in archive.namelist() if name.startswith("МЕСТА/"))
+        sheets = sorted(name for name in archive.namelist() if "/МЕСТА/" in name)
 
-        # Every degree the jury can award, under the template the sheet overprints,
-        # numbered by seniority so the folder does not read alphabetically.
+        # Every degree the jury can award, inside the folder of the template the
+        # sheet overprints, numbered by seniority so the folder does not read
+        # alphabetically.
         assert sheets == [
-            "МЕСТА/Вокал A4/1. Гран-при.pdf",
-            "МЕСТА/Вокал A4/2. Номинант на Гран-при.pdf",
-            "МЕСТА/Вокал A4/3. Лауреат I степени.pdf",
-            "МЕСТА/Вокал A4/4. Лауреат II степени.pdf",
-            "МЕСТА/Вокал A4/5. Лауреат III степени.pdf",
-            "МЕСТА/Вокал A4/6. Дипломант I степени.pdf",
-            "МЕСТА/Вокал A4/7. Дипломант II степени.pdf",
-            "МЕСТА/Вокал A4/8. Дипломант III степени.pdf",
-            "МЕСТА/Вокал A4/9. Диплом участника.pdf",
+            "Вокал A4/МЕСТА/1. Гран-при.pdf",
+            "Вокал A4/МЕСТА/2. Номинант на Гран-при.pdf",
+            "Вокал A4/МЕСТА/3. Лауреат I степени.pdf",
+            "Вокал A4/МЕСТА/4. Лауреат II степени.pdf",
+            "Вокал A4/МЕСТА/5. Лауреат III степени.pdf",
+            "Вокал A4/МЕСТА/6. Дипломант I степени.pdf",
+            "Вокал A4/МЕСТА/7. Дипломант II степени.pdf",
+            "Вокал A4/МЕСТА/8. Дипломант III степени.pdf",
+            "Вокал A4/МЕСТА/9. Диплом участника.pdf",
         ]
         # And the diplomas themselves are still there, beside the folder.
-        assert [name for name in archive.namelist() if not name.startswith("МЕСТА/")] != []
+        assert [name for name in archive.namelist() if "/МЕСТА/" not in name] != []
 
     def test_a_sheet_is_the_degree_on_an_otherwise_blank_page(self) -> None:
         """Blank is the point: the sheet is fed over an already-printed diploma, so
@@ -387,7 +392,7 @@ class TestPlaceSheets:
         _submission(competition, "Иванов Иван", vocals)
 
         archive = _archive_of(print_package.start_print_package(competition_id=competition.id, category_ids=[]))
-        page = PdfReader(io.BytesIO(archive.read("МЕСТА/Вокал A4/3. Лауреат I степени.pdf"))).pages[0]
+        page = PdfReader(io.BytesIO(archive.read("Вокал A4/МЕСТА/3. Лауреат I степени.pdf"))).pages[0]
 
         text = page.extract_text()
         assert "Лауреат I степени" in text
@@ -410,7 +415,7 @@ class TestPlaceSheets:
         _submission(competition, "Петров Пётр", dance)
 
         archive = _archive_of(print_package.start_print_package(competition_id=competition.id, category_ids=[]))
-        folders = {name.split("/")[1] for name in archive.namelist() if name.startswith("МЕСТА/")}
+        folders = {name.split("/")[0] for name in archive.namelist() if "/МЕСТА/" in name}
 
         assert folders == {"Общий A4"}
 
@@ -425,7 +430,7 @@ class TestPlaceSheets:
         _submission(competition, "Петров Пётр", dance)
 
         archive = _archive_of(print_package.start_print_package(competition_id=competition.id, category_ids=[]))
-        folders = {name.split("/")[1] for name in archive.namelist() if name.startswith("МЕСТА/")}
+        folders = {name.split("/")[0] for name in archive.namelist() if "/МЕСТА/" in name}
 
         assert folders == {"Вокал A4"}
 

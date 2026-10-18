@@ -328,13 +328,22 @@ export function GenerationSection(): React.JSX.Element {
                   </span>
                 </div>
                 {zipHref ? (
-                  <div>
-                    <Button asChild>
-                      <a href={zipHref} download>
-                        <Download className="size-4" aria-hidden="true" />
-                        Скачать ZIP
-                      </a>
-                    </Button>
+                  <div className="flex flex-col gap-2">
+                    <div>
+                      <Button asChild>
+                        <a href={zipHref} download>
+                          <Download className="size-4" aria-hidden="true" />
+                          Скачать ZIP
+                        </a>
+                      </Button>
+                    </div>
+                    {/* The archive's shape is a printing instruction, so it is stated
+                        next to the download rather than discovered after unzipping. */}
+                    <p className="text-muted-foreground text-sm">
+                      Внутри — папка на каждый шаблон: всё, что печатается на одной подложке, лежит
+                      вместе, а листы со степенями для допечатки — в подпапке «МЕСТА» этого же
+                      шаблона.
+                    </p>
                   </div>
                 ) : null}
               </CardContent>

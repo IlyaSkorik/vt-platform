@@ -7,10 +7,16 @@ the service creates a diploma for every performance in that slice that lacks one
 (snapshot + number + verification token, no degree), renders each pre-ceremony
 PDF, and bundles them all into one ZIP the organizer prints from. Existing
 diplomas are skipped; any still missing a print PDF is rendered so the ZIP is a
-complete printable set. Each sheet is filed under the name it will be handed out
-by — see :func:`_sheet_name`.
+complete printable set.
 
-The ZIP also carries a ``МЕСТА`` folder — see :data:`PLACE_SHEETS_DIR`.
+**The archive is filed by template.** Printing a package is loading one stack of
+pre-printed blanks into the printer and running everything that prints on it, then
+swapping the stack — so the archive's top level is one folder per template, and a
+folder is exactly one print session. Inside it each sheet is named after the person
+it will be handed to (see :func:`_sheet_name`) and the template's overprint sheets
+sit in a ``МЕСТА`` subfolder (see :data:`PLACE_SHEETS_DIR`). Genres do not appear:
+two genres printed on one blank are one stack, and splitting them would only make
+the operator reload the printer twice for nothing.
 """
 
 from __future__ import annotations
@@ -35,15 +41,16 @@ __all__ = ["PLACE_SHEETS_DIR", "BatchResult", "DiplomaBatchGenerationService", "
 
 _TOKEN_BYTES = 32
 
-#: Folder inside the print archive holding the overprint sheets, one per degree.
+#: Subfolder of a template's folder holding its overprint sheets, one per degree.
 #:
 #: The package is printed before the ceremony, so every diploma in it leaves the
 #: Степень field empty — the jury has not decided yet. The degree still has to reach
 #: a sheet that is already printed, and the way that is done in practice is to feed
 #: it back through the printer over a page that is blank apart from the degree. This
-#: folder is that set of pages: for each template in the run, one sheet per degree
-#: the jury can award, each drawn exactly where and how that template places its
-#: Степень field.
+#: folder is that set of pages: one sheet per degree the jury can award, each drawn
+#: exactly where and how the owning template places its Степень field. It sits beside
+#: that template's diplomas rather than in an archive-wide folder, because the sheets
+#: are only ever run over the blanks of the template they were derived from.
 PLACE_SHEETS_DIR = "МЕСТА"
 
 #: Characters that would turn a template's name into extra nesting (or escape the
@@ -57,8 +64,28 @@ def _arc_component(name: str, *, fallback: str) -> str:
     return cleaned or fallback
 
 
+def _template_folders(assets_by_template: dict[uuid.UUID, TemplateAssets]) -> dict[uuid.UUID, str]:
+    """A folder name per template, unique within the archive.
+
+    Named after the template as the organizer named it, because that is what is
+    printed on the blanks sitting in the paper tray. Two templates may legitimately
+    carry one name, and letting both resolve to one folder would merge two stacks
+    into a pile nobody can sort — so the later one is distinguished by its position
+    in the run.
+    """
+    folders: dict[uuid.UUID, str] = {}
+    used: set[str] = set()
+    for index, (template_id, assets) in enumerate(assets_by_template.items(), start=1):
+        folder = _arc_component(assets.name, fallback=f"Шаблон {index}")
+        while folder.casefold() in used:
+            folder = f"{folder} ({index})"
+        used.add(folder.casefold())
+        folders[template_id] = folder
+    return folders
+
+
 def _sheet_name(diploma: Diploma) -> str:
-    """What one diploma is called inside the print archive.
+    """What one diploma is called inside its template's folder.
 
     Whoever opens this archive is sorting a stack of paper into envelopes, and they
     do it by who the sheet is for — so the collective's name (or the performer's
@@ -152,6 +179,10 @@ class DiplomaBatchGenerationService:
                 raise PrintTemplateNotReadyError("У выбранного шаблона нет PDF-подложки для печати.")
             assets_by_template[target.template_id] = assets
 
+        # One folder per template, resolved before anything is rendered so that a
+        # diploma's entry and its template's place sheets agree on where they live.
+        folders = _template_folders(assets_by_template)
+
         created = 0
         skipped = 0
         items: list[tuple[str, str]] = []
@@ -202,24 +233,28 @@ class DiplomaBatchGenerationService:
                     # skipping beats putting a null into the ZIP manifest: one
                     # unrenderable diploma must not fail the whole batch.
                     continue
-                items.append((_sheet_name(diploma), pdf_path))
+                items.append((f"{folders[target.template_id]}/{_sheet_name(diploma)}", pdf_path))
 
         zip_path = self._workspace.store_zip(
             competition_id=competition_id,
             items=items,
-            extras=self._place_sheets(assets_by_template),
+            extras=self._place_sheets(assets_by_template, folders),
         )
         return BatchResult(created=created, skipped=skipped, zip_path=zip_path)
 
-    def _place_sheets(self, assets_by_template: dict[uuid.UUID, TemplateAssets]) -> list[tuple[str, bytes]]:
-        """The ``МЕСТА`` folder: one blank overprint sheet per template per degree.
+    def _place_sheets(
+        self,
+        assets_by_template: dict[uuid.UUID, TemplateAssets],
+        folders: dict[uuid.UUID, str],
+    ) -> list[tuple[str, bytes]]:
+        """Each template's ``МЕСТА`` subfolder: one blank overprint sheet per degree.
 
-        Keyed by template, not by nomination — the sheet is a function of where the
-        template puts its Степень field, so two nominations printed over the same
-        template need one set between them. Each folder is named after its template,
-        which is how the organizer knows which stack of blanks a sheet belongs to, and
-        each sheet is numbered by seniority so the folder reads Гран-при first rather
-        than alphabetically.
+        Derived from the template, not from any nomination — the sheet is a function
+        of where the template puts its Степень field, so two nominations printed over
+        the same template need one set between them. It lives inside that template's
+        own folder, next to the diplomas it will be run over, and each sheet is
+        numbered by seniority so the folder reads Гран-при first rather than
+        alphabetically.
 
         A template with no Степень field contributes nothing: there is nowhere on it
         for a degree to land, so an empty sheet would only be printed by mistake.
@@ -227,22 +262,11 @@ class DiplomaBatchGenerationService:
         if not self._place_degrees:
             return []
         sheets: list[tuple[str, bytes]] = []
-        used: set[str] = set()
-        for index, assets in enumerate(assets_by_template.values(), start=1):
-            rendered = [
-                (position, degree, data)
-                for position, degree in enumerate(self._place_degrees, start=1)
-                if (data := self._workspace.render_place_sheet(assets=assets, degree=degree)) is not None
-            ]
-            if not rendered:
-                continue  # No Степень field on this template — nowhere to overprint.
-            folder = _arc_component(assets.name, fallback=f"Шаблон {index}")
-            # Two templates may carry the same name; keeping both under it would put two
-            # different sets of sheets in one folder, so the later one is distinguished.
-            while folder in used:
-                folder = f"{folder} ({index})"
-            used.add(folder)
-            for position, degree, data in rendered:
+        for template_id, assets in assets_by_template.items():
+            for position, degree in enumerate(self._place_degrees, start=1):
+                data = self._workspace.render_place_sheet(assets=assets, degree=degree)
+                if data is None:
+                    continue  # No Степень field on this template — nowhere to overprint.
                 name = _arc_component(degree, fallback=str(position))
-                sheets.append((f"{PLACE_SHEETS_DIR}/{folder}/{position}. {name}.pdf", data))
+                sheets.append((f"{folders[template_id]}/{PLACE_SHEETS_DIR}/{position}. {name}.pdf", data))
         return sheets
