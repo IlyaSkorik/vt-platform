@@ -12,7 +12,7 @@ assignments only. Keeps the views thin.
 from __future__ import annotations
 
 import uuid
-from collections import Counter
+from collections import Counter, defaultdict
 from typing import Any
 
 from apps.competitions.infrastructure.models.taxonomy import CategoryModel, DisciplineModel
@@ -157,19 +157,23 @@ def printable_targets(competition_id: uuid.UUID, category_ids: list[str]) -> lis
     return targets
 
 
-def _named_teachers(teachers: Any) -> int:
-    """How many letters an entry's teacher roster is worth.
+def _named_teachers(teachers: Any) -> set[str]:
+    """Who an entry's teacher roster is worth a letter to, as comparable keys.
 
-    Mirrors the snapshot source's rule — a teacher counts only once some part of
-    the name is filled in — so the summary's forecast matches what a run actually
-    issues rather than promising letters to blank rows.
+    Names rather than a count, because a letter is issued once per teacher per
+    genre: five entries naming one teacher are one letter, and only the names
+    themselves can say so. Mirrors the snapshot source's rule — a teacher counts
+    only once some part of the name is filled in — and the generation service's
+    comparison, which collapses whitespace and case so «Иванова И.И.» and
+    «иванова  И.И.» are one person.
     """
-    count = 0
+    names: set[str] = set()
     for teacher in teachers or []:
         parts = (teacher.get("last_name"), teacher.get("first_name"), teacher.get("middle_name"))
-        if any(str(part or "").strip() for part in parts):
-            count += 1
-    return count
+        key = " ".join(" ".join(str(part or "") for part in parts).split()).casefold()
+        if key:
+            names.add(key)
+    return names
 
 
 def _named_members(participants: Any) -> int:
@@ -230,7 +234,9 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
     # Keyed by (genre, nomination) — the pair that decides which template an entry
     # prints on. The empty string stands for "names no nomination".
     submissions: Counter[tuple[str, str]] = Counter()
-    recipients: Counter[tuple[str, str]] = Counter()
+    #: The distinct teachers each bucket names. Sets, not counts: one teacher across
+    #: five entries of a genre is one letter, and that only shows up by name.
+    recipients: defaultdict[tuple[str, str], set[str]] = defaultdict(set)
     unaddressable: Counter[tuple[str, str]] = Counter()
     members: Counter[tuple[str, str]] = Counter()
     # The same narrowing the generation pipeline applies, so «Выступлений» is the
@@ -248,7 +254,7 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
         category_of[str(row["id"])] = category_id
         submissions[bucket] += 1
         named = _named_teachers(row["teachers"])
-        recipients[bucket] += named
+        recipients[bucket] |= named
         if not named:
             unaddressable[bucket] += 1
         members[bucket] += _named_members(row["participants"])
@@ -288,27 +294,44 @@ def print_package_summary(competition_id: uuid.UUID) -> dict[str, Any]:
         policy = policy_for(document_type)
         per_teacher = policy.per_teacher
 
+        def printable(discipline_id: str) -> bool:
+            """Whether this nomination's entries have a template with a PDF behind it."""
+            assignment = _resolve_slot(slots, discipline_id or None)
+            return assignment is not None and assignment["templateId"] in templates_with_pdf
+
         def denominator(bucket: tuple[str, str]) -> int:
-            if per_teacher:
-                return recipients[bucket]
             if policy.per_member:
                 # One per person the applicants named, not one per entry: an ensemble
                 # that named nobody contributes nothing to this slot.
                 return members[bucket]
             return submissions[bucket]
 
-        total = 0
-        without_template = 0
-        for discipline_id in buckets_of(category_id):
-            bucket = (category_id, discipline_id)
-            assignment = _resolve_slot(slots, discipline_id or None)
-            if assignment is not None and assignment["templateId"] in templates_with_pdf:
-                total += denominator(bucket)
-            else:
-                # Nothing to print these on — no template, or one with no PDF behind
-                # it. Reported rather than folded into the forecast, so the number
-                # beside the button is what a run will actually produce.
-                without_template += denominator(bucket)
+        if per_teacher:
+            # Counted over the genre's distinct teachers rather than per nomination:
+            # one letter per teacher per genre, so a teacher who entered three
+            # nominations of «Вокал» is one letter, not three. A teacher reachable
+            # from any printable nomination gets theirs from that one — a run skips
+            # the unprintable entries before it ever looks at who they name — so
+            # only teachers reachable from nowhere else count as unprinted.
+            addressable: set[str] = set()
+            unprintable: set[str] = set()
+            for discipline_id in buckets_of(category_id):
+                reached = addressable if printable(discipline_id) else unprintable
+                reached |= recipients[(category_id, discipline_id)]
+            total = len(addressable)
+            without_template = len(unprintable - addressable)
+        else:
+            total = 0
+            without_template = 0
+            for discipline_id in buckets_of(category_id):
+                bucket = (category_id, discipline_id)
+                if printable(discipline_id):
+                    total += denominator(bucket)
+                else:
+                    # Nothing to print these on — no template, or one with no PDF behind
+                    # it. Reported rather than folded into the forecast, so the number
+                    # beside the button is what a run will actually produce.
+                    without_template += denominator(bucket)
 
         ready = any(item["templateId"] in templates_with_pdf for item in slots.values())
         done = existing[document_type][category_id]

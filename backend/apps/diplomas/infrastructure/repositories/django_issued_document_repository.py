@@ -1,10 +1,12 @@
 """Django adapter implementing the ``IssuedDocumentRepository`` port.
 
 No numbering and no token minting: an issued document is defined by having neither
-(see :mod:`apps.diplomas.domain.document_types`). The unique constraint on
-``(submission_id, document_type)`` is the correctness backstop — a double
-generation surfaces as an ``IntegrityError`` rather than two thank-you letters for
-one performance.
+(see :mod:`apps.diplomas.domain.document_types`). Two unique constraints are the
+correctness backstop, and which one applies depends on how the kind is addressed:
+``(submission_id, document_type, recipient)`` for a kind issued once per
+performance, and ``(competition_id, category_id, document_type, recipient)`` for
+one addressed to a person — a double generation surfaces as an ``IntegrityError``
+rather than as a second thank-you letter for the same teacher.
 """
 
 from __future__ import annotations
@@ -47,6 +49,33 @@ class DjangoIssuedDocumentRepository:
             recipient=recipient,
             deleted_at__isnull=True,
         ).first()
+        return IssuedDocumentMapper.to_domain(model) if model is not None else None
+
+    def get_for_recipient(
+        self,
+        *,
+        competition_id: uuid.UUID,
+        category_id: uuid.UUID,
+        document_type: DocumentType,
+        recipient: str,
+    ) -> IssuedDocument | None:
+        """The live document this genre already holds for that person, or None.
+
+        Matched case-insensitively on the recipient: the name comes from whatever
+        the applicants typed into their entries, and «Иванова» beside «иванова»
+        is one teacher asking to be thanked once, not two people.
+        """
+        model = (
+            IssuedDocumentModel.objects.filter(
+                competition_id=competition_id,
+                category_id=category_id,
+                document_type=document_type.value,
+                recipient__iexact=recipient,
+                deleted_at__isnull=True,
+            )
+            .order_by("created_at")
+            .first()
+        )
         return IssuedDocumentMapper.to_domain(model) if model is not None else None
 
     def list_by_competition(self, competition_id: uuid.UUID, document_type: DocumentType) -> list[IssuedDocument]:

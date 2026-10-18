@@ -17,6 +17,11 @@ What actually differs per kind is expressed as data, not branches:
   with no value is not drawn — simply does not appear.
 * **No degree.** A kind that does not award one leaves the snapshot's award
   untouched, and the same "no value, no field" rule omits any Степень field.
+* **One document per addressee, not per entry.** A kind addressed to a person
+  (``per_teacher``) is identified by ``(competition, genre, recipient)``, so a
+  teacher who entered five acts in one genre is thanked **once**. The entry the
+  sheet was built from is then incidental — it decides which template the letter
+  prints on and nothing else. A kind issued per performance keeps its own identity.
 * **Immediate publication — when asked for.** For a kind whose policy allows it,
   :meth:`IssuedDocument.with_pdf` stamps ``published_at`` and the document reaches
   the participant's cabinet with no separate organizer step. A run may withhold
@@ -65,7 +70,8 @@ class IssuedDocumentResult:
     """Outcome of one generation run for one nomination.
 
     Counts **documents**, not performances: a per-teacher kind issues one per
-    teacher, so an entry with two teachers contributes two.
+    teacher of the genre, so an entry with two teachers contributes two and a
+    teacher with five entries contributes one.
     """
 
     created: int
@@ -95,17 +101,28 @@ def _safe(value: str | None) -> str:
 def _arcname(snapshot: DiplomaSnapshot, recipient: str) -> str:
     """Where one document sits inside the printable ZIP.
 
-    Grouped by nomination and named after the person the sheet is handed to,
-    because that is how an organizer sorts a printed stack — the storage key is a
-    submission uuid and says nothing to whoever is stuffing envelopes. The
-    performance is kept in the name too, so a teacher thanked twice gets two
-    distinguishable sheets rather than a bare ``(2)``.
+    Grouped by genre and named after whoever the sheet is handed to, because that
+    is how an organizer sorts a printed stack — the storage key is a submission
+    uuid and says nothing to whoever is stuffing envelopes.
+
+    For an addressed kind the name is the addressee alone: the genre holds one
+    letter per teacher, so there is no second sheet to tell it apart from, and
+    naming an entry beside it would only claim the letter was for that one act.
     """
     folder = _safe(snapshot.nomination.title) or "Без жанра"
-    participant = _safe(snapshot.participant.display_name) or "Без имени"
     addressee = _safe(recipient)
-    stem = f"{addressee} — {participant}" if addressee else participant
-    return f"{folder}/{stem}.pdf"
+    return f"{folder}/{addressee or _safe(snapshot.participant.display_name) or 'Без имени'}.pdf"
+
+
+def _recipient_key(name: str) -> str:
+    """How two recipient names are compared for sameness.
+
+    The names come from whatever applicants typed into their entries, so the same
+    teacher reaches a run as «Иванова  И.И.» on one and «иванова И.И.» on the next.
+    Collapsing whitespace and case is what makes those one person — and one letter —
+    rather than two.
+    """
+    return " ".join(name.split()).casefold()
 
 
 def _addressees(snapshot: DiplomaSnapshot, policy: DocumentPolicy) -> list[tuple[str, DiplomaSnapshot]]:
@@ -113,15 +130,24 @@ def _addressees(snapshot: DiplomaSnapshot, policy: DocumentPolicy) -> list[tuple
 
     A thank-you letter is addressed to a person, so an entry naming two teachers
     yields **two** letters — each carrying only its own recipient in the snapshot,
-    so the teacher field prints one name rather than the whole roster. An entry with
-    no teacher yields nothing: there is nobody to thank.
+    so the teacher field prints one name rather than the whole roster. One teacher
+    listed twice on an entry is still one letter. An entry with no teacher yields
+    nothing: there is nobody to thank.
 
     For a kind issued once per performance (a diploma) there is a single document
     with no recipient and the snapshot untouched — every teacher stays on the sheet.
     """
     if not policy.per_teacher:
         return [("", snapshot)]
-    return [(teacher.name, replace(snapshot, teachers=(teacher,))) for teacher in snapshot.teachers if teacher.name.strip()]
+    addressed: list[tuple[str, DiplomaSnapshot]] = []
+    seen: set[str] = set()
+    for teacher in snapshot.teachers:
+        key = _recipient_key(teacher.name)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        addressed.append((teacher.name, replace(snapshot, teachers=(teacher,))))
+    return addressed
 
 
 def _prepare_layout(fields: list[dict[str, Any]], policy: DocumentPolicy) -> list[dict[str, Any]]:
@@ -181,6 +207,11 @@ class IssuedDocumentGenerationService:
         «Вокал» may print its own instead of the genre's. Documents that already
         have a PDF are left alone unless ``force`` re-renders them.
 
+        A kind addressed to a person is issued **once per person per genre**: a
+        teacher who entered five acts in «Вокал» is thanked on one letter, built
+        from whichever of the five the run reaches first and printed on that act's
+        template. Their entries in another genre are another genre's letter.
+
         ``publish`` decides whether the run also shows its documents to the
         participants. Off, the documents are generated and stored but stay out of
         the cabinets — which is what an organizer wants when preparing sheets to
@@ -231,6 +262,12 @@ class IssuedDocumentGenerationService:
         without_template = 0
         published = 0
         items: list[tuple[str, str]] = []
+        # Recipients this run has already produced a document for. An addressed kind
+        # issues one per person per genre, and the entries of one teacher are walked
+        # one after another here — without this the second of them would look up a
+        # row the first has only just inserted, which works, and then a run over a
+        # genre whose teacher appears five times would still render five times.
+        handled: set[str] = set()
         entries = self._snapshots.list_submission_ids(competition_id, category_id=category_id)
         # One lookup for the whole genre: which nomination each entry performs in
         # decides which of the genre's templates its sheet is printed on.
@@ -257,7 +294,25 @@ class IssuedDocumentGenerationService:
                 continue
 
             for recipient, snapshot in addressed:
-                document = self._repository.get_for_submission(submission_id, document_type, recipient)
+                if policy.per_teacher:
+                    key = _recipient_key(recipient)
+                    if key in handled:
+                        # Another entry of this genre already thanked this teacher in
+                        # this very run. Their letter is in `items` from that entry;
+                        # issuing a second one is exactly what this run must not do.
+                        continue
+                    handled.add(key)
+                    # Asked for by person and genre, not by entry: the letter this
+                    # teacher already holds was built from whichever of their acts a
+                    # previous run reached first, and that is still their letter.
+                    document = self._repository.get_for_recipient(
+                        competition_id=built.competition_id,
+                        category_id=category_id,
+                        document_type=document_type,
+                        recipient=recipient,
+                    )
+                else:
+                    document = self._repository.get_for_submission(submission_id, document_type, recipient)
                 if document is None:
                     document = IssuedDocument.create(
                         document_id=self._repository.new_id(),
@@ -268,6 +323,7 @@ class IssuedDocumentGenerationService:
                         snapshot=snapshot,
                         now=now,
                         recipient=recipient,
+                        category_id=category_id,
                     )
                     self._repository.add(document)
                     created += 1
@@ -280,7 +336,7 @@ class IssuedDocumentGenerationService:
                         published += 1
                     # It still belongs in the bundle either way: the ZIP is the
                     # nomination's whole printable set, not this run's delta.
-                    items.append((_arcname(document.snapshot, recipient), document.pdf_path))
+                    items.append((_arcname(document.snapshot, document.recipient), document.pdf_path))
                     continue
                 else:
                     regenerated += 1
@@ -304,7 +360,7 @@ class IssuedDocumentGenerationService:
                 if rendered.is_published and not document.is_published:
                     published += 1
                 self._repository.update(rendered)
-                items.append((_arcname(document.snapshot, recipient), path))
+                items.append((_arcname(document.snapshot, document.recipient), path))
 
         return IssuedDocumentResult(
             created=created,
@@ -331,11 +387,9 @@ class IssuedDocumentGenerationService:
         the run's output, not a different way of generating it.
 
         Names are made unique across the whole archive, because they are built from
-        names people actually share — two entries in one nomination may carry the
-        same participant name and thank the same teacher — and a duplicate name in a
-        ZIP is one file silently overwriting another on extraction. The same file
-        listed twice (a teacher named twice on one entry gets one letter) collapses
-        to a single entry instead.
+        names people actually share — two genres may each thank a Петрова О. — and a
+        duplicate name in a ZIP is one file silently overwriting another on
+        extraction. The same file listed twice collapses to a single entry instead.
         """
         unique: list[tuple[str, str]] = []
         taken: set[str] = set()

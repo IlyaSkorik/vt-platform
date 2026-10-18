@@ -228,6 +228,23 @@ class IssuedDocumentRepository(Protocol):
         ``recipient`` is empty for a kind issued once per performance."""
         ...
 
+    def get_for_recipient(
+        self,
+        *,
+        competition_id: uuid.UUID,
+        category_id: uuid.UUID,
+        document_type: DocumentType,
+        recipient: str,
+    ) -> IssuedDocument | None:
+        """The live document this genre already holds for that person, or None.
+
+        The lookup a per-teacher kind is identified by: a teacher who entered five
+        acts in one genre holds **one** letter, and which of the five it was built
+        from is an implementation detail of the run that created it. Asking by
+        submission would find none of the other four and issue a sixth.
+        """
+        ...
+
     def list_by_competition(self, competition_id: uuid.UUID, document_type: DocumentType) -> list[IssuedDocument]:
         """Every live document of this kind for a competition, newest first."""
         ...

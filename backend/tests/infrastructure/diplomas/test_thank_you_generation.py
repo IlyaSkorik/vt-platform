@@ -88,8 +88,9 @@ def _backing_pdf() -> bytes:
 def _template(name: str, document_type: str, *, with_qr: bool = False) -> TemplateModel:
     """A template of one kind, with a backing PDF and the one name field it may carry.
 
-    A thank-you letter names its recipient and nothing else; a diploma belongs to
-    the performance and names the performer.
+    A thank-you letter names its recipient and nothing else — it is issued once per
+    teacher, so it has no one participant to name — while a diploma belongs to the
+    performance and names the performer.
 
     ``with_qr`` inserts the QR row **directly**, bypassing
     :func:`replace_template_layout` — which now refuses a QR on a thank-you
@@ -129,6 +130,11 @@ def _template(name: str, document_type: str, *, with_qr: bool = False) -> Templa
             style={"fontSize": 9},
         )
     return template
+
+
+def _teacher(last_name: str, first_name: str = "Ольга", role: str = "Педагог") -> dict[str, str]:
+    """One teacher row as an applicant fills it in."""
+    return {"first_name": first_name, "last_name": last_name, "role": role}
 
 
 def _competition() -> CompetitionModel:
@@ -187,11 +193,11 @@ def _generate(competition: CompetitionModel, category: CategoryModel, *, force: 
 
 
 class TestGeneration:
-    def test_generates_a_published_letter_per_performance(self) -> None:
+    def test_generates_a_published_letter_per_teacher(self) -> None:
         competition = _competition()
         vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
-        _submission(competition, vocals, "Иванов Иван")
-        _submission(competition, vocals, "Петров Пётр")
+        _submission(competition, vocals, "Иванов Иван", teachers=[_teacher("Петрова")])
+        _submission(competition, vocals, "Петров Пётр", teachers=[_teacher("Сидорова")])
         _assign(competition, vocals, _template("Благодарность синяя", "THANK_YOU"))
 
         result = _generate(competition, vocals)
@@ -271,8 +277,85 @@ class TestGeneration:
         assert (first.created, first.regenerated) == (1, 0)
         assert (second.created, second.regenerated) == (0, 0)
         assert (forced.created, forced.regenerated) == (0, 1)
-        # One performance keeps exactly one letter throughout.
+        # One teacher keeps exactly one letter throughout.
         assert IssuedDocumentModel.objects.count() == 1
+
+
+class TestOneLetterPerTeacher:
+    """A letter is the teacher's, not the entry's.
+
+    A teacher who enters five acts in a genre has done one thing worth thanking
+    them for, and five identical sheets with their name on it is five times the
+    paper for no extra meaning — so the genre holds one.
+    """
+
+    def _vocals_with(self, *rosters: list[dict[str, str]]) -> tuple[CompetitionModel, CategoryModel]:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        for index, roster in enumerate(rosters, start=1):
+            _submission(competition, vocals, f"Участник {index}", teachers=roster)
+        _assign(competition, vocals, _template("Благодарность", "THANK_YOU"))
+        return competition, vocals
+
+    def test_five_entries_of_one_teacher_are_one_letter(self) -> None:
+        competition, vocals = self._vocals_with(*[[_teacher("Петрова")] for _ in range(5)])
+
+        result = _generate(competition, vocals)
+
+        assert result.created == 1
+        row = IssuedDocumentModel.objects.get()
+        assert row.recipient == "Петрова Ольга"
+        # Built from one of the five; which one is an implementation detail, but the
+        # genre it belongs to is what identifies it.
+        assert row.category_id == vocals.id
+
+    def test_one_teacher_listed_twice_on_one_entry_is_one_letter(self) -> None:
+        competition, vocals = self._vocals_with([_teacher("Петрова"), _teacher("Петрова", role="Концертмейстер")])
+
+        result = _generate(competition, vocals)
+
+        assert result.created == 1
+        assert IssuedDocumentModel.objects.count() == 1
+
+    def test_the_same_name_spelled_differently_is_one_teacher(self) -> None:
+        # The names come from whatever applicants typed, so the spacing and case of
+        # one person's name vary from entry to entry.
+        competition, vocals = self._vocals_with(
+            [{"first_name": "Ольга", "last_name": "Петрова", "role": "Педагог"}],
+            [{"first_name": "ольга", "last_name": "ПЕТРОВА", "role": "Педагог"}],
+        )
+
+        result = _generate(competition, vocals)
+
+        assert result.created == 1
+        assert IssuedDocumentModel.objects.count() == 1
+
+    def test_a_rerun_issues_nothing_further(self) -> None:
+        competition, vocals = self._vocals_with(*[[_teacher("Петрова")] for _ in range(3)])
+        _generate(competition, vocals)
+
+        again = _generate(competition, vocals)
+
+        # The second run finds the teacher's letter by person and genre, not by the
+        # entry it happened to be built from — otherwise it would issue two more.
+        assert (again.created, again.regenerated) == (0, 0)
+        assert IssuedDocumentModel.objects.count() == 1
+
+    def test_the_same_teacher_in_another_genre_gets_that_genres_letter(self) -> None:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        dance = CategoryModel.objects.create(competition=competition, name="Хореография")
+        _submission(competition, vocals, "Иванов Иван", teachers=[_teacher("Петрова")])
+        _submission(competition, dance, "Петров Пётр", teachers=[_teacher("Петрова")])
+        _assign(competition, vocals, _template("Благодарность синяя", "THANK_YOU"))
+        _assign(competition, dance, _template("Благодарность золотая", "THANK_YOU"))
+
+        _generate(competition, vocals)
+        _generate(competition, dance)
+
+        # Two genres, two sheets: each prints on its own design and is handed out at
+        # its own ceremony.
+        assert sorted(str(row.category_id) for row in IssuedDocumentModel.objects.all()) == sorted([str(vocals.id), str(dance.id)])
 
 
 class TestLayoutRules:
@@ -547,18 +630,18 @@ class TestPrintableBundle:
         # SECRET_KEY, so the test asserts the shape rather than recomputing the secret.
         assert summary["zipUrl"].startswith(f"/media/diplomas/documents/{competition.id}/thank_you/")
         assert summary["zipUrl"].endswith("/ThankYou.zip")
-        # Addressed to the teacher, filed under the nomination, with the performance
-        # named so a teacher thanked twice yields two distinguishable sheets.
+        # Filed under the genre and named after the addressee alone: the genre holds
+        # one letter per teacher, so no entry has to be named to tell two apart.
         assert self._entries(summary["zipUrl"]) == [
-            "Вокал/Петрова Ольга — Иванов Иван.pdf",
-            "Вокал/Сидоров Иван — Иванов Иван.pdf",
+            "Вокал/Петрова Ольга.pdf",
+            "Вокал/Сидоров Иван.pdf",
         ]
 
     def test_a_repeat_run_archives_the_whole_set_it_did_not_regenerate(self) -> None:
         competition = _competition()
         vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
-        _submission(competition, vocals, "Иванов Иван")
-        _submission(competition, vocals, "Петров Пётр")
+        _submission(competition, vocals, "Иванов Иван", teachers=[_teacher("Петрова")])
+        _submission(competition, vocals, "Петров Пётр", teachers=[_teacher("Сидорова")])
         _assign(competition, vocals, _template("Благодарность", "THANK_YOU"))
 
         self._run(competition, [vocals], bundle=False)
@@ -591,20 +674,25 @@ class TestPrintableBundle:
     def test_namesakes_get_two_entries_rather_than_one_overwriting_the_other(self) -> None:
         competition = _competition()
         vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
-        # Two separate entries with the same performer name and the same teacher —
-        # names are not unique, so the archive cannot rely on them being so.
-        _submission(competition, vocals, "Иванов Иван")
-        _submission(competition, vocals, "Иванов Иван")
-        _assign(competition, vocals, _template("Благодарность", "THANK_YOU"))
+        # Two people who happen to share a name, each teaching in a genre of their
+        # own. Names are not unique, so the archive cannot rely on them being so —
+        # and both genres are bundled into one ZIP.
+        _submission(competition, vocals, "Иванов Иван", teachers=[_teacher("Петрова")])
+        dance = CategoryModel.objects.create(competition=competition, name="Хореография")
+        _submission(competition, dance, "Петров Пётр", teachers=[_teacher("Петрова")])
+        template = _template("Благодарность", "THANK_YOU")
+        _assign(competition, vocals, template)
+        _assign(competition, dance, _template("Благодарность 2", "THANK_YOU"))
 
-        summary = self._run(competition, [vocals], bundle=True)
+        summary = self._run(competition, [vocals, dance], bundle=True)
 
         assert summary["documents"] == 2
-        # Both letters survive: a duplicate name in a ZIP means one file replacing
-        # the other on extraction.
+        # Each genre's letter keeps its own entry: a duplicate name in a ZIP means
+        # one file replacing the other on extraction. Here the genre folder already
+        # separates them.
         assert self._entries(summary["zipUrl"]) == [
-            "Вокал/Петрова Ольга — Иванов Иван (2).pdf",
-            "Вокал/Петрова Ольга — Иванов Иван.pdf",
+            "Вокал/Петрова Ольга.pdf",
+            "Хореография/Петрова Ольга.pdf",
         ]
 
 
@@ -737,15 +825,15 @@ class TestNominationLevelTemplates:
         gold = _template("Благодарность золотая", "THANK_YOU")
         _assign(competition, vocals, blue)
         self._assign_nomination(competition, pop, gold)
-        _submission(competition, vocals, "Иванов Иван")
-        _submission(competition, vocals, "Петров Пётр", discipline=pop)
+        _submission(competition, vocals, "Иванов Иван", teachers=[_teacher("Петрова")])
+        _submission(competition, vocals, "Петров Пётр", teachers=[_teacher("Сидорова")], discipline=pop)
 
         result = _generate(competition, vocals)
 
         assert result.created == 2
-        by_template = {str(row.template_id): row.snapshot["participant"]["display_name"] for row in IssuedDocumentModel.objects.all()}
-        assert by_template[str(blue.id)] == "Иванов Иван"
-        assert by_template[str(gold.id)] == "Петров Пётр"
+        by_template = {str(row.template_id): row.recipient for row in IssuedDocumentModel.objects.all()}
+        assert by_template[str(blue.id)] == "Петрова Ольга"
+        assert by_template[str(gold.id)] == "Сидорова Ольга"
 
     def test_a_genre_with_no_default_counts_what_it_cannot_print(self) -> None:
         competition = _competition()
