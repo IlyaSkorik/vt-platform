@@ -21,6 +21,7 @@ __all__ = [
     "CreateTemplateRequestSerializer",
     "DiplomaResponseSerializer",
     "DiplomaSnapshotSerializer",
+    "DocumentJobResponseSerializer",
     "DocumentSlotSerializer",
     "GenerateDocumentsRequestSerializer",
     "GenerateDocumentsResponseSerializer",
@@ -298,6 +299,29 @@ class GenerateDocumentsResponseSerializer(serializers.Serializer[dict[str, objec
     #: The printable archive's ``/media/…`` path; null unless ``bundle`` was asked
     #: for (or the run produced nothing to archive).
     zipUrl = serializers.CharField(allow_null=True)
+
+
+class DocumentJobResponseSerializer(serializers.Serializer[dict[str, object]]):
+    """A document-generation job's status and result (poll until COMPLETED/FAILED).
+
+    ``result`` is the run's own summary, carried whole: a client that already knew
+    how to read a finished run reads the same object, only later. It is null while
+    the job is pending or running, and stays null on a failure — where ``error``
+    says what went wrong instead.
+    """
+
+    jobId = serializers.UUIDField()
+    competitionId = serializers.UUIDField()
+    categoryIds = serializers.ListField(child=serializers.UUIDField())
+    documentType = serializers.ChoiceField(choices=GENERATED_DOCUMENT_TYPES)
+    force = serializers.BooleanField()
+    bundle = serializers.BooleanField()
+    publish = serializers.BooleanField()
+    status = serializers.ChoiceField(choices=["PENDING", "RUNNING", "COMPLETED", "FAILED"])
+    result = GenerateDocumentsResponseSerializer(allow_null=True)
+    error = serializers.CharField(allow_null=True)
+    createdAt = serializers.DateTimeField()
+    updatedAt = serializers.DateTimeField()
 
 
 class GenerationRunResponseSerializer(serializers.Serializer[dict[str, object]]):

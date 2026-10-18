@@ -18,6 +18,7 @@ from .views import (
     DiplomaTemplateLayoutView,
     DiplomaTemplatesView,
     DocumentGenerationView,
+    DocumentJobDetailView,
 )
 
 app_name = "diplomas"
@@ -76,6 +77,12 @@ urlpatterns = [
         "staff/diplomas/documents/generate",
         DocumentGenerationView.as_view(),
         name="generate-documents",
+    ),
+    # The run is a job: rendering a sheet per recipient outlasts any connection.
+    path(
+        "staff/diplomas/documents/jobs/<str:job_id>",
+        DocumentJobDetailView.as_view(),
+        name="document-job-detail",
     ),
     # The history of completed generation runs, of every document kind.
     path(

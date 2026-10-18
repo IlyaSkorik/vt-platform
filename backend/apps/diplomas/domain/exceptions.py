@@ -12,6 +12,7 @@ __all__ = [
     "AssignmentNotFoundError",
     "DiplomaError",
     "DiplomaNotFoundError",
+    "DocumentJobNotFoundError",
     "DuplicateDiplomaError",
     "FieldTypeNotAllowedError",
     "NominationNotFoundError",
@@ -81,6 +82,12 @@ class PrintTemplateNotReadyError(DiplomaError):
     """Raised when a print package is requested but the template has no PDF."""
 
     code = "print_template_not_ready"
+
+
+class DocumentJobNotFoundError(DiplomaError):
+    """Raised when a referenced non-registry generation job does not exist."""
+
+    code = "document_job_not_found"
 
 
 class PrintJobNotFoundError(DiplomaError):
