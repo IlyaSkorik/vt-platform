@@ -95,10 +95,9 @@ class TestPolicyTable:
 class TestThankYouFields:
     """What a courtesy letter may carry — and, mostly, what it may not."""
 
-    def test_keeps_only_who_taught_whom_and_where(self) -> None:
+    def test_keeps_only_who_is_thanked_and_which_event_it_was(self) -> None:
         assert policy_for(DocumentType.THANK_YOU).field_types == frozenset(
             {
-                "participant_name",
                 "teacher",
                 "competition_name",
                 "competition_date",
@@ -109,7 +108,18 @@ class TestThankYouFields:
 
     @pytest.mark.parametrize(
         "field_type",
-        ["award_degree", "qr_block", "diploma_issue_date", "nomination_block", "work", "organization", "participant_age"],
+        [
+            "award_degree",
+            "qr_block",
+            "diploma_issue_date",
+            "nomination_block",
+            "work",
+            "organization",
+            "participant_age",
+            # One letter covers every act this teacher entered in the genre, so any
+            # one participant printed on it would be an arbitrary pick.
+            "participant_name",
+        ],
     )
     def test_refuses_what_belongs_to_a_diploma(self, field_type: str) -> None:
         thanks = policy_for(DocumentType.THANK_YOU)

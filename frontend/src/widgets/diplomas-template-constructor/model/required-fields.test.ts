@@ -39,12 +39,30 @@ describe("withRequiredFields", () => {
     expect(withRequiredFields([], "DIPLOMA").map((item) => item.type)).toEqual(["qr_block"]);
   });
 
-  it("returns the very same array when nothing is missing", () => {
+  it("returns the very same array when nothing is missing and nothing is stale", () => {
     // Reference equality is what the editor uses to decide it has nothing to save.
     const saved = [field("participant_name"), field("qr_block")];
 
     expect(withRequiredFields(saved, "DIPLOMA")).toBe(saved);
-    expect(withRequiredFields(saved, "THANK_YOU")).toBe(saved);
+  });
+
+  it("drops a field the kind may no longer carry", () => {
+    // A thank-you letter is issued once per teacher, so it names no participant —
+    // and the backend refuses to save a layout that still carries the field.
+    const saved = [field("participant_name"), field("teacher")];
+
+    expect(withRequiredFields(saved, "THANK_YOU").map((item) => item.type)).toEqual(["teacher"]);
+  });
+
+  it("drops a stale field and still adds what the kind requires", () => {
+    // A template retyped from letter to diploma: the member field goes, the QR
+    // block it now needs arrives.
+    const saved = [field("member_name"), field("teacher")];
+
+    expect(withRequiredFields(saved, "DIPLOMA").map((item) => item.type)).toEqual([
+      "teacher",
+      "qr_block",
+    ]);
   });
 
   it("puts the QR block in the lower-right corner rather than over the name", () => {

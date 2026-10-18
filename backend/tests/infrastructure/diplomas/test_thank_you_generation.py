@@ -86,7 +86,10 @@ def _backing_pdf() -> bytes:
 
 
 def _template(name: str, document_type: str, *, with_qr: bool = False) -> TemplateModel:
-    """A template of one kind, with a backing PDF and a name field.
+    """A template of one kind, with a backing PDF and the one name field it may carry.
+
+    A thank-you letter names its recipient and nothing else; a diploma belongs to
+    the performance and names the performer.
 
     ``with_qr`` inserts the QR row **directly**, bypassing
     :func:`replace_template_layout` — which now refuses a QR on a thank-you
@@ -97,13 +100,14 @@ def _template(name: str, document_type: str, *, with_qr: bool = False) -> Templa
     template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type=document_type, name=name)
     key = default_storage.save(f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf()))
     TemplateDocumentModel.objects.create(template=template, file_reference=f"/media/{key}", page_count=1)
+    addressed = document_type == "THANK_YOU"
     composition.replace_template_layout(
         template_id=str(template.id),
         fields=[
             {
                 "page": 1,
-                "type": "participant_name",
-                "binding": "participant.display_name",
+                "type": "teacher" if addressed else "participant_name",
+                "binding": "teacher.display_name" if addressed else "participant.display_name",
                 "x": 0.1,
                 "y": 0.1,
                 "width": 0.6,
@@ -236,7 +240,7 @@ class TestGeneration:
         text = page.extract_text()
         assert "Подлинность гарантирована!" not in text
         assert "VT-" not in text
-        assert "Иванов Иван" in text
+        assert "Петрова Ольга" in text
 
     def test_has_no_registry_row_and_no_token(self) -> None:
         competition = _competition()
@@ -309,7 +313,6 @@ class TestLayoutRules:
                     "height": 0.1,
                 }
                 for field_type, binding in [
-                    ("participant_name", "participant.display_name"),
                     ("teacher", "teacher.display_name"),
                     ("competition_name", "competition.title"),
                     ("competition_date", "competition.date"),
@@ -319,7 +322,7 @@ class TestLayoutRules:
             ],
         )
 
-        assert len(layout["fields"]) == 6
+        assert len(layout["fields"]) == 5
 
     def test_a_diploma_template_still_accepts_everything(self) -> None:
         template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Диплом")

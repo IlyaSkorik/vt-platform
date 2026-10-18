@@ -34,11 +34,12 @@ export function TemplateConstructorLayout({
   template,
   initialFields,
 }: TemplateConstructorLayoutProps): React.JSX.Element {
-  // A diploma must print its number and verification link, so the editor completes
-  // the loaded layout with the QR block when it carries none — a template created
-  // before this rule gains it here rather than issuing another sheet nobody can
-  // check. Completing it means the state differs from what is stored, hence dirty:
-  // Save lights up and the guard warns on the way out.
+  // The loaded layout is reconciled with what its kind may print: a diploma gains
+  // the QR block when it carries none (its number and verification link are printed
+  // nowhere else), and a template still holding a field its kind has given up loses
+  // it — the backend refuses to save such a layout, so leaving it would block every
+  // further edit. Either change means the state differs from what is stored, hence
+  // dirty: Save lights up and the guard warns on the way out.
   const seededFields = useMemo(
     () => withRequiredFields(initialFields, template.type),
     [initialFields, template.type],

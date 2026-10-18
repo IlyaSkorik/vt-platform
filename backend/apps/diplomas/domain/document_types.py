@@ -59,14 +59,18 @@ INDIVIDUAL_DIPLOMA_FIELD_TYPES: frozenset[str] = DIPLOMA_FIELD_TYPES | {"member_
 
 #: What a thank-you letter may carry, and nothing more.
 #:
-#: A courtesy letter names who is being thanked, who taught them, and which event
-#: it was for. It ranks nothing, so there is no degree; it is not registered, so
-#: there is no number, issue date or QR; and it does not itemise the entry, so no
-#: age, organization, nomination or work. Free text carries whatever wording the
+#: A courtesy letter names who is being thanked and which event it was for. It
+#: ranks nothing, so there is no degree; it is not registered, so there is no
+#: number, issue date or QR; and it does not itemise an entry, so no age,
+#: organization, nomination or work. Free text carries whatever wording the
 #: organizer wants.
+#:
+#: **No participant either.** A letter is addressed to a teacher, and a teacher's
+#: entries are many — naming one of their participants on it would be an arbitrary
+#: choice presented as a fact. A layout that still carries the field (placed before
+#: this rule) simply does not print it.
 THANK_YOU_FIELD_TYPES: frozenset[str] = frozenset(
     {
-        "participant_name",
         "teacher",
         "competition_name",
         "competition_date",
