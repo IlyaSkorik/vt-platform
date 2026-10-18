@@ -859,3 +859,74 @@ class TestNominationLevelTemplates:
 
         with pytest.raises(TemplateNotAssignedError):
             _generate(competition, vocals)
+
+
+class TestLettersIssuedBeforeTheRuleChanged:
+    """Generation over a table that already holds letters from the old rule.
+
+    Until letters became one-per-teacher a document was identified by its entry,
+    so the table of a live festival holds one row per (entry, teacher). The
+    migration backfills the genre onto those rows and collapses the duplicates;
+    these cover what a run does afterwards — and what it does with a row the
+    backfill could not place, which the migration deliberately leaves with no
+    genre at all.
+    """
+
+    def _fixture(self) -> tuple[CompetitionModel, CategoryModel, list[SubmissionModel]]:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        entries = [
+            _submission(competition, vocals, "Иванов Иван", teachers=[_teacher("Петрова")]),
+            _submission(competition, vocals, "Петров Пётр", teachers=[_teacher("Петрова")]),
+        ]
+        _assign(competition, vocals, _template("Благодарность", "THANK_YOU"))
+        return competition, vocals, entries
+
+    def _legacy_letter(
+        self,
+        competition: CompetitionModel,
+        submission: SubmissionModel,
+        recipient: str,
+        *,
+        category: CategoryModel | None,
+    ) -> IssuedDocumentModel:
+        """One row as the old rule wrote it: keyed by entry, genre absent or filled in."""
+        return IssuedDocumentModel.objects.create(
+            document_type="THANK_YOU",
+            competition_id=competition.id,
+            submission_id=submission.id,
+            category_id=category.id if category is not None else None,
+            template_id=TemplateModel.objects.get(type="THANK_YOU").id,
+            recipient=recipient,
+            snapshot={"participant": {"display_name": "Иванов Иван"}, "teachers": [{"name": recipient}]},
+            pdf_path=f"/media/diplomas/documents/{competition.id}/thank_you/legacy-{submission.id}.pdf",
+            published_at=_NOW,
+        )
+
+    def test_a_backfilled_letter_is_reused_rather_than_issued_again(self) -> None:
+        competition, vocals, entries = self._fixture()
+        kept = self._legacy_letter(competition, entries[0], "Петрова Ольга", category=vocals)
+
+        result = _generate(competition, vocals)
+
+        assert (result.created, result.regenerated) == (0, 0)
+        assert [row.id for row in IssuedDocumentModel.objects.all()] == [kept.id]
+
+    def test_a_letter_with_no_genre_on_it_is_adopted_rather_than_reissued(self) -> None:
+        """A row the backfill left unplaced is still this genre's letter.
+
+        It is recognised by the entry it is anchored to, and the run stamps the
+        genre onto it. Issuing a fresh one instead would not merely duplicate it:
+        the per-entry constraint still stands, so the insert would fail and take
+        the whole request — and the organizer's — down with it.
+        """
+        competition, vocals, entries = self._fixture()
+        orphan = self._legacy_letter(competition, entries[0], "Петрова Ольга", category=None)
+
+        result = _generate(competition, vocals)
+
+        assert (result.created, result.regenerated) == (0, 0)
+        kept = IssuedDocumentModel.objects.get()
+        assert kept.id == orphan.id
+        # Stamped on the way through, so the next run finds it the direct way.
+        assert kept.category_id == vocals.id

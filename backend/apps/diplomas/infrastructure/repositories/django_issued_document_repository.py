@@ -12,6 +12,9 @@ rather than as a second thank-you letter for the same teacher.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
+
+from django.db.models import Q
 
 from apps.diplomas.domain.document_types import DocumentType
 from apps.diplomas.domain.issued_document import IssuedDocument
@@ -51,32 +54,29 @@ class DjangoIssuedDocumentRepository:
         ).first()
         return IssuedDocumentMapper.to_domain(model) if model is not None else None
 
-    def get_for_recipient(
+    def list_for_genre(
         self,
         *,
         competition_id: uuid.UUID,
         category_id: uuid.UUID,
         document_type: DocumentType,
-        recipient: str,
-    ) -> IssuedDocument | None:
-        """The live document this genre already holds for that person, or None.
+        submission_ids: Sequence[uuid.UUID],
+    ) -> list[IssuedDocument]:
+        """Every live document of this kind the genre already holds, oldest first.
 
-        Matched case-insensitively on the recipient: the name comes from whatever
-        the applicants typed into their entries, and «Иванова» beside «иванова»
-        is one teacher asking to be thanked once, not two people.
+        One query for the whole run rather than one per recipient, and it has to
+        reach rows written before the genre was part of a document's identity —
+        those carry no ``category_id`` and are recognised by the entry they are
+        anchored to. Oldest first so that, where a genre somehow holds two for one
+        person, the run keeps the one whose URL has been in circulation longest.
         """
-        model = (
-            IssuedDocumentModel.objects.filter(
-                competition_id=competition_id,
-                category_id=category_id,
-                document_type=document_type.value,
-                recipient__iexact=recipient,
-                deleted_at__isnull=True,
-            )
-            .order_by("created_at")
-            .first()
-        )
-        return IssuedDocumentMapper.to_domain(model) if model is not None else None
+        rows = IssuedDocumentModel.objects.filter(
+            Q(category_id=category_id) | Q(category_id__isnull=True, submission_id__in=list(submission_ids)),
+            competition_id=competition_id,
+            document_type=document_type.value,
+            deleted_at__isnull=True,
+        ).order_by("created_at")
+        return [IssuedDocumentMapper.to_domain(row) for row in rows]
 
     def list_by_competition(self, competition_id: uuid.UUID, document_type: DocumentType) -> list[IssuedDocument]:
         """Every live document of this kind for a competition, newest first."""

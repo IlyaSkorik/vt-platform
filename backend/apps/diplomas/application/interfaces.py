@@ -228,20 +228,28 @@ class IssuedDocumentRepository(Protocol):
         ``recipient`` is empty for a kind issued once per performance."""
         ...
 
-    def get_for_recipient(
+    def list_for_genre(
         self,
         *,
         competition_id: uuid.UUID,
         category_id: uuid.UUID,
         document_type: DocumentType,
-        recipient: str,
-    ) -> IssuedDocument | None:
-        """The live document this genre already holds for that person, or None.
+        submission_ids: Sequence[uuid.UUID],
+    ) -> list[IssuedDocument]:
+        """Every live document of this kind the genre already holds.
 
         The lookup a per-teacher kind is identified by: a teacher who entered five
         acts in one genre holds **one** letter, and which of the five it was built
         from is an implementation detail of the run that created it. Asking by
         submission would find none of the other four and issue a sixth.
+
+        Two sources, because the genre was not always part of a document's
+        identity. A row stamped with ``category_id`` is this genre's outright; a
+        row with none but anchored to one of ``submission_ids`` was issued for
+        this genre before the column existed, and is this genre's too. Missing the
+        second kind is not merely a duplicate: the run would insert a second row
+        against the same entry and break the per-entry constraint, failing the
+        whole request.
         """
         ...
 

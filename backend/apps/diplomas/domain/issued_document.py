@@ -128,6 +128,18 @@ class IssuedDocument:
             version=version,
         )
 
+    def placed_in(self, category_id: uuid.UUID, *, now: datetime) -> IssuedDocument:
+        """Record which genre this document belongs to; unchanged if it already says so.
+
+        An addressed document written before the genre was part of its identity
+        carries none, and the run that finds it again is the one that knows which
+        genre it was issued for. Stamping it there converges the table instead of
+        leaving a row that every future run has to rediscover by its entry.
+        """
+        if self.category_id == category_id:
+            return self
+        return replace(self, category_id=category_id, updated_at=now, version=self.version + 1)
+
     @property
     def is_published(self) -> bool:
         """Whether the participant can see this document."""

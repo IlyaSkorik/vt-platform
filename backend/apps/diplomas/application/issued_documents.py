@@ -262,13 +262,27 @@ class IssuedDocumentGenerationService:
         without_template = 0
         published = 0
         items: list[tuple[str, str]] = []
-        # Recipients this run has already produced a document for. An addressed kind
-        # issues one per person per genre, and the entries of one teacher are walked
-        # one after another here — without this the second of them would look up a
-        # row the first has only just inserted, which works, and then a run over a
-        # genre whose teacher appears five times would still render five times.
-        handled: set[str] = set()
         entries = self._snapshots.list_submission_ids(competition_id, category_id=category_id)
+        # What the genre already holds, by recipient — one read for the whole run.
+        #
+        # An addressed kind issues one document per person per genre, and a
+        # teacher's entries are walked one after another here, so the loop needs to
+        # recognise on the second entry what it did on the first. Keeping it in a
+        # dict rather than re-querying also means a teacher with five entries is
+        # rendered once rather than five times. For a kind issued per performance
+        # the register stays empty and the per-entry lookup below is used instead.
+        held: dict[str, IssuedDocument] = {}
+        if policy.per_teacher:
+            for existing in self._repository.list_for_genre(
+                competition_id=competition_id,
+                category_id=category_id,
+                document_type=document_type,
+                submission_ids=entries,
+            ):
+                held.setdefault(_recipient_key(existing.recipient), existing)
+        # Recipients this run has already dealt with, so a teacher met again on a
+        # later entry is passed over rather than re-rendered.
+        handled: set[str] = set()
         # One lookup for the whole genre: which nomination each entry performs in
         # decides which of the genre's templates its sheet is printed on.
         discipline_of = self._snapshots.discipline_ids(entries)
@@ -302,15 +316,17 @@ class IssuedDocumentGenerationService:
                         # issuing a second one is exactly what this run must not do.
                         continue
                     handled.add(key)
-                    # Asked for by person and genre, not by entry: the letter this
-                    # teacher already holds was built from whichever of their acts a
-                    # previous run reached first, and that is still their letter.
-                    document = self._repository.get_for_recipient(
-                        competition_id=built.competition_id,
-                        category_id=category_id,
-                        document_type=document_type,
-                        recipient=recipient,
-                    )
+                    # Looked up by person, not by entry: the letter this teacher
+                    # already holds was built from whichever of their acts a previous
+                    # run reached first, and that is still their letter.
+                    document = held.get(key)
+                    if document is not None and document.category_id != category_id:
+                        # Issued before the genre was part of a document's identity.
+                        # Stamping it now is what keeps the next run from rediscovering
+                        # it the hard way — and what keeps this one from inserting a
+                        # second row against an entry that already has one.
+                        document = document.placed_in(category_id, now=now)
+                        self._repository.update(document)
                 else:
                     document = self._repository.get_for_submission(submission_id, document_type, recipient)
                 if document is None:
@@ -326,6 +342,8 @@ class IssuedDocumentGenerationService:
                         category_id=category_id,
                     )
                     self._repository.add(document)
+                    if policy.per_teacher:
+                        held[_recipient_key(recipient)] = document
                     created += 1
                 elif document.pdf_path and not force:
                     # Nothing to render — but there may still be something to do: a
