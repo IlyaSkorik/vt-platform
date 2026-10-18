@@ -5,6 +5,7 @@ import {
   type DocumentSlot,
   type PrintPackageNomination,
   resolveMediaUrl,
+  useDocumentJob,
   useGenerateDocumentsMutation,
   usePrintJob,
   usePrintPackageSummary,
@@ -37,6 +38,10 @@ export function GenerationSection(): React.JSX.Element {
   const [touched, setTouched] = useState(false);
   const [force, setForce] = useState(false);
   const [thanksAction, setThanksAction] = useState<ThanksAction | null>(null);
+  const [thanksJobId, setThanksJobId] = useState<string | null>(null);
+  // The last job already reported to the organizer, so the polling effect toasts
+  // once rather than on every refetch after it settles.
+  const [reportedJobId, setReportedJobId] = useState<string | null>(null);
   const [thanksZipUrl, setThanksZipUrl] = useState<string | null>(null);
 
   const competitionsQuery = useCompetitionsList();
@@ -44,11 +49,14 @@ export function GenerationSection(): React.JSX.Element {
   const startMutation = useStartPrintPackageMutation();
   const generateThanks = useGenerateDocumentsMutation();
   const jobQuery = usePrintJob(jobId || undefined);
+  const thanksJobQuery = useDocumentJob(thanksJobId || undefined);
 
   // Reset the picker state when the competition changes.
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset only on competition change
   useEffect(() => {
     setJobId(null);
+    setThanksJobId(null);
+    setThanksAction(null);
     setSelected(new Set());
     setTouched(false);
     setForce(false);
@@ -128,11 +136,12 @@ export function GenerationSection(): React.JSX.Element {
   }
 
   /**
-   * Generate thank-you letters for the nominations that have a letter template.
+   * Queue a thank-you run for the genres that have a letter template.
    *
-   * A separate action, not a variant of the print package: letters are unnumbered
-   * and unverifiable, so there is no job to poll — each nomination's own THANK_YOU
-   * template renders straight to the participants' cabinets.
+   * A separate action, not a variant of the print package — letters are unnumbered
+   * and unverifiable, and each genre renders on its own THANK_YOU template — but
+   * the same shape of wait: the run takes minutes on a festival, so the request
+   * only hands back a job and {@link useDocumentJob} polls it.
    *
    * The two actions differ in what they *do* with the result, not in what they
    * render: `publish` puts the letters in the participants' cabinets, `print` only
@@ -142,9 +151,10 @@ export function GenerationSection(): React.JSX.Element {
   async function handleGenerateThanks(action: ThanksAction): Promise<void> {
     const forPrint = action === "print";
     setThanksAction(action);
+    setThanksJobId(null);
     setThanksZipUrl(null);
     try {
-      const summary = await generateThanks.mutateAsync({
+      const queued = await generateThanks.mutateAsync({
         competitionId,
         categoryIds: thanksRun.categoryIds,
         documentType: "THANK_YOU",
@@ -152,36 +162,65 @@ export function GenerationSection(): React.JSX.Element {
         bundle: forPrint,
         publish: !forPrint,
       });
-      const skipped =
-        (summary.withoutRecipient ? ` Заявок без педагога: ${summary.withoutRecipient}.` : "") +
-        // Entries in a nomination that assigns no letter template, inside a genre
-        // that has no default either. Named rather than quietly missing from the
-        // count: the organizer is the only one who can assign the template.
-        (summary.withoutTemplate ? ` Заявок без шаблона: ${summary.withoutTemplate}.` : "");
-      if (forPrint) {
-        setThanksZipUrl(summary.zipUrl);
-        toast.success(
-          summary.documents > 0
-            ? `Благодарностей в архиве: ${summary.documents}. Скачайте ZIP для печати — в личных кабинетах они не опубликованы.${skipped}`
-            : `Нечего печатать: благодарности не сформированы.${skipped}`,
-        );
-        return;
-      }
-      toast.success(
-        summary.published > 0
-          ? `Благодарностей опубликовано: ${summary.published}. Они доступны участникам в личном кабинете.${skipped}`
-          : `Новых благодарностей нет: все уже опубликованы.${skipped}`,
-      );
+      setThanksJobId(queued.jobId);
     } catch (error) {
-      const message =
-        error instanceof ApiError
-          ? (error.problem?.detail ?? "Не удалось сформировать благодарности.")
-          : "Не удалось сформировать благодарности.";
-      toast.error(message);
-    } finally {
+      // Only what the request itself could refuse — the run's own failures arrive
+      // on the job, below.
+      toast.error(errorText(error, "Не удалось запустить формирование благодарностей."));
       setThanksAction(null);
     }
   }
+
+  const thanksJob = thanksJobQuery.data;
+  const thanksRunning =
+    generateThanks.isPending ||
+    thanksJob?.status === "PENDING" ||
+    thanksJob?.status === "RUNNING" ||
+    // Queued, but the first poll has not come back yet.
+    (thanksJobId !== null && thanksJob === undefined);
+
+  /**
+   * Report a settled run exactly once.
+   *
+   * What was asked for is read off the job rather than off local state: the job
+   * is the record of the request, so a reload mid-run still reports the right
+   * thing when the poll finally lands.
+   */
+  useEffect(() => {
+    if (!thanksJob || thanksJob.jobId === reportedJobId) {
+      return;
+    }
+    if (thanksJob.status !== "COMPLETED" && thanksJob.status !== "FAILED") {
+      return;
+    }
+    setReportedJobId(thanksJob.jobId);
+    setThanksAction(null);
+    if (thanksJob.status === "FAILED" || !thanksJob.result) {
+      toast.error(thanksJob.error ?? "Не удалось сформировать благодарности.");
+      return;
+    }
+    const summary = thanksJob.result;
+    const skipped =
+      (summary.withoutRecipient ? ` Заявок без педагога: ${summary.withoutRecipient}.` : "") +
+      // Entries in a nomination that assigns no letter template, inside a genre
+      // that has no default either. Named rather than quietly missing from the
+      // count: the organizer is the only one who can assign the template.
+      (summary.withoutTemplate ? ` Заявок без шаблона: ${summary.withoutTemplate}.` : "");
+    if (thanksJob.bundle) {
+      setThanksZipUrl(summary.zipUrl);
+      toast.success(
+        summary.documents > 0
+          ? `Благодарностей в архиве: ${summary.documents}. Скачайте ZIP для печати — в личных кабинетах они не опубликованы.${skipped}`
+          : `Нечего печатать: благодарности не сформированы.${skipped}`,
+      );
+      return;
+    }
+    toast.success(
+      summary.published > 0
+        ? `Благодарностей опубликовано: ${summary.published}. Они доступны участникам в личном кабинете.${skipped}`
+        : `Новых благодарностей нет: все уже опубликованы.${skipped}`,
+    );
+  }, [thanksJob, reportedJobId]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -259,7 +298,7 @@ export function GenerationSection(): React.JSX.Element {
                   label="Сформировать и опубликовать в ЛК"
                   variant="outline"
                   pending={thanksAction === "publish"}
-                  busy={generateThanks.isPending}
+                  busy={thanksRunning}
                   run={thanksRun}
                   missingHint="без шаблона благодарности"
                   onRun={() => void handleGenerateThanks("publish")}
@@ -268,7 +307,7 @@ export function GenerationSection(): React.JSX.Element {
                   label="Сформировать и скачать для печати"
                   variant="outline"
                   pending={thanksAction === "print"}
-                  busy={generateThanks.isPending}
+                  busy={thanksRunning}
                   run={thanksRun}
                   missingHint="без шаблона благодарности"
                   onRun={() => void handleGenerateThanks("print")}
@@ -279,6 +318,8 @@ export function GenerationSection(): React.JSX.Element {
                   действие публикует их в личных кабинетах участников. Второе только готовит файлы и
                   отдаёт ZIP со всеми благодарностями выбранных жанров (по папкам жанров) — в
                   кабинетах они не появятся, пока не нажать «Сформировать и опубликовать в ЛК».
+                  Формирование идёт в фоне: страницу можно не держать открытой, результат придёт,
+                  когда прогон закончится.
                 </p>
                 {thanksZipUrl ? (
                   <div>

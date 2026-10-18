@@ -5,6 +5,7 @@ import { useCompetitionsList } from "@/features/competitions";
 import {
   type DocumentSlot,
   type PrintPackageNomination,
+  useDocumentJob,
   useGenerateDocumentsMutation,
   usePrintJob,
   usePrintPackageSummary,
@@ -22,6 +23,7 @@ vi.mock("@/features/competitions", async (importOriginal) => ({
 
 vi.mock("@/features/diplomas", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/diplomas")>()),
+  useDocumentJob: vi.fn(),
   useGenerateDocumentsMutation: vi.fn(),
   usePrintJob: vi.fn(),
   usePrintPackageSummary: vi.fn(),
@@ -81,21 +83,65 @@ const DANCE_ROW: PrintPackageNomination = {
 
 const NOMINATIONS: PrintPackageNomination[] = [VOCALS_ROW, DANCE_ROW];
 
-function setup(nominations: PrintPackageNomination[] = NOMINATIONS): {
+const THANKS_JOB_ID = "01900000-0000-7000-8000-0000000000j1";
+const THANKS_ZIP = "/media/diplomas/documents/c1/thank_you/ThankYou.zip";
+
+/**
+ * The job a settled thank-you run comes back as.
+ *
+ * ``bundle`` is read off the request the component made, because that is what
+ * the real job records and what the page reads to decide between "published to
+ * the cabinets" and "here is the archive".
+ */
+function settledJob(request: { bundle?: boolean } | undefined, status = "COMPLETED"): unknown {
+  return {
+    jobId: THANKS_JOB_ID,
+    competitionId: COMPETITION_ID,
+    categoryIds: [VOCALS],
+    documentType: "THANK_YOU",
+    force: false,
+    bundle: Boolean(request?.bundle),
+    publish: !request?.bundle,
+    status,
+    error: status === "FAILED" ? "Для этого жанра не назначен шаблон такого типа." : null,
+    result:
+      status === "COMPLETED"
+        ? {
+            documentType: "THANK_YOU",
+            created: 2,
+            regenerated: 0,
+            withoutRecipient: 0,
+            withoutTemplate: 0,
+            nominations: 1,
+            documents: 2,
+            published: 2,
+            zipUrl: THANKS_ZIP,
+          }
+        : null,
+    createdAt: "2026-05-20T12:00:00Z",
+    updatedAt: "2026-05-20T12:00:05Z",
+  };
+}
+
+function setup(
+  nominations: PrintPackageNomination[] = NOMINATIONS,
+  jobStatus = "COMPLETED",
+): {
   startPrintPackage: ReturnType<typeof vi.fn>;
   generateThanks: ReturnType<typeof vi.fn>;
 } {
   const startPrintPackage = vi.fn();
-  const generateThanks = vi.fn().mockResolvedValue({
-    documentType: "THANK_YOU",
-    created: 2,
-    regenerated: 0,
-    withoutRecipient: 0,
-    nominations: 1,
-    documents: 2,
-    published: 2,
-    zipUrl: "/media/diplomas/documents/c1/thank_you/ThankYou.zip",
-  });
+  // The request answers with a job; the outcome arrives by polling it.
+  const generateThanks = vi.fn().mockResolvedValue({ jobId: THANKS_JOB_ID });
+
+  // Nothing to poll until a run is queued, so the hook is asked with `undefined`
+  // on first render and with the id afterwards — exactly as the component does.
+  vi.mocked(useDocumentJob).mockImplementation(
+    (jobId?: string) =>
+      ({
+        data: jobId ? settledJob(generateThanks.mock.lastCall?.[0], jobStatus) : undefined,
+      }) as unknown as ReturnType<typeof useDocumentJob>,
+  );
 
   vi.mocked(useCompetitionsList).mockReturnValue({
     data: [{ id: COMPETITION_ID, title: "Восходящие таланты" }],
@@ -185,10 +231,7 @@ describe("GenerationSection", () => {
       publish: false,
     });
     const download = await screen.findByRole("link", { name: /Скачать ZIP с благодарностями/ });
-    expect(download).toHaveAttribute(
-      "href",
-      expect.stringContaining("/media/diplomas/documents/c1/thank_you/ThankYou.zip"),
-    );
+    expect(download).toHaveAttribute("href", expect.stringContaining(THANKS_ZIP));
   });
 
   it("still sends every diploma-ready nomination to the print package", async () => {
@@ -206,6 +249,21 @@ describe("GenerationSection", () => {
       { competitionId: COMPETITION_ID, categoryIds: [VOCALS, DANCE], force: false },
       expect.anything(),
     );
+  });
+
+  it("keeps the letter actions busy until the queued run settles", async () => {
+    setup(NOMINATIONS, "RUNNING");
+    render(<GenerationSection />);
+    await chooseCompetition();
+
+    await userEvent.setup().click(screen.getByRole("button", { name: /скачать для печати/ }));
+
+    // The run is the worker's now, so the page waits on the job rather than on the
+    // request — and offers no archive before there is one.
+    expect(await screen.findByRole("button", { name: /скачать для печати/ })).toBeDisabled();
+    expect(
+      screen.queryByRole("link", { name: /Скачать ZIP с благодарностями/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("disables a run with nothing of its kind to produce", async () => {

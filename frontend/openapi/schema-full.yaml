@@ -7990,17 +7990,21 @@ paths:
     post:
       operationId: diplomas_generate_documents
       description: |-
-        Generate non-registry documents (thank-you letters) for chosen nominations.
+        Start generating non-registry documents (thank-you letters) for chosen genres.
 
-        Each nomination is generated from its own assigned template of that kind, so
+        Each genre is generated from its own assigned template of that kind, so
         «Вокал» may print a blue thank-you while «Хореография» prints a gold one.
         Diplomas are not generated here — they keep the numbered print-package path,
         which this endpoint does not touch.
 
-        Synchronous: there is no numbering to serialize, so the run completes in the
-        request. ``publish`` and ``bundle`` are independent: a run can publish the
-        documents to the participants' cabinets, hand back a ZIP to print from, or —
-        for a print-only run — generate them without publishing anything yet.
+        Asynchronous, like the print package and for the same reason: the run renders
+        a PDF per recipient and uploads a ZIP, which outlasts any connection between
+        the organizer and the worker. The response is the job; poll it at
+        ``/staff/diplomas/documents/jobs/<id>`` until it completes.
+
+        ``publish`` and ``bundle`` are independent: a run can publish the documents to
+        the participants' cabinets, hand back a ZIP to print from, or — for a
+        print-only run — generate them without publishing anything yet.
       tags:
       - Diplomas
       requestBody:
@@ -8016,11 +8020,30 @@ paths:
               $ref: '#/components/schemas/GenerateDocumentsRequest'
         required: true
       responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentJobResponse'
+          description: ''
+  /api/v1/staff/diplomas/documents/jobs/{job_id}:
+    get:
+      operationId: diplomas_get_document_job
+      description: Poll a document-generation job's status and result.
+      parameters:
+      - in: path
+        name: job_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Diplomas
+      responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GenerateDocumentsResponse'
+                $ref: '#/components/schemas/DocumentJobResponse'
           description: ''
   /api/v1/staff/diplomas/fonts:
     get:
@@ -15055,6 +15078,64 @@ components:
           type: string
       required:
       - requestId
+    DocumentJobResponse:
+      type: object
+      description: |-
+        A document-generation job's status and result (poll until COMPLETED/FAILED).
+
+        ``result`` is the run's own summary, carried whole: a client that already knew
+        how to read a finished run reads the same object, only later. It is null while
+        the job is pending or running, and stays null on a failure — where ``error``
+        says what went wrong instead.
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        competitionId:
+          type: string
+          format: uuid
+        categoryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        documentType:
+          $ref: '#/components/schemas/GeneratedDocumentTypeEnum'
+        force:
+          type: boolean
+        bundle:
+          type: boolean
+        publish:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/Status54aEnum'
+        result:
+          oneOf:
+          - $ref: '#/components/schemas/GenerateDocumentsResponse'
+          - type: 'null'
+        error:
+          type:
+          - string
+          - 'null'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - bundle
+      - categoryIds
+      - competitionId
+      - createdAt
+      - documentType
+      - error
+      - force
+      - jobId
+      - publish
+      - result
+      - status
+      - updatedAt
     DocumentSlot:
       type: object
       description: One genre's readiness and forecast for a single document type.
@@ -15306,7 +15387,7 @@ components:
             type: string
             format: uuid
         documentType:
-          $ref: '#/components/schemas/GenerateDocumentsRequestDocumentTypeEnum'
+          $ref: '#/components/schemas/GeneratedDocumentTypeEnum'
         force:
           type: boolean
           default: false
@@ -15320,11 +15401,6 @@ components:
       - categoryIds
       - competitionId
       - documentType
-    GenerateDocumentsRequestDocumentTypeEnum:
-      enum:
-      - THANK_YOU
-      type: string
-      description: '* `THANK_YOU` - THANK_YOU'
     GenerateDocumentsResponse:
       type: object
       description: |-
@@ -15363,6 +15439,11 @@ components:
       - withoutRecipient
       - withoutTemplate
       - zipUrl
+    GeneratedDocumentTypeEnum:
+      enum:
+      - THANK_YOU
+      type: string
+      description: '* `THANK_YOU` - THANK_YOU'
     GenerationRunResponse:
       type: object
       description: |-
@@ -17451,7 +17532,7 @@ components:
         force:
           type: boolean
         status:
-          $ref: '#/components/schemas/PrintJobResponseStatusEnum'
+          $ref: '#/components/schemas/Status54aEnum'
         created:
           type: integer
         skipped:
@@ -17482,18 +17563,6 @@ components:
       - status
       - updatedAt
       - zipUrl
-    PrintJobResponseStatusEnum:
-      enum:
-      - PENDING
-      - RUNNING
-      - COMPLETED
-      - FAILED
-      type: string
-      description: |-
-        * `PENDING` - PENDING
-        * `RUNNING` - RUNNING
-        * `COMPLETED` - COMPLETED
-        * `FAILED` - FAILED
     PrintPackageNomination:
       type: object
       description: |-
@@ -20492,6 +20561,18 @@ components:
         force:
           type: boolean
           default: false
+    Status54aEnum:
+      enum:
+      - PENDING
+      - RUNNING
+      - COMPLETED
+      - FAILED
+      type: string
+      description: |-
+        * `PENDING` - PENDING
+        * `RUNNING` - RUNNING
+        * `COMPLETED` - COMPLETED
+        * `FAILED` - FAILED
     StatusEe1Enum:
       enum:
       - DRAFT

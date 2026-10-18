@@ -1,7 +1,7 @@
 import type {
   AssignmentResponse,
   DiplomaResponse,
-  GenerateDocumentsResponse,
+  DocumentJobResponse,
   GenerationRunResponse,
   LayoutResponse,
   PreviewApplication,
@@ -63,8 +63,8 @@ export const unwrapPrintJob = (body: unknown): PrintJobResponse =>
 export const unwrapPrintSummary = (body: unknown): PrintPackageSummaryResponse =>
   unwrapItem<PrintPackageSummaryResponse>(body);
 
-export const unwrapGeneratedDocuments = (body: unknown): GenerateDocumentsResponse =>
-  unwrapItem<GenerateDocumentsResponse>(body);
+export const unwrapDocumentJob = (body: unknown): DocumentJobResponse =>
+  unwrapItem<DocumentJobResponse>(body);
 
 export const unwrapGenerationRuns = (body: unknown): GenerationRunResponse[] =>
   unwrapList<GenerationRunResponse>(body);

@@ -18,6 +18,7 @@ export {
   useDiplomaRegistry,
   useDiplomaTemplate,
   useDiplomaTemplates,
+  useDocumentJob,
   useGenerateDocumentsMutation,
   useGenerationArchive,
   usePreviewApplications,
