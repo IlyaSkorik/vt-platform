@@ -321,6 +321,11 @@ SPECTACULAR_SETTINGS = {
         # with itself as well as with unrelated `value` fields elsewhere. Same reason as
         # above: an unpinned name gets a hash suffix that moves as the schema grows.
         "ProtocolStatusEnum": "apps.results.presentation.api.v1.serializers.PROTOCOL_STATUS_VALUES",
+        # The kinds this API generates directly. Pinned for the same reason: it is
+        # named by both the generation request and the job that reports the run, so
+        # without this the shared component gets a hash suffix — and the generated
+        # client's type is renamed by any unrelated change to the schema.
+        "GeneratedDocumentTypeEnum": "apps.diplomas.presentation.api.v1.diplomas.serializers.GENERATED_DOCUMENT_TYPES",
     },
 }
 
