@@ -6,7 +6,13 @@
  */
 export { type ActingOrganization, actingOrganizationStore } from "./acting-organization";
 export { apiClient, toApiError } from "./client";
-export { DEFAULT_LOCALE, DOWNLOAD_TIMEOUT_MS, HEADER, uploadTimeoutMs } from "./config";
+export {
+  DEFAULT_LOCALE,
+  DOWNLOAD_TIMEOUT_MS,
+  GENERATION_TIMEOUT_MS,
+  HEADER,
+  uploadTimeoutMs,
+} from "./config";
 export { filenameFromDisposition, saveAuthenticatedDownload } from "./download";
 export {
   ApiError,
@@ -14,6 +20,7 @@ export {
   type ProblemDetails,
   type ProblemFieldError,
 } from "./error";
+export { type ApiRequestOptions, withTimeout } from "./orval-mutator";
 export { createQueryClient } from "./query-client";
 export { refreshAccessToken } from "./refresh";
 export {

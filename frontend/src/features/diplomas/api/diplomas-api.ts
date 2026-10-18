@@ -5,7 +5,14 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { type ApiError, apiClient, toApiError, uploadTimeoutMs } from "@/shared/api";
+import {
+  type ApiError,
+  apiClient,
+  GENERATION_TIMEOUT_MS,
+  toApiError,
+  uploadTimeoutMs,
+  withTimeout,
+} from "@/shared/api";
 import {
   diplomasAssignmentsList,
   diplomasCreateAssignment,
@@ -442,6 +449,12 @@ export interface GenerateDocumentsPayload {
  * the response already carries the outcome (and the archive, when asked for) and
  * there is no job to poll. Each nomination uses its own assigned template of the kind.
  * `publish` and `bundle` are independent — see {@link GenerateDocumentsPayload}.
+ *
+ * Which is exactly why this call sets its own deadline. The server renders a PDF
+ * per teacher and bundles the ZIP inside the request, so the wait is the work —
+ * not a slow answer — and the transport's 15-second ceiling cut a festival-sized
+ * run off mid-render, reporting a failure for a run the server went on to finish.
+ * See `GENERATION_TIMEOUT_MS`.
  */
 export function useGenerateDocumentsMutation(): UseMutationResult<
   GenerateDocumentsResponse,
@@ -458,14 +471,17 @@ export function useGenerateDocumentsMutation(): UseMutationResult<
       bundle = false,
       publish = true,
     }) => {
-      const response = await diplomasGenerateDocuments({
-        competitionId,
-        categoryIds,
-        documentType: documentType as GenerateDocumentsRequestDocumentTypeEnum,
-        force,
-        bundle,
-        publish,
-      });
+      const response = await diplomasGenerateDocuments(
+        {
+          competitionId,
+          categoryIds,
+          documentType: documentType as GenerateDocumentsRequestDocumentTypeEnum,
+          force,
+          bundle,
+          publish,
+        },
+        withTimeout(GENERATION_TIMEOUT_MS),
+      );
       return unwrapGeneratedDocuments(response.data);
     },
     onSuccess: (_summary, { competitionId }) => {
