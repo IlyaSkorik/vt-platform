@@ -75,6 +75,11 @@ class RegistrationNominationView:
     #: decides whether the genre is selectable at all once ``registration_open`` is off.
     waitlist_enabled: bool = False
     waitlist_open: bool = False
+    #: Whether the organizer has frozen everything an applicant may change in this
+    #: genre. Here rather than on the competition because the freeze is thrown per
+    #: genre: вокал is being turned into a programme while хореография still takes
+    #: entries, and one flag over both would close the wrong one.
+    editing_locked: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -186,15 +191,16 @@ class RegistrationView:
     #: field is absent rather than shown and rejected. When true the note stays
     #: optional — it is an opportunity to say something, never a question to answer.
     participant_comment_enabled: bool
-    #: Whether the organizer has frozen everything the applicant may change. Separate
-    #: from ``registration_open`` because it is a different sentence to the applicant —
-    #: a closed registration still leaves the files open, and this is what does not.
-    editing_locked: bool
-    #: Whether each kind of file may be attached *right now*: the upload deadline, the
-    #: freeze and a finished festival, resolved into the one answer the cabinet needs.
-    #: Projected rather than derived on the client from ``deadlines`` below, because
-    #: the dates alone cannot see the freeze and the client would be rebuilding a rule
-    #: the backend already owns — and getting a different answer the day it mattered.
+    #: Whether each kind of file is admitted by the *calendar* right now: the upload
+    #: deadline and a finished festival, resolved into one answer. Projected rather
+    #: than derived on the client from ``deadlines`` below, because the client would
+    #: be rebuilding a rule the backend already owns — and getting a different answer
+    #: the day it mattered.
+    #:
+    #: The organizer's freeze is deliberately not folded in: it belongs to a genre
+    #: (``nominations[].editing_locked``) and these windows belong to the festival, so
+    #: the cabinet combines the two for the entry in front of it. See
+    #: ``entities/application/lib/file-windows.ts``.
     music_upload_open: bool
     media_upload_open: bool
     document_upload_open: bool
@@ -258,6 +264,7 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
             registration_closes_at=category.registration.closes_at,
             waitlist_enabled=category.is_waitlist_enabled,
             waitlist_open=competition.accepts_waitlist_for(category.id, now),
+            editing_locked=category.is_editing_locked,
         )
         for category in competition.categories
     ]
@@ -359,7 +366,6 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
         allow_multiple_performances=settings.allow_multiple_performances,
         collect_payer_details=settings.collect_payer_details,
         participant_comment_enabled=settings.participant_comment_enabled,
-        editing_locked=competition.is_editing_locked,
         music_upload_open=competition.is_music_upload_allowed(now),
         media_upload_open=competition.is_media_upload_allowed(now),
         document_upload_open=competition.is_document_upload_allowed(now),

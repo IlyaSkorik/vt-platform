@@ -42,7 +42,8 @@ from apps.applications.application.interfaces import (
     SubmissionRepository,
     UuidGenerator,
 )
-from apps.applications.domain.value_objects import AttachmentId, AttachmentType, FileReference
+from apps.applications.domain.entities import Submission
+from apps.applications.domain.value_objects import AttachmentId, AttachmentType, FileReference, NominationId
 
 from ._support import (
     ensure_editing_unlocked,
@@ -93,7 +94,7 @@ class AttachFileHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
-        ensure_editing_unlocked(catalog=self._catalog, competition_id=submission.competition_id)
+        ensure_editing_unlocked(catalog=self._catalog, competition_id=submission.competition_id, nomination_id=_nomination_of(submission))
 
         try:
             attachment_type = AttachmentType(command.attachment_type)
@@ -112,6 +113,17 @@ class AttachFileHandler:
         self._submissions.save(submission)
         self._events.publish(domain_events)
         return SubmissionOperationResultDto.of(submission, tuple(domain_events))
+
+
+def _nomination_of(submission: Submission) -> NominationId | None:
+    """The genre this entry's files belong to, or ``None`` before it has a performance.
+
+    The freeze is a genre's, so every file path has to say which genre it is asking
+    about. An entry with no performance is in none, and the rest of the path refuses
+    it on its own terms.
+    """
+    performance = submission.performance
+    return performance.nomination_id if performance is not None else None
 
 
 class RemoveAttachmentHandler:
@@ -140,7 +152,7 @@ class RemoveAttachmentHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
-        ensure_editing_unlocked(catalog=self._catalog, competition_id=submission.competition_id)
+        ensure_editing_unlocked(catalog=self._catalog, competition_id=submission.competition_id, nomination_id=_nomination_of(submission))
         with translate_domain_errors():
             attachment_id = AttachmentId.from_string(command.attachment_id)
             domain_events = submission.remove_attachment(attachment_id=attachment_id, now=now)
@@ -185,7 +197,7 @@ class UploadAttachmentHandler:
 
         # Before the deadline question, because the freeze closes the window too and
         # «срок истёк» would be a lie about a date that has not arrived.
-        ensure_editing_unlocked(catalog=self._catalog, competition_id=submission.competition_id)
+        ensure_editing_unlocked(catalog=self._catalog, competition_id=submission.competition_id, nomination_id=_nomination_of(submission))
         if not self._catalog.accepts_upload(competition_id=submission.competition_id, attachment_kind=attachment_type.value, now=now):
             raise DeadlinePassedError("Срок загрузки файлов этого типа истёк.")
 

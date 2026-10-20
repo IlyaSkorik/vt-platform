@@ -227,6 +227,10 @@ class CategoryView:
     registration_closes_at: datetime | None
     registration_stopped: bool
     waitlist_enabled: bool
+    #: When the organizer froze applicant-side editing in this genre, or ``None``.
+    #: Beside the window rather than inside it: the client renders it as a state
+    #: («правки закрыты»), not as a date in the schedule.
+    editing_locked_at: datetime | None
 
     @classmethod
     def of(cls, category: Category) -> CategoryView:
@@ -239,6 +243,7 @@ class CategoryView:
             registration_closes_at=category.registration.closes_at,
             registration_stopped=category.is_registration_stopped,
             waitlist_enabled=category.is_waitlist_enabled,
+            editing_locked_at=category.editing_locked_at,
         )
 
 
@@ -781,10 +786,6 @@ class CompetitionDetailView:
     contacts_config: ContactsConfigView
     landing_config: LandingConfigView
     deadlines: DeadlinesView
-    #: When the organizer froze applicant-side editing, or ``None``. Beside the
-    #: deadlines rather than inside them: the client renders it as a state («правки
-    #: закрыты»), not as a date in the schedule.
-    editing_locked_at: datetime | None
     participation_formats: tuple[ParticipationFormatView, ...]
     categories: tuple[CategoryView, ...]
     disciplines: tuple[DisciplineView, ...]
@@ -837,7 +838,6 @@ class CompetitionDetailView:
                 document_upload=deadlines.document_upload,
                 correction=deadlines.correction,
             ),
-            editing_locked_at=competition.editing_locked_at,
             participation_formats=tuple(ParticipationFormatView.of(f) for f in competition.participation_formats),
             categories=tuple(CategoryView.of(c) for c in competition.categories),
             disciplines=tuple(DisciplineView.of(d) for d in competition.disciplines),

@@ -41,6 +41,10 @@ class CategoryModel(BasePersistenceModel):
     registration_stopped = models.BooleanField(default=False)
     # Keep a queue once the above has shut the door; see Category.accepts_waitlist.
     waitlist_enabled = models.BooleanField(default=False)
+    # The organizer's freeze on everything applicants may still change in this genre.
+    # Not a deadline (those are announced in advance; this is thrown on the day), and
+    # per nomination for the same reason the window above is — see ``Category``.
+    editing_locked_at = models.DateTimeField(null=True, blank=True, default=None)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "competitions_category"

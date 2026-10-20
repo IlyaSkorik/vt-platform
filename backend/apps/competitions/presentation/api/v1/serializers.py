@@ -784,6 +784,8 @@ class _CategorySerializer(serializers.Serializer[dict[str, object]]):
     registrationClosesAt = serializers.DateTimeField(source="registration_closes_at", allow_null=True)
     registrationStopped = serializers.BooleanField(source="registration_stopped")
     waitlistEnabled = serializers.BooleanField(source="waitlist_enabled")
+    #: When this genre's editing was frozen, or null while it is open.
+    editingLockedAt = serializers.DateTimeField(source="editing_locked_at", allow_null=True)
 
 
 class _DisciplineSerializer(serializers.Serializer[dict[str, object]]):
@@ -914,7 +916,6 @@ class CompetitionDetailSerializer(serializers.Serializer[dict[str, object]]):
     #: ``null`` while applicants may still change what the calendar lets them; an
     #: instant once the organizer froze the festival. The staff console reads it as
     #: the state of one button, so it travels as the date rather than a flag.
-    editingLockedAt = serializers.DateTimeField(source="editing_locked_at", allow_null=True)
     participationFormats = _ParticipationFormatSerializer(source="participation_formats", many=True)
     categories = _CategorySerializer(many=True)
     disciplines = _DisciplineSerializer(many=True)

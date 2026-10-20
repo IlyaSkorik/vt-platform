@@ -176,13 +176,16 @@ class DjangoCompetitionCatalog:
         # replaced. They ride the upload window now, like the track they go with.
         return competition.is_media_upload_allowed(now)
 
-    def is_editing_locked(self, *, competition_id: CompetitionId) -> bool:
+    def is_editing_locked(self, *, competition_id: CompetitionId, nomination_id: NominationId | None) -> bool:
         # An unreadable competition is not a frozen one: the use case asking this has
         # already refused an unknown competition on its own terms, and answering
         # "locked" here would turn a missing row into a message about the organizer
-        # having closed something.
+        # having closed something. An entry with no genre yet is not in a frozen one
+        # either — the freeze is a genre's, and this entry is in none.
+        if nomination_id is None:
+            return False
         competition = self._load(competition_id)
-        return competition is not None and competition.is_editing_locked
+        return competition is not None and competition.is_editing_locked_for(CompCategoryId.from_uuid(nomination_id.value))
 
     def participation_policy(
         self,

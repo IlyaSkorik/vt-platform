@@ -287,10 +287,10 @@ def test_the_file_windows_are_open_while_the_festival_is() -> None:
 
     data = APIClient().get(_url(competition_id)).data["data"]
 
-    assert data["editingLocked"] is False
     assert data["musicUploadOpen"] is True
     assert data["mediaUploadOpen"] is True
     assert data["documentUploadOpen"] is True
+    assert [nomination["editingLocked"] for nomination in data["nominations"]] == [False]
 
 
 def test_the_material_stays_open_after_registration_closes() -> None:
@@ -318,18 +318,39 @@ def test_the_material_stays_open_after_registration_closes() -> None:
     assert data["musicUploadOpen"] is True
 
 
-def test_the_organizer_s_freeze_closes_everything_in_the_projection() -> None:
+def test_the_organizer_s_freeze_shows_on_the_genre_it_was_thrown_on() -> None:
+    """Замок — жанровый, и проекция говорит это жанром, а не фестивалем.
+
+    Сроки загрузки при этом остаются фестивальными и открытыми: они одни на все
+    жанры, и свернуть в них замок вокала значило бы закрыть загрузку хореографии.
+    Складывает два ответа кабинет — он знает, про какой номер спрашивает.
+    """
     from datetime import UTC, datetime
 
-    from apps.competitions.infrastructure.models import CompetitionModel
+    from apps.competitions.infrastructure.models import CategoryModel
 
-    competition_id = _seed_competition()
-    CompetitionModel.objects.filter(id=competition_id).update(editing_locked_at=datetime(2026, 5, 1, tzinfo=UTC))
+    competition_id = _seed_competition(waitlisted_nomination=True)
+    CategoryModel.objects.filter(competition_id=competition_id, name="Vocal").update(
+        editing_locked_at=datetime(2026, 5, 1, tzinfo=UTC)
+    )
 
     data = APIClient().get(_url(competition_id)).data["data"]
 
-    assert data["editingLocked"] is True
+    frozen = {nomination["name"]: nomination for nomination in data["nominations"]}
+    assert frozen["Vocal"]["editingLocked"] is True
+    assert frozen["Vocal"]["registrationOpen"] is False
+    assert frozen["Choreography"]["editingLocked"] is False
+    assert data["musicUploadOpen"] is True
+
+
+def test_the_festival_s_door_shuts_once_every_genre_is_frozen() -> None:
+    from datetime import UTC, datetime
+
+    from apps.competitions.infrastructure.models import CategoryModel
+
+    competition_id = _seed_competition()
+    CategoryModel.objects.filter(competition_id=competition_id).update(editing_locked_at=datetime(2026, 5, 1, tzinfo=UTC))
+
+    data = APIClient().get(_url(competition_id)).data["data"]
+
     assert data["registrationOpen"] is False
-    assert data["musicUploadOpen"] is False
-    assert data["mediaUploadOpen"] is False
-    assert data["documentUploadOpen"] is False

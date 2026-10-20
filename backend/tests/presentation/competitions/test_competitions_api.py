@@ -245,29 +245,52 @@ def test_nomination_waitlist_is_switched_on_and_off_in_place(staff_client: APICl
     assert disabled.data["data"]["categories"][0]["waitlistEnabled"] is False
 
 
-def test_editing_lock_is_thrown_and_lifted_on_the_festival(staff_client: APIClient) -> None:
-    """Одна кнопка на фестиваль: POST закрывает правки, DELETE возвращает календарь.
+def test_editing_lock_is_thrown_and_lifted_on_one_genre(staff_client: APIClient) -> None:
+    """POST закрывает правки в жанре, DELETE возвращает ему календарь.
 
-    Не по жанрам, в отличие от приёма: её нажимают, когда список сведён и из него
-    собирают программу, и «кроме вокала» в этот момент никто не имеет в виду.
+    По жанрам, как и приём: фестиваль заканчивает жанры по одному, и тот, из
+    которого в субботу собирают программу, должен замереть, не трогая соседний.
     """
     competition_id = _create_competition(staff_client).data["data"]["id"]
     detail = f"/api/v1/competitions/{competition_id}"
-    assert staff_client.get(detail).data["data"]["editingLockedAt"] is None
+    created = staff_client.post(f"{detail}/categories", {"name": "Vocal"}, format="json")
+    category_id = created.data["data"]["categories"][0]["id"]
+    assert created.data["data"]["categories"][0]["editingLockedAt"] is None
 
-    locked = staff_client.post(f"{detail}/editing-lock", {}, format="json")
+    locked = staff_client.post(f"{detail}/categories/{category_id}/editing-lock", {}, format="json")
     assert locked.status_code == 200, locked.data
-    assert locked.data["data"]["editingLockedAt"] is not None
+    assert locked.data["data"]["categories"][0]["editingLockedAt"] is not None
 
-    lifted = staff_client.delete(f"{detail}/editing-lock")
+    lifted = staff_client.delete(f"{detail}/categories/{category_id}/editing-lock")
     assert lifted.status_code == 200, lifted.data
-    assert lifted.data["data"]["editingLockedAt"] is None
+    assert lifted.data["data"]["categories"][0]["editingLockedAt"] is None
+
+
+def test_freezing_one_genre_leaves_its_neighbour_open(staff_client: APIClient) -> None:
+    competition_id = _create_competition(staff_client).data["data"]["id"]
+    detail = f"/api/v1/competitions/{competition_id}"
+    staff_client.post(f"{detail}/categories", {"name": "Vocal"}, format="json")
+    created = staff_client.post(f"{detail}/categories", {"name": "Хореография"}, format="json")
+    by_name = {c["name"]: c["id"] for c in created.data["data"]["categories"]}
+
+    locked = staff_client.post(f"{detail}/categories/{by_name['Vocal']}/editing-lock", {}, format="json")
+
+    frozen = {c["name"]: c["editingLockedAt"] for c in locked.data["data"]["categories"]}
+    assert frozen["Vocal"] is not None
+    assert frozen["Хореография"] is None
 
 
 def test_editing_lock_is_not_a_participant_s_button(participant_client: APIClient, staff_client: APIClient) -> None:
-    competition_id = _create_competition(staff_client).data["data"]["id"]
+    created = _create_competition(staff_client)
+    competition_id = created.data["data"]["id"]
+    category = staff_client.post(f"/api/v1/competitions/{competition_id}/categories", {"name": "Vocal"}, format="json")
+    category_id = category.data["data"]["categories"][0]["id"]
 
-    refused = participant_client.post(f"/api/v1/competitions/{competition_id}/editing-lock", {}, format="json")
+    refused = participant_client.post(
+        f"/api/v1/competitions/{competition_id}/categories/{category_id}/editing-lock",
+        {},
+        format="json",
+    )
 
     assert refused.status_code in {403, 404}, refused.data
 

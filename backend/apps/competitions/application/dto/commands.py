@@ -242,16 +242,18 @@ class ResumeNominationRegistrationCommand:
 
 @dataclass(frozen=True, slots=True)
 class LockSubmissionEditingCommand:
-    """Freeze everything applicants may still change, festival-wide."""
+    """Freeze everything applicants may still change in one nomination."""
 
     competition_id: str
+    category_id: str
 
 
 @dataclass(frozen=True, slots=True)
 class UnlockSubmissionEditingCommand:
-    """Lift the freeze; the calendar governs again."""
+    """Lift one nomination's freeze; its calendar governs again."""
 
     competition_id: str
+    category_id: str
 
 
 @dataclass(frozen=True, slots=True)

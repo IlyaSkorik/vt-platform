@@ -242,14 +242,18 @@ class CompetitionCatalog(Protocol):
         """
         ...
 
-    def is_editing_locked(self, *, competition_id: CompetitionId) -> bool:
-        """Whether the organizer has frozen everything applicants may still change.
+    def is_editing_locked(self, *, competition_id: CompetitionId, nomination_id: NominationId | None) -> bool:
+        """Whether the organizer has frozen what applicants may change in this genre.
 
-        The festival-wide switch thrown when the list is final — it closes the file
+        The switch thrown when a genre's list is final — it closes that genre's file
         windows early and ends editing regardless of status, including for an entry
-        the organizer had returned for correction. Unknown competitions answer
-        ``False``: a missing row must not be reported to an applicant as a decision
-        somebody made.
+        the organizer had returned for correction. Per genre because a festival
+        finishes its genres one at a time.
+
+        ``nomination_id`` of ``None`` means the question has no genre yet — an entry
+        with no performance on it — and answers ``False``: there is nothing in a
+        genre to have been frozen. Unknown competitions answer ``False`` too: a
+        missing row must not be reported to an applicant as a decision somebody made.
         """
         ...
 

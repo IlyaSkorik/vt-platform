@@ -42,11 +42,11 @@ def _seed(*, other_genre_open: bool) -> tuple[str, str, str]:
     return str(competition.id), str(vocal.id), str(choreography.id)
 
 
-def _lock_editing(competition_id: str) -> None:
-    """Кнопка организатора «закрыть редактирование полностью», на уровне строки."""
-    from apps.competitions.infrastructure.models import CompetitionModel
+def _lock_editing(category_id: str) -> None:
+    """Кнопка организатора «закрыть редактирование» в жанре, на уровне строки."""
+    from apps.competitions.infrastructure.models import CategoryModel
 
-    CompetitionModel.objects.filter(pk=competition_id).update(editing_locked_at=datetime(2026, 5, 1, tzinfo=UTC))
+    CategoryModel.objects.filter(pk=category_id).update(editing_locked_at=datetime(2026, 5, 1, tzinfo=UTC))
 
 
 def _upload_a_track(client: APIClient, submission_id: str) -> Any:
@@ -202,12 +202,12 @@ class TestFilesOutliveTheCloseOfRegistration:
 
 
 class TestTheOrganizerClosesEverything:
-    """Вторая кнопка: та, после которой не остаётся и файлов."""
+    """Вторая кнопка: та, после которой не остаётся и файлов. И она — жанровая."""
 
     def test_the_track_is_refused_too(self, applicant: APIClient) -> None:
         competition_id, vocal, _choreography = _seed(other_genre_open=True)
         _application_id, submission_id = _place_order(applicant, competition_id, vocal)
-        _lock_editing(competition_id)
+        _lock_editing(vocal)
 
         refused = _upload_a_track(applicant, submission_id)
 
@@ -218,7 +218,18 @@ class TestTheOrganizerClosesEverything:
     def test_the_number_and_the_order_both_say_so(self, applicant: APIClient) -> None:
         competition_id, vocal, _choreography = _seed(other_genre_open=True)
         application_id, submission_id = _place_order(applicant, competition_id, vocal)
-        _lock_editing(competition_id)
+        _lock_editing(vocal)
 
         assert applicant.get(f"/api/v1/submissions/{submission_id}").data["data"]["editable"] is False
         assert applicant.get(f"/api/v1/applications/{application_id}").data["data"]["editable"] is False
+
+    def test_a_frozen_genre_leaves_an_entry_in_another_one_alone(self, applicant: APIClient) -> None:
+        """Ради этого замок и переехал на жанр: вокал печатают, хореография грузит."""
+        competition_id, vocal, choreography = _seed(other_genre_open=True)
+        _application_id, submission_id = _place_order(applicant, competition_id, choreography)
+        _lock_editing(vocal)
+
+        accepted = _upload_a_track(applicant, submission_id)
+
+        assert accepted.status_code in {200, 201}, accepted.data
+        assert applicant.get(f"/api/v1/submissions/{submission_id}").data["data"]["editable"] is True

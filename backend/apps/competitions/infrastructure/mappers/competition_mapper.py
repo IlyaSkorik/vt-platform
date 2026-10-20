@@ -233,7 +233,6 @@ class CompetitionMapper:
                 document_upload=model.deadline_document_upload,
                 correction=model.deadline_correction,
             ),
-            editing_locked_at=model.editing_locked_at,
             categories=[
                 Category.rehydrate(
                     category_id=CategoryId.from_uuid(row.id),
@@ -246,6 +245,7 @@ class CompetitionMapper:
                     ),
                     registration_stopped=row.registration_stopped,
                     waitlist_enabled=row.waitlist_enabled,
+                    editing_locked_at=row.editing_locked_at,
                 )
                 for row in categories
             ],
@@ -399,7 +399,6 @@ class CompetitionMapper:
             "deadline_music_upload": deadlines.music_upload,
             "deadline_document_upload": deadlines.document_upload,
             "deadline_correction": deadlines.correction,
-            "editing_locked_at": entity.editing_locked_at,
             "settings": settings_to_json(entity.settings),
             "contacts_config": contacts_config_to_json(entity.contacts_config),
             "landing_config": landing_config_to_json(entity.landing_config),
@@ -430,6 +429,7 @@ class CompetitionMapper:
                     registration_closes_at=c.registration.closes_at,
                     registration_stopped=c.is_registration_stopped,
                     waitlist_enabled=c.is_waitlist_enabled,
+                    editing_locked_at=c.editing_locked_at,
                 )
                 for c in entity.categories
             ],

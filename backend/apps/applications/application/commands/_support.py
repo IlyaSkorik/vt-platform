@@ -158,7 +158,7 @@ def submission_editable_now(
     # Then the organizer's switch, before any calendar rule: the freeze is the one
     # thing that outranks «организатор вернул на доработку» below, because it is
     # thrown precisely when the organizer has stopped wanting corrections at all.
-    if catalog.is_editing_locked(competition_id=submission.competition_id):
+    if catalog.is_editing_locked(competition_id=submission.competition_id, nomination_id=target):
         return False
     if submission.status is SubmissionStatus.REQUIRES_CORRECTION:
         return True
@@ -169,21 +169,39 @@ def submission_editable_now(
     return catalog.accepts_submissions(competition_id=submission.competition_id, nomination_id=target, now=now)
 
 
-def _locked_or_closed(catalog: CompetitionCatalog, competition_id: CompetitionId) -> str:
-    """Which of the two refusals this is — a frozen festival, or one past its dates."""
-    return _EDITING_LOCKED if catalog.is_editing_locked(competition_id=competition_id) else _EDITING_CLOSED
+def _nomination_of(submission: Submission, override: NominationId | None) -> NominationId | None:
+    """The genre a refusal about this entry is about — the edit's, else the entry's."""
+    if override is not None:
+        return override
+    performance = submission.performance
+    return performance.nomination_id if performance is not None else None
 
 
-def ensure_editing_unlocked(*, catalog: CompetitionCatalog, competition_id: CompetitionId) -> None:
-    """Assert the organizer has not frozen the festival, else refuse.
+def _locked_or_closed(catalog: CompetitionCatalog, competition_id: CompetitionId, *nomination_ids: NominationId | None) -> str:
+    """Which of the two refusals this is — a frozen genre, or one past its dates.
+
+    Takes every genre the refusal could be about, because an order spans them: if any
+    one of them is frozen, that is what the applicant ran into, and «приём закрыт» on
+    a genre still taking entries is the message that sends them to argue about dates
+    with the person who did not change any.
+    """
+    frozen = any(catalog.is_editing_locked(competition_id=competition_id, nomination_id=nomination_id) for nomination_id in nomination_ids)
+    return _EDITING_LOCKED if frozen else _EDITING_CLOSED
+
+
+def ensure_editing_unlocked(*, catalog: CompetitionCatalog, competition_id: CompetitionId, nomination_id: NominationId | None) -> None:
+    """Assert the organizer has not frozen this entry's genre, else refuse.
 
     The file paths need this on its own. They deliberately do not ask
     :func:`ensure_submission_editable` — a track may be replaced long after the
     applicant stopped being able to touch anything else, which is the whole reason
-    the upload deadlines outlive the application one — so without this the one switch
-    that is supposed to close *everything* would leave the uploads open.
+    the upload deadlines outlive the application one — so without this the switch
+    that is supposed to close *everything in a genre* would leave its uploads open.
+
+    An entry with no performance yet has no genre and so no freeze to run into; the
+    rest of its path still refuses it on its own terms.
     """
-    if catalog.is_editing_locked(competition_id=competition_id):
+    if catalog.is_editing_locked(competition_id=competition_id, nomination_id=nomination_id):
         raise CompetitionClosedError(_EDITING_LOCKED)
 
 
@@ -222,7 +240,7 @@ def ensure_submission_editable(
         return
     if submission_editable_now(catalog=catalog, submission=submission, now=now, nomination_id=nomination_id):
         return
-    raise CompetitionClosedError(_locked_or_closed(catalog, submission.competition_id))
+    raise CompetitionClosedError(_locked_or_closed(catalog, submission.competition_id, _nomination_of(submission, nomination_id)))
 
 
 def ensure_order_editable(*, catalog: CompetitionCatalog, application: Application, now: datetime) -> None:
@@ -231,15 +249,24 @@ def ensure_order_editable(*, catalog: CompetitionCatalog, application: Applicati
     The order's counterpart to :func:`ensure_submission_editable`, and the same split:
     a ``DRAFT`` order is being assembled, so the waitlist counts as a door; a placed
     one is in the festival, and once registration is over its composition is settled.
-    The question is festival-wide because the things it guards are — a service, a
-    payer and a consent belong to the order, not to any one genre.
+
+    The calendar question stays festival-wide, because the things this guards are — a
+    service, a payer and a consent belong to the order, not to any one genre. **The
+    freeze does not**, and it is checked first: an order is frozen as soon as any one
+    of its performances is in a frozen genre. Вокал being turned into a programme
+    while хореография still takes entries is exactly when the organizer needs the
+    order settled, and leaving the payer editable because another genre is open would
+    let the documents move under the genre that is already printed.
     """
+    nominations = tuple(ref.nomination_id for ref in application.submission_refs)
+    if any(catalog.is_editing_locked(competition_id=application.competition_id, nomination_id=nomination_id) for nomination_id in nominations):
+        raise CompetitionClosedError(_EDITING_LOCKED)
     if application.status is ApplicationStatus.DRAFT:
         ensure_nomination_reachable(catalog=catalog, competition_id=application.competition_id, now=now)
         return
     if catalog.accepts_submissions(competition_id=application.competition_id, now=now):
         return
-    raise CompetitionClosedError(_locked_or_closed(catalog, application.competition_id))
+    raise CompetitionClosedError(_EDITING_CLOSED)
 
 
 def ensure_reviewer(organization: OrganizationReadModel, reviewer_id: ReviewerId) -> None:

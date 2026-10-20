@@ -293,6 +293,8 @@ class RegistrationNominationSerializer(serializers.Serializer[object]):
     registrationClosesAt = serializers.DateTimeField(source="registration_closes_at", allow_null=True)
     waitlistEnabled = serializers.BooleanField(source="waitlist_enabled")
     waitlistOpen = serializers.BooleanField(source="waitlist_open")
+    #: Whether the organizer has frozen what applicants may change in this genre.
+    editingLocked = serializers.BooleanField(source="editing_locked")
 
 
 class RegistrationDisciplineSerializer(serializers.Serializer[object]):
@@ -385,7 +387,6 @@ class RegistrationSerializer(serializers.Serializer[object]):
     #: The organizer's freeze, and what each file window says *today*. The cabinet
     #: shows uploads long after the wizard is over, so these travel with the same
     #: projection: one request already answers "can this applicant still act?".
-    editingLocked = serializers.BooleanField(source="editing_locked")
     musicUploadOpen = serializers.BooleanField(source="music_upload_open")
     mediaUploadOpen = serializers.BooleanField(source="media_upload_open")
     documentUploadOpen = serializers.BooleanField(source="document_upload_open")

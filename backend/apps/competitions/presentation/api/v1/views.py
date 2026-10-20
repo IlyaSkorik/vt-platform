@@ -659,17 +659,26 @@ class CompetitionViewSet(viewsets.ViewSet):
 
     @extend_schema(methods=["POST"], tags=[_TAG], operation_id="lockSubmissionEditing", request=None, responses=_detail_ok())
     @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="unlockSubmissionEditing", request=None, responses=_detail_ok())
-    @action(detail=True, methods=["post", "delete"], url_path="editing-lock")
-    def editing_lock(self, request: Request, pk: str) -> Response:
-        """Freeze (POST) or release (DELETE) everything applicants may still change.
+    @action(detail=True, methods=["post", "delete"], url_path=r"categories/(?P<category_id>[^/.]+)/editing-lock")
+    def editing_lock(self, request: Request, pk: str, category_id: str) -> Response:
+        """Freeze (POST) or release (DELETE) what applicants may change in one genre.
 
-        One switch for the whole festival, unlike registration, which is scheduled per
-        nomination: it is thrown when the list is final and the programme is about to
-        be built from it, and at that point "кроме вокала" is not a thing anybody means.
+        Beside this nomination's registration controls, and scheduled per nomination
+        for the same reason they are: a festival finishes its genres one at a time, and
+        the genre being turned into a programme on Saturday must be able to freeze
+        without closing the one still taking entries.
         """
         if request.method == "DELETE":
-            return self._run(UnlockSubmissionEditingHandler, UnlockSubmissionEditingCommand(competition_id=pk), request)
-        return self._run(LockSubmissionEditingHandler, LockSubmissionEditingCommand(competition_id=pk), request)
+            return self._run(
+                UnlockSubmissionEditingHandler,
+                UnlockSubmissionEditingCommand(competition_id=pk, category_id=category_id),
+                request,
+            )
+        return self._run(
+            LockSubmissionEditingHandler,
+            LockSubmissionEditingCommand(competition_id=pk, category_id=category_id),
+            request,
+        )
 
     @extend_schema(methods=["POST"], tags=[_TAG], operation_id="enableNominationWaitlist", request=None, responses=_detail_ok())
     @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="disableNominationWaitlist", request=None, responses=_detail_ok())
