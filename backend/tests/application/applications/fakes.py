@@ -114,6 +114,7 @@ class FakeCompetitionCatalog:
         auto_cancels_unpaid_orders: bool = True,
         waitlisting_nominations: frozenset[str] = frozenset(),
         closed_nominations: frozenset[str] = frozenset(),
+        editing_locked: bool = False,
     ) -> None:
         self.discount_percent = additional_performance_discount_percent
         self.multiple_performances = allows_multiple_performances
@@ -126,6 +127,9 @@ class FakeCompetitionCatalog:
         #: submission; only the first has a second door.
         self.waitlisting_nominations = waitlisting_nominations
         self.closed_nominations = closed_nominations
+        #: The organizer's festival-wide freeze. Off by default — it is a decision
+        #: somebody takes, so a test that does not mention it has not taken it.
+        self.editing_locked = editing_locked
         self.accepts_payment_flag = accepts_payment
         self.accepts_upload_flag = accepts_upload
         self.policy: SubmissionParticipationPolicy | None = (
@@ -154,6 +158,9 @@ class FakeCompetitionCatalog:
 
     def accepts_payment(self, *, competition_id: CompetitionId, now: datetime) -> bool:
         return self.accepts_payment_flag
+
+    def is_editing_locked(self, *, competition_id: CompetitionId) -> bool:
+        return self.editing_locked
 
     def accepts_upload(self, *, competition_id: CompetitionId, attachment_kind: str, now: datetime) -> bool:
         return self.accepts_upload_flag

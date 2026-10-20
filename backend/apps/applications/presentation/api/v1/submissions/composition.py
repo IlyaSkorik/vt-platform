@@ -179,7 +179,12 @@ def build_upload_attachment_handler() -> UploadAttachmentHandler:
 
 
 def build_remove_attachment_handler() -> RemoveAttachmentHandler:
-    return RemoveAttachmentHandler(submissions=DjangoSubmissionRepository(), clock=SystemClock(), events=NullEventPublisher())
+    return RemoveAttachmentHandler(
+        submissions=DjangoSubmissionRepository(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+        events=NullEventPublisher(),
+    )
 
 
 def build_upload_attachment_by_organizer_handler() -> UploadAttachmentByOrganizerHandler:

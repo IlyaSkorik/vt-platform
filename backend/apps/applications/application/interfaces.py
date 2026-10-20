@@ -242,6 +242,17 @@ class CompetitionCatalog(Protocol):
         """
         ...
 
+    def is_editing_locked(self, *, competition_id: CompetitionId) -> bool:
+        """Whether the organizer has frozen everything applicants may still change.
+
+        The festival-wide switch thrown when the list is final — it closes the file
+        windows early and ends editing regardless of status, including for an entry
+        the organizer had returned for correction. Unknown competitions answer
+        ``False``: a missing row must not be reported to an applicant as a decision
+        somebody made.
+        """
+        ...
+
     def participation_policy(
         self,
         *,

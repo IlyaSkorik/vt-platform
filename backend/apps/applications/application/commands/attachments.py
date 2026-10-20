@@ -5,6 +5,12 @@ competition's upload deadline, and the organizer's, which proves staff membershi
 does not. The split is the same one the content correction makes, for the same reason —
 the organizer is the person the files end up with when the form did not catch them, and
 that happens precisely after the deadline has passed.
+
+What the applicant's side deliberately does *not* ask is whether the entry is editable:
+the files outlive the rest of the entry on purpose, so that a festival whose
+registration closed on Monday still takes the backing track on Friday. The one thing
+that closes them early is the organizer's freeze, which every applicant path here
+checks for exactly that reason.
 """
 
 from __future__ import annotations
@@ -39,6 +45,7 @@ from apps.applications.application.interfaces import (
 from apps.applications.domain.value_objects import AttachmentId, AttachmentType, FileReference
 
 from ._support import (
+    ensure_editing_unlocked,
     ensure_owner,
     ensure_reviewer,
     load_submission,
@@ -71,11 +78,13 @@ class AttachFileHandler:
         self,
         *,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         clock: Clock,
         uuids: UuidGenerator,
         events: EventPublisher,
     ) -> None:
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
         self._uuids = uuids
         self._events = events
@@ -84,6 +93,7 @@ class AttachFileHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
+        ensure_editing_unlocked(catalog=self._catalog, competition_id=submission.competition_id)
 
         try:
             attachment_type = AttachmentType(command.attachment_type)
@@ -105,16 +115,24 @@ class AttachFileHandler:
 
 
 class RemoveAttachmentHandler:
-    """Use case: remove an attachment reference from the submission."""
+    """Use case: remove an attachment reference from the submission.
+
+    Takes the festival's freeze into account and nothing else about the calendar: a
+    file may be taken off for as long as it may be replaced, and an applicant who can
+    upload but not delete is an applicant with two tracks and no way to say which one
+    is the right one.
+    """
 
     def __init__(
         self,
         *,
         submissions: SubmissionRepository,
+        catalog: CompetitionCatalog,
         clock: Clock,
         events: EventPublisher,
     ) -> None:
         self._submissions = submissions
+        self._catalog = catalog
         self._clock = clock
         self._events = events
 
@@ -122,6 +140,7 @@ class RemoveAttachmentHandler:
         now = self._clock.utcnow()
         submission = load_submission(self._submissions, parse_submission_id(command.submission_id))
         ensure_owner(submission, parse_user_id(command.requested_by))
+        ensure_editing_unlocked(catalog=self._catalog, competition_id=submission.competition_id)
         with translate_domain_errors():
             attachment_id = AttachmentId.from_string(command.attachment_id)
             domain_events = submission.remove_attachment(attachment_id=attachment_id, now=now)
@@ -164,6 +183,9 @@ class UploadAttachmentHandler:
         ensure_owner(submission, parse_user_id(command.requested_by))
         attachment_type = _parse_attachment_type(command.attachment_type)
 
+        # Before the deadline question, because the freeze closes the window too and
+        # «срок истёк» would be a lie about a date that has not arrived.
+        ensure_editing_unlocked(catalog=self._catalog, competition_id=submission.competition_id)
         if not self._catalog.accepts_upload(competition_id=submission.competition_id, attachment_kind=attachment_type.value, now=now):
             raise DeadlinePassedError("Срок загрузки файлов этого типа истёк.")
 

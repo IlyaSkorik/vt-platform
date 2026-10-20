@@ -42,6 +42,13 @@ def _seed(*, other_genre_open: bool) -> tuple[str, str, str]:
     return str(competition.id), str(vocal.id), str(choreography.id)
 
 
+def _lock_editing(competition_id: str) -> None:
+    """Кнопка организатора «закрыть редактирование полностью», на уровне строки."""
+    from apps.competitions.infrastructure.models import CompetitionModel
+
+    CompetitionModel.objects.filter(pk=competition_id).update(editing_locked_at=datetime(2026, 5, 1, tzinfo=UTC))
+
+
 def _upload_a_track(client: APIClient, submission_id: str) -> Any:
     return client.post(
         f"/api/v1/submissions/{submission_id}/attachments",
@@ -192,3 +199,26 @@ class TestFilesOutliveTheCloseOfRegistration:
         )
 
         assert refused.status_code == 409, refused.data
+
+
+class TestTheOrganizerClosesEverything:
+    """Вторая кнопка: та, после которой не остаётся и файлов."""
+
+    def test_the_track_is_refused_too(self, applicant: APIClient) -> None:
+        competition_id, vocal, _choreography = _seed(other_genre_open=True)
+        _application_id, submission_id = _place_order(applicant, competition_id, vocal)
+        _lock_editing(competition_id)
+
+        refused = _upload_a_track(applicant, submission_id)
+
+        assert refused.status_code == 409, refused.data
+        # Приём ещё открыт — сказать «приём закрыт» было бы неправдой о датах.
+        assert "Организатор закрыл редактирование" in str(refused.data["detail"])
+
+    def test_the_number_and_the_order_both_say_so(self, applicant: APIClient) -> None:
+        competition_id, vocal, _choreography = _seed(other_genre_open=True)
+        application_id, submission_id = _place_order(applicant, competition_id, vocal)
+        _lock_editing(competition_id)
+
+        assert applicant.get(f"/api/v1/submissions/{submission_id}").data["data"]["editable"] is False
+        assert applicant.get(f"/api/v1/applications/{application_id}").data["data"]["editable"] is False

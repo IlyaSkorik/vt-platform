@@ -7,6 +7,7 @@ import pytest
 from apps.applications.application.commands.attachments import UploadAttachmentHandler
 from apps.applications.application.dto.commands import UploadAttachmentCommand
 from apps.applications.application.exceptions import (
+    CompetitionClosedError,
     DeadlinePassedError,
     FileTooLargeError,
     SubmissionNotFoundError,
@@ -39,11 +40,17 @@ def _draft_submission(applicant: UserId) -> Submission:
 
 
 class _Env:
-    def __init__(self, *, policy: FakeCompetitionUploadPolicy | None = None, accepts_upload: bool = True) -> None:
+    def __init__(
+        self,
+        *,
+        policy: FakeCompetitionUploadPolicy | None = None,
+        accepts_upload: bool = True,
+        editing_locked: bool = False,
+    ) -> None:
         self.submissions = FakeSubmissionRepository()
         self.storage = FakeFileStorage()
         self.policy = policy or FakeCompetitionUploadPolicy()
-        self.catalog = FakeCompetitionCatalog(accepts_upload=accepts_upload)
+        self.catalog = FakeCompetitionCatalog(accepts_upload=accepts_upload, editing_locked=editing_locked)
         self.handler = UploadAttachmentHandler(
             submissions=self.submissions,
             storage=self.storage,
@@ -107,6 +114,26 @@ def test_upload_rejected_after_upload_deadline() -> None:
     env.submissions.save(submission)
     with pytest.raises(DeadlinePassedError):
         env.handler.handle(_command(submission.id.json(), applicant.json()))
+    assert env.storage.saved == {}
+
+
+def test_upload_refused_once_the_organizer_froze_the_festival() -> None:
+    """Замок закрывает и загрузку — иначе он закрывал бы всё, кроме главного.
+
+    Сроки загрузки переживают закрытие приёма специально, так что без отдельной
+    проверки одна кнопка «закрыть редактирование полностью» оставляла бы файлы
+    открытыми ровно до своего дедлайна.
+    """
+    applicant = UserId.from_uuid(SubmissionId.generate().value)
+    env = _Env(editing_locked=True)
+    submission = _draft_submission(applicant)
+    env.submissions.save(submission)
+
+    with pytest.raises(CompetitionClosedError) as refusal:
+        env.handler.handle(_command(submission.id.json(), applicant.json()))
+
+    # Не «срок истёк»: срок может быть ещё через неделю, это решение организатора.
+    assert "организатор" in str(refusal.value).lower()
     assert env.storage.saved == {}
 
 

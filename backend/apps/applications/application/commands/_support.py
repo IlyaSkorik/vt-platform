@@ -38,6 +38,7 @@ from apps.applications.domain.value_objects import (
 )
 
 __all__ = [
+    "ensure_editing_unlocked",
     "ensure_nomination_reachable",
     "ensure_order_editable",
     "ensure_owner",
@@ -126,6 +127,11 @@ _ENTRY_STILL_BEING_MADE: Final = frozenset({SubmissionStatus.DRAFT, SubmissionSt
 #: to say that this is what is now over.
 _EDITING_CLOSED: Final = "Приём заявок закрыт — заявку больше нельзя редактировать. Напишите организатору."
 
+#: Said when the organizer threw the festival-wide switch. Deliberately not the
+#: sentence above: the applicant may well be looking at an upload window that is still
+#: days away, and "приём закрыт" would read as a mistake. Somebody decided this.
+_EDITING_LOCKED: Final = "Организатор закрыл редактирование заявок — изменить ничего нельзя, включая файлы. Напишите организатору."
+
 
 def submission_editable_now(
     *,
@@ -149,6 +155,11 @@ def submission_editable_now(
     # A performed or cancelled number is closed to everybody, calendar or no.
     if not submission.is_editable():
         return False
+    # Then the organizer's switch, before any calendar rule: the freeze is the one
+    # thing that outranks «организатор вернул на доработку» below, because it is
+    # thrown precisely when the organizer has stopped wanting corrections at all.
+    if catalog.is_editing_locked(competition_id=submission.competition_id):
+        return False
     if submission.status is SubmissionStatus.REQUIRES_CORRECTION:
         return True
     if submission.status in _ENTRY_STILL_BEING_MADE:
@@ -156,6 +167,24 @@ def submission_editable_now(
             competition_id=submission.competition_id, nomination_id=target, now=now
         )
     return catalog.accepts_submissions(competition_id=submission.competition_id, nomination_id=target, now=now)
+
+
+def _locked_or_closed(catalog: CompetitionCatalog, competition_id: CompetitionId) -> str:
+    """Which of the two refusals this is — a frozen festival, or one past its dates."""
+    return _EDITING_LOCKED if catalog.is_editing_locked(competition_id=competition_id) else _EDITING_CLOSED
+
+
+def ensure_editing_unlocked(*, catalog: CompetitionCatalog, competition_id: CompetitionId) -> None:
+    """Assert the organizer has not frozen the festival, else refuse.
+
+    The file paths need this on its own. They deliberately do not ask
+    :func:`ensure_submission_editable` — a track may be replaced long after the
+    applicant stopped being able to touch anything else, which is the whole reason
+    the upload deadlines outlive the application one — so without this the one switch
+    that is supposed to close *everything* would leave the uploads open.
+    """
+    if catalog.is_editing_locked(competition_id=competition_id):
+        raise CompetitionClosedError(_EDITING_LOCKED)
 
 
 def ensure_submission_editable(
@@ -193,7 +222,7 @@ def ensure_submission_editable(
         return
     if submission_editable_now(catalog=catalog, submission=submission, now=now, nomination_id=nomination_id):
         return
-    raise CompetitionClosedError(_EDITING_CLOSED)
+    raise CompetitionClosedError(_locked_or_closed(catalog, submission.competition_id))
 
 
 def ensure_order_editable(*, catalog: CompetitionCatalog, application: Application, now: datetime) -> None:
@@ -210,7 +239,7 @@ def ensure_order_editable(*, catalog: CompetitionCatalog, application: Applicati
         return
     if catalog.accepts_submissions(competition_id=application.competition_id, now=now):
         return
-    raise CompetitionClosedError(_EDITING_CLOSED)
+    raise CompetitionClosedError(_locked_or_closed(catalog, application.competition_id))
 
 
 def ensure_reviewer(organization: OrganizationReadModel, reviewer_id: ReviewerId) -> None:
