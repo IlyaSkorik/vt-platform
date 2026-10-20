@@ -74,6 +74,7 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
       documentUpload: null,
       correction: null,
     },
+    editingLockedAt: null,
     categories: [],
     disciplines: [],
     ageCategories: [],

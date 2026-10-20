@@ -48,6 +48,7 @@ function baseCompetition(overrides: Partial<CompetitionDetail> = {}): Competitio
       documentUpload: null,
       correction: null,
     },
+    editingLockedAt: null,
     participationFormats: [],
     categories: [],
     disciplines: [],

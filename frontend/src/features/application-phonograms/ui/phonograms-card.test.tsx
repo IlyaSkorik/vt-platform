@@ -15,7 +15,10 @@ import type {
 
 import { PhonogramsCard } from "./phonograms-card";
 
-vi.mock("@/entities/application", () => ({
+// The hooks are stubbed; the rule that decides whether files may be touched is not —
+// it is the thing under test here as much as the markup is.
+vi.mock("@/entities/application", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/entities/application")>()),
   useRegistration: vi.fn(),
   useSubmissionDetail: vi.fn(),
   useUploadSubmissionAttachment: vi.fn(),
@@ -56,6 +59,10 @@ beforeEach(() => {
   upload.mockResolvedValue(undefined);
   vi.mocked(useRegistration).mockReturnValue({
     data: {
+      editingLocked: false,
+      musicUploadOpen: true,
+      mediaUploadOpen: true,
+      documentUploadOpen: true,
       uploadRequirements: [
         {
           participationFormatId: FORMAT,
@@ -113,6 +120,32 @@ describe("PhonogramsCard", () => {
       "part-1.mp3",
       "part-2.mp3",
     ]);
+  });
+
+  it("says so and offers nothing once the organizer has frozen the festival", () => {
+    // Приём может быть ещё открыт, а срок загрузки — через неделю: единственный
+    // честный ответ здесь тот, что это решение организатора.
+    vi.mocked(useRegistration).mockReturnValue({
+      data: { editingLocked: true, musicUploadOpen: false, uploadRequirements: [] },
+    } as unknown as ReturnType<typeof useRegistration>);
+    stubSubmission([aTrack("t1", "uploads/2026/final.mp3")]);
+
+    render(<PhonogramsCard application={anApplication("ACCEPTED")} />);
+
+    expect(screen.getByText(/Организатор закрыл редактирование/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Добавить ещё/ })).not.toBeInTheDocument();
+  });
+
+  it("names the deadline, not the organizer, when it is the deadline that passed", () => {
+    vi.mocked(useRegistration).mockReturnValue({
+      data: { editingLocked: false, musicUploadOpen: false, uploadRequirements: [] },
+    } as unknown as ReturnType<typeof useRegistration>);
+    stubSubmission([]);
+
+    render(<PhonogramsCard application={anApplication("ACCEPTED")} />);
+
+    expect(screen.getByText(/Срок загрузки/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Загрузить фонограмму/ })).not.toBeInTheDocument();
   });
 
   it("hides the controls for a finished entry but keeps showing its tracks", () => {

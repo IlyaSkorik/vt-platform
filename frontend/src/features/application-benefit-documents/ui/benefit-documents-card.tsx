@@ -2,6 +2,9 @@ import { FileText, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 import {
+  acceptsFiles,
+  fileWindowClosedReason,
+  useRegistration,
   useRemoveSubmissionAttachment,
   useSubmissionDetail,
   useUploadSubmissionAttachment,
@@ -20,26 +23,6 @@ import {
   toast,
 } from "@/shared/ui";
 
-/**
- * Submission statuses whose content the domain still accepts edits to —
- * mirrors `_LIVE_STATUSES` in the Applications domain.
- *
- * Gated on the holder submission, not the order: the entry stays editable for its
- * whole live path, because what ends the applicant's window is the competition's
- * deadline, not the organizer's verdict. Only a performance that took place, or an
- * entry that was called off, is closed.
- */
-const EDITABLE_STATUSES = new Set([
-  "DRAFT",
-  "SUBMITTED",
-  "UNDER_REVIEW",
-  "REQUIRES_CORRECTION",
-  "APPROVED",
-  "WAITING_PAYMENT",
-  "PAID",
-  "ACCEPTED",
-  "SCHEDULED",
-]);
 const BENEFIT_ACCEPT = ".pdf,image/*";
 
 /** The last segment of a stored file reference, which is what a person recognises. */
@@ -67,6 +50,7 @@ export function BenefitDocumentsCard({
 }): React.JSX.Element | null {
   const holder = application.submissions[0];
   const holderId = holder?.submissionId;
+  const { data: registration } = useRegistration(application.competitionId);
   const { data: submission } = useSubmissionDetail(holderId);
   const upload = useUploadSubmissionAttachment(holderId ?? "");
   const remove = useRemoveSubmissionAttachment(holderId ?? "");
@@ -74,7 +58,11 @@ export function BenefitDocumentsCard({
   const [caption, setCaption] = useState("");
 
   const documents = (submission?.attachments ?? []).filter((a) => a.type === "BENEFIT");
-  const canEdit = holder != null && EDITABLE_STATUSES.has(holder.status);
+  // The entry's own stage, and then the festival's window for paperwork. Gated on the
+  // holder submission rather than the order: the domain hangs attachments off an entry,
+  // and what ends the applicant's window is the deadline, not the organizer's verdict.
+  const closed = fileWindowClosedReason(registration, "document");
+  const canEdit = holder != null && acceptsFiles(holder.status) && closed === null;
 
   if (!holderId || (!canEdit && documents.length === 0)) {
     return null;
@@ -124,6 +112,7 @@ export function BenefitDocumentsCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
+        {closed ? <Alert variant="info">{closed}</Alert> : null}
         {documents.length === 0 ? (
           <p className="text-sm text-muted-foreground">Документы не приложены.</p>
         ) : (

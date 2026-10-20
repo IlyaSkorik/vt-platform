@@ -54,6 +54,7 @@ function competition(): CompetitionDetail {
       documentUpload: null,
       correction: null,
     },
+    editingLockedAt: null,
     participationFormats: [],
     categories: [],
     disciplines: [],

@@ -70,6 +70,10 @@ function aRegistration({
     allowMultiplePerformances: true,
     collectPayerDetails: false,
     participantCommentEnabled: commentEnabled,
+    editingLocked: false,
+    musicUploadOpen: true,
+    mediaUploadOpen: true,
+    documentUploadOpen: true,
     deadlines: {
       application: null,
       payment: null,

@@ -2,6 +2,8 @@ import { Music, Trash2 } from "lucide-react";
 import { useRef } from "react";
 
 import {
+  acceptsFiles,
+  fileWindowClosedReason,
   useRegistration,
   useRemoveSubmissionAttachment,
   useSubmissionDetail,
@@ -14,6 +16,7 @@ import type {
 } from "@/shared/api/generated/model-applications";
 import type { RegistrationUploadRequirement } from "@/shared/api/generated/model-public-catalog";
 import {
+  Alert,
   Badge,
   Button,
   Card,
@@ -24,27 +27,6 @@ import {
   Divider,
   toast,
 } from "@/shared/ui";
-
-/**
- * Submission statuses in which the platform still takes a backing track — the whole
- * live path of an entry, matching ``_LIVE_STATUSES`` in the Applications domain.
- *
- * A running order is built only from entries that are ACCEPTED or beyond, and a track
- * is wanted right up to the day, so anything narrower would leave the sound desk's
- * archive empty. Its own deadline (``MUSIC_UPLOAD``) is checked by the upload use
- * case, which is where every file deadline lives.
- */
-const LIVE_STATUSES = new Set([
-  "DRAFT",
-  "SUBMITTED",
-  "UNDER_REVIEW",
-  "REQUIRES_CORRECTION",
-  "APPROVED",
-  "WAITING_PAYMENT",
-  "PAID",
-  "ACCEPTED",
-  "SCHEDULED",
-]);
 
 const BYTES_PER_MB = 1024 * 1024;
 
@@ -81,9 +63,12 @@ function refusalMessage(error: unknown, hint: string, maxBytes: number | undefin
 function PerformancePhonograms({
   reference,
   requirements,
+  closed,
 }: {
   reference: _SubmissionRef;
   requirements: RegistrationUploadRequirement[];
+  /** Why the window is shut, or ``null`` while a track may still be sent. */
+  closed: string | null;
 }): React.JSX.Element {
   const { data: submission } = useSubmissionDetail(reference.submissionId);
   const upload = useUploadSubmissionAttachment(reference.submissionId);
@@ -93,7 +78,7 @@ function PerformancePhonograms({
   const tracks = (submission?.attachments ?? []).filter(
     (attachment) => attachment.type === "MUSIC",
   );
-  const canEdit = LIVE_STATUSES.has(reference.status);
+  const canEdit = acceptsFiles(reference.status) && closed === null;
   const requirement = requirements.find(
     (entry) => entry.participationFormatId === submission?.performance?.participationFormatId,
   );
@@ -220,6 +205,9 @@ export function PhonogramsCard({
   application: ApplicationResource;
 }): React.JSX.Element | null {
   const { data: registration } = useRegistration(application.competitionId);
+  // Said once, above the list: the reason is the festival's, not any one number's,
+  // and repeating it under every performance would be the same sentence three times.
+  const closed = fileWindowClosedReason(registration, "music");
 
   if (application.submissions.length === 0) {
     return null;
@@ -235,12 +223,14 @@ export function PhonogramsCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
+        {closed ? <Alert variant="info">{closed}</Alert> : null}
         {application.submissions.map((reference, index) => (
           <div key={reference.submissionId} className="flex flex-col gap-4">
             {index > 0 ? <Divider /> : null}
             <PerformancePhonograms
               reference={reference}
               requirements={registration?.uploadRequirements ?? []}
+              closed={closed}
             />
           </div>
         ))}

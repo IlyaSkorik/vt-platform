@@ -56,6 +56,7 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
       documentUpload: null,
       correction: null,
     },
+    editingLockedAt: null,
     categories: [
       {
         id: "cat-1",
