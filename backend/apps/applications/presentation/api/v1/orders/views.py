@@ -119,6 +119,7 @@ def _application_resource(dto: ApplicationView) -> dict[str, Any]:
                 "performanceTitle": ref.performance_title,
                 "participantDisplayName": ref.participant_display_name,
                 "nomination": ref.nomination,
+                "nominationId": ref.nomination_id,
                 "discipline": ref.discipline,
                 "status": ref.status,
                 "priceAmount": ref.price_amount,

@@ -45,6 +45,11 @@ class SubmissionRefView:
     performance_title: str
     participant_display_name: str
     nomination: str
+    #: The genre's id, which is what the cabinet needs rather than its label: the
+    #: organizer's editing freeze is per genre, and the card has to know which one
+    #: this entry is in to say whether its files may still be touched. ``None`` for
+    #: an entry with no performance yet.
+    nomination_id: str | None
     discipline: str
     status: str
     price_amount: str | None
@@ -57,6 +62,7 @@ class SubmissionRefView:
             performance_title=ref.performance_title,
             participant_display_name=ref.participant_display_name,
             nomination=ref.nomination,
+            nomination_id=ref.nomination_id.json() if ref.nomination_id is not None else None,
             discipline=ref.discipline,
             status=ref.status.value,
             price_amount=str(ref.price.amount) if ref.price is not None else None,

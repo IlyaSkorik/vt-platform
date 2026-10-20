@@ -89,6 +89,9 @@ class _SubmissionRefSerializer(serializers.Serializer[dict[str, object]]):
     performanceTitle = serializers.CharField(allow_blank=True)
     participantDisplayName = serializers.CharField(allow_blank=True)
     nomination = serializers.CharField(allow_blank=True)
+    #: Which genre this entry is in — the cabinet asks it whether the files may still
+    #: be touched, because the organizer's freeze is thrown per genre.
+    nominationId = serializers.UUIDField(allow_null=True)
     discipline = serializers.CharField(allow_blank=True)
     status = serializers.CharField()
     priceAmount = serializers.CharField(allow_null=True)

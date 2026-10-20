@@ -1653,6 +1653,14 @@ class SubmissionRef:
     discipline: str
     status: SubmissionStatus
     price: PriceSnapshot | None = None
+    #: The genre's id, kept beside its label because the order is asked questions
+    #: about genres and not only shown them: the organizer's editing freeze is thrown
+    #: per genre, and «can this order still be changed» is answered by looking at the
+    #: genres its performances are in. Separate from ``nomination`` on purpose — that
+    #: one is a display string on its way to becoming a human label, and a rule keyed
+    #: on it would break silently the day it stops being an id. ``None`` for an entry
+    #: with no performance yet, and for refs cached before this field existed.
+    nomination_id: NominationId | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.submission_id, SubmissionId):
