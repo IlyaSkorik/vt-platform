@@ -47,6 +47,15 @@ _ARCHIVE_SPOOL_BYTES = 4 * 1024 * 1024
 #: Read size when copying one document into the archive.
 _COPY_CHUNK_BYTES = 256 * 1024
 
+#: Moves both archive keys when it is bumped, and nothing else.
+#:
+#: The headers are fixed from now on, but a browser that already cached the old archive
+#: URL under the year-long ``immutable`` was told it never has to ask again, and it will
+#: not — the fix cannot reach it. A different key is a different URL, which is the only
+#: thing that does. One orphaned archive per competition stays behind at the old key;
+#: bump this only when there is a reason as good as that one.
+_ARCHIVE_KEY_SALT = "2"
+
 
 def storage_key_of(reference: str) -> str:
     """Turn a stored reference back into the storage key it was minted from.
@@ -209,7 +218,11 @@ class DjangoPrintPackageWorkspace:
     def store_zip(self, *, competition_id: uuid.UUID, items: list[tuple[str, str]], extras: Sequence[tuple[str, bytes]] = ()) -> str:
         # The archive is the whole set in one file, so it is the most valuable object in
         # the bucket and gets the same unguessable token as the diplomas inside it.
-        token = _unguessable("print-zip", str(competition_id))
+        #
+        # ``_ARCHIVE_KEY_SALT`` is what moves the archive off the URL browsers were told
+        # to keep for a year — see its comment. Only the token changes; the path around
+        # it reads the same.
+        token = _unguessable("print-zip", _ARCHIVE_KEY_SALT, str(competition_id))
         return self._store_archive(key=f"diplomas/print/{competition_id}/{token}/Diplomas.zip", items=items, extras=extras)
 
     def store_documents_zip(self, *, competition_id: uuid.UUID, document_type: str, items: list[tuple[str, str]]) -> str:
@@ -219,7 +232,7 @@ class DjangoPrintPackageWorkspace:
         # nor with another kind's bundle.
         kind = document_type.lower()
         filename = "".join(part.capitalize() for part in document_type.split("_"))
-        token = _unguessable("documents-zip", str(competition_id), kind)
+        token = _unguessable("documents-zip", _ARCHIVE_KEY_SALT, str(competition_id), kind)
         return self._store_archive(key=f"diplomas/documents/{competition_id}/{kind}/{token}/{filename}.zip", items=items)
 
     @staticmethod
