@@ -245,6 +245,33 @@ def test_nomination_waitlist_is_switched_on_and_off_in_place(staff_client: APICl
     assert disabled.data["data"]["categories"][0]["waitlistEnabled"] is False
 
 
+def test_editing_lock_is_thrown_and_lifted_on_the_festival(staff_client: APIClient) -> None:
+    """Одна кнопка на фестиваль: POST закрывает правки, DELETE возвращает календарь.
+
+    Не по жанрам, в отличие от приёма: её нажимают, когда список сведён и из него
+    собирают программу, и «кроме вокала» в этот момент никто не имеет в виду.
+    """
+    competition_id = _create_competition(staff_client).data["data"]["id"]
+    detail = f"/api/v1/competitions/{competition_id}"
+    assert staff_client.get(detail).data["data"]["editingLockedAt"] is None
+
+    locked = staff_client.post(f"{detail}/editing-lock", {}, format="json")
+    assert locked.status_code == 200, locked.data
+    assert locked.data["data"]["editingLockedAt"] is not None
+
+    lifted = staff_client.delete(f"{detail}/editing-lock")
+    assert lifted.status_code == 200, lifted.data
+    assert lifted.data["data"]["editingLockedAt"] is None
+
+
+def test_editing_lock_is_not_a_participant_s_button(participant_client: APIClient, staff_client: APIClient) -> None:
+    competition_id = _create_competition(staff_client).data["data"]["id"]
+
+    refused = participant_client.post(f"/api/v1/competitions/{competition_id}/editing-lock", {}, format="json")
+
+    assert refused.status_code in {403, 404}, refused.data
+
+
 def test_settings_round_trip_carries_the_media_requirements(staff_client: APIClient) -> None:
     """Save the organizer's media rules and read them back on the detail screen.
 

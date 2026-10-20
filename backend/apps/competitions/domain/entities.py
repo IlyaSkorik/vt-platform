@@ -97,6 +97,8 @@ from .events import (
     PricingRuleAdded,
     PricingRuleRemoved,
     RegulationPublished,
+    SubmissionEditingLocked,
+    SubmissionEditingUnlocked,
 )
 from .exceptions import (
     AdmissionRuleInUseError,
@@ -1442,6 +1444,14 @@ class Competition:
     _registration_period: DateRange | None = None
     _competition_period: DateRange | None = None
     _deadlines: RegistrationDeadlines = field(default_factory=RegistrationDeadlines)
+    #: When the organizer froze everything an applicant may still change, or ``None``.
+    #:
+    #: Not a deadline, which is why it does not live in :class:`RegistrationDeadlines`:
+    #: a deadline is a date announced in advance and read off the calendar, this is a
+    #: switch thrown on the day the organizer decides nothing more may move. It is kept
+    #: as the instant rather than a flag because "закрыто" and "закрыто вчера в 18:00"
+    #: are different answers to an applicant asking what happened to their file.
+    _editing_locked_at: datetime | None = None
     _settings: CompetitionSettings = field(default_factory=CompetitionSettings.default)
     _contacts_config: ContactsConfiguration = field(default_factory=ContactsConfiguration.default)
     _landing_config: LandingConfiguration = field(default_factory=LandingConfiguration.default)
@@ -1543,6 +1553,7 @@ class Competition:
         contacts_config: ContactsConfiguration | None = None,
         landing_config: LandingConfiguration | None = None,
         deadlines: RegistrationDeadlines | None = None,
+        editing_locked_at: datetime | None = None,
         categories: Sequence[Category] = (),
         disciplines: Sequence[Discipline] = (),
         age_categories: Sequence[AgeCategory] = (),
@@ -1582,6 +1593,7 @@ class Competition:
             _contacts_config=contacts_config if contacts_config is not None else ContactsConfiguration.default(),
             _landing_config=landing_config if landing_config is not None else LandingConfiguration.default(),
             _deadlines=deadlines if deadlines is not None else RegistrationDeadlines(),
+            _editing_locked_at=editing_locked_at,
             _categories={c.id: c for c in categories},
             _disciplines={d.id: d for d in disciplines},
             _age_categories={a.id: a for a in age_categories},
@@ -1781,6 +1793,16 @@ class Competition:
         return self._deadlines
 
     @property
+    def editing_locked_at(self) -> datetime | None:
+        """When the organizer froze applicant-side editing, or ``None``."""
+        return self._editing_locked_at
+
+    @property
+    def is_editing_locked(self) -> bool:
+        """Whether applicants may change nothing at all — entries, files included."""
+        return self._editing_locked_at is not None
+
+    @property
     def contacts(self) -> tuple[Contact, ...]:
         return tuple(self._contacts.values())
 
@@ -1939,11 +1961,11 @@ class Competition:
     def accepts_submissions_for(self, category_id: CategoryId, now: datetime) -> bool:
         """Whether the nomination ``category_id`` accepts applications at ``now``.
 
-        Requires the competition to be PUBLISHED or RUNNING and the nomination's own
-        registration window to be open (not stopped early, within its dates). Closed
-        otherwise, or when the nomination is unknown.
+        Requires the competition to be PUBLISHED or RUNNING, the editing freeze to be
+        off, and the nomination's own registration window to be open (not stopped
+        early, within its dates). Closed otherwise, or when the nomination is unknown.
         """
-        if self._status not in _SUBMISSION_STATUSES:
+        if self._status not in _SUBMISSION_STATUSES or self.is_editing_locked:
             return False
         category = self._categories.get(category_id)
         return category is not None and category.accepts_submissions(now)
@@ -1953,26 +1975,33 @@ class Competition:
 
         A closed nomination that keeps a waitlist still belongs to a live festival:
         the competition itself must be PUBLISHED or RUNNING, exactly as for an open
-        one. A finished festival has no queue to join.
+        one. A finished festival has no queue to join, and neither has a frozen one.
         """
-        if self._status not in _SUBMISSION_STATUSES:
+        if self._status not in _SUBMISSION_STATUSES or self.is_editing_locked:
             return False
         category = self._categories.get(category_id)
         return category is not None and category.accepts_waitlist(now)
 
     def is_any_nomination_open(self, now: datetime) -> bool:
         """Whether at least one nomination currently accepts applications at ``now``."""
+        if self.is_editing_locked:
+            return False
         return self._status in _SUBMISSION_STATUSES and any(c.accepts_submissions(now) for c in self._categories.values())
 
     def is_any_nomination_waitlisting(self, now: datetime) -> bool:
         """Whether at least one nomination currently takes waitlist entries at ``now``."""
+        if self.is_editing_locked:
+            return False
         return self._status in _SUBMISSION_STATUSES and any(c.accepts_waitlist(now) for c in self._categories.values())
 
     def is_payment_allowed(self, now: datetime) -> bool:
+        # Not frozen by the editing lock: money owed is owed whether or not the entry
+        # may still be touched, and an applicant locked out of paying is an applicant
+        # the festival has to chase by hand.
         return not self.is_completed() and self._deadlines.is_open(DeadlineKind.PAYMENT, now)
 
     def is_music_upload_allowed(self, now: datetime) -> bool:
-        return not self.is_completed() and self._deadlines.is_open(DeadlineKind.MUSIC_UPLOAD, now)
+        return self._uploads_allowed(DeadlineKind.MUSIC_UPLOAD, now)
 
     def is_media_upload_allowed(self, now: datetime) -> bool:
         """Whether video and photographs may still be attached at ``now``.
@@ -1984,13 +2013,24 @@ class Competition:
         festival: the applicant who got in on the last day could no longer replace the
         video they had sent, and that is the opposite of what the deadline is for.
         """
-        return not self.is_completed() and self._deadlines.is_open(DeadlineKind.MUSIC_UPLOAD, now)
+        return self._uploads_allowed(DeadlineKind.MUSIC_UPLOAD, now)
 
     def is_document_upload_allowed(self, now: datetime) -> bool:
-        return not self.is_completed() and self._deadlines.is_open(DeadlineKind.DOCUMENT_UPLOAD, now)
+        return self._uploads_allowed(DeadlineKind.DOCUMENT_UPLOAD, now)
 
     def is_correction_allowed(self, now: datetime) -> bool:
-        return not self.is_completed() and self._deadlines.is_open(DeadlineKind.CORRECTION, now)
+        return not self.is_completed() and not self.is_editing_locked and self._deadlines.is_open(DeadlineKind.CORRECTION, now)
+
+    def _uploads_allowed(self, kind: DeadlineKind, now: datetime) -> bool:
+        """Whether files of ``kind`` may still be attached by the applicant at ``now``.
+
+        Three gates, and the file windows are the only place all three meet: a finished
+        festival takes nothing, a frozen one takes nothing either, and otherwise the
+        answer is the deadline the organizer announced. An unset deadline stays open —
+        which, now that the application deadline no longer closes them, is what lets an
+        organizer keep taking tracks right up to the day without configuring anything.
+        """
+        return not self.is_completed() and not self.is_editing_locked and self._deadlines.is_open(kind, now)
 
     # ------------------------------------------------------------------
     # General information
@@ -3005,6 +3045,47 @@ class Competition:
         category.resume_registration()
         self._touch(now)
         return [NominationRegistrationResumed(aggregate_id=self._id.value, category_id=category_id)]
+
+    def lock_submission_editing(self, *, now: datetime) -> list[DomainEvent]:
+        """Freeze everything an applicant may still change, across the whole festival.
+
+        The last switch of the registration period, and deliberately one switch rather
+        than one per nomination: it is thrown when the organizer has the final list in
+        front of them and is about to build the programme from it, and at that moment
+        "кроме вокала" is not a thing anybody means.
+
+        Separate from closing registration because the two answer different questions.
+        Closing a nomination stops people *getting in*; whoever is already in keeps
+        correcting their files, which is the whole point of the upload deadlines being
+        later than the application one. This stops that too — the sound desk's archive
+        is being burned to a disk and may not move under it any more.
+
+        Idempotent: locking a frozen festival keeps the original instant, because the
+        answer the applicant is owed is when editing closed, not when the organizer
+        last pressed the button.
+        """
+        self._ensure_not_completed()
+        if self._editing_locked_at is not None:
+            return []
+        self._editing_locked_at = now
+        self._touch(now)
+        return [SubmissionEditingLocked(aggregate_id=self._id.value, locked_at=now)]
+
+    def unlock_submission_editing(self, *, now: datetime) -> list[DomainEvent]:
+        """Lift the freeze; the calendar governs what applicants may change again.
+
+        The way back, because the freeze is a judgement call made a day early as often
+        as not — a teacher writes in with a track the organizer agreed to take, and the
+        alternative to lifting it is the organizer uploading files by hand for the rest
+        of the week. Nothing about the entries themselves changed while it was on, so
+        there is nothing to restore: the deadlines simply start answering again.
+        """
+        self._ensure_not_completed()
+        if self._editing_locked_at is None:
+            return []
+        self._editing_locked_at = None
+        self._touch(now)
+        return [SubmissionEditingUnlocked(aggregate_id=self._id.value)]
 
     def enable_nomination_waitlist(self, *, category_id: CategoryId, now: datetime) -> list[DomainEvent]:
         """Keep a waitlist for a nomination once its registration closes."""

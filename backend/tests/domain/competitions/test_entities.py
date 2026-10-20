@@ -34,6 +34,8 @@ from apps.competitions.domain.events import (
     PricingRuleAdded,
     PricingRuleRemoved,
     RegulationPublished,
+    SubmissionEditingLocked,
+    SubmissionEditingUnlocked,
 )
 from apps.competitions.domain.exceptions import (
     AdmissionRuleInUseError,
@@ -1096,6 +1098,101 @@ class TestNominationRegistration:
         c = _completed()
         with pytest.raises(CompetitionAlreadyCompletedError):
             c.schedule_nomination_registration(category_id=CategoryId.generate(), closes_at=datetime(2026, 8, 1, tzinfo=UTC), now=NOW)
+
+
+class TestSubmissionEditingLock:
+    """Одна кнопка организатора, которая закрывает всё, что может менять заявитель.
+
+    Отдельная от закрытия приёма, потому что отвечает на другой вопрос. Приём — про
+    то, кого ещё пускают внутрь; у тех, кто внутри, файлы живут дольше, и это не
+    побочный эффект, а то, ради чего сроки загрузки стоят позже срока заявок. Замок
+    кончает и это: список финальный, программа собирается, двигаться больше нечему.
+    """
+
+    @staticmethod
+    def _open_festival() -> tuple[Competition, CategoryId]:
+        c, cat_id = _published()
+        c.schedule_nomination_registration(category_id=cat_id, closes_at=datetime(2026, 12, 31, tzinfo=UTC), now=NOW)
+        return c, cat_id
+
+    def test_a_festival_starts_unlocked(self) -> None:
+        c, _ = self._open_festival()
+
+        assert not c.is_editing_locked
+        assert c.editing_locked_at is None
+
+    def test_locking_closes_registration_and_every_upload_window(self) -> None:
+        c, cat_id = self._open_festival()
+        at = datetime(2026, 8, 15, tzinfo=UTC)
+        assert c.accepts_submissions_for(cat_id, at)
+        assert c.is_music_upload_allowed(at)
+
+        events = c.lock_submission_editing(now=NOW)
+
+        assert isinstance(events[0], SubmissionEditingLocked)
+        assert c.is_editing_locked
+        assert not c.accepts_submissions_for(cat_id, at)
+        assert not c.is_any_nomination_open(at)
+        assert not c.is_music_upload_allowed(at)
+        assert not c.is_media_upload_allowed(at)
+        assert not c.is_document_upload_allowed(at)
+        assert not c.is_correction_allowed(at)
+
+    def test_the_waitlist_closes_with_it(self) -> None:
+        # Очередь — дверь для опоздавших; замерший фестиваль никого не ждёт.
+        c, cat_id = self._open_festival()
+        c.enable_nomination_waitlist(category_id=cat_id, now=NOW)
+        after = datetime(2027, 1, 15, tzinfo=UTC)
+        assert c.accepts_waitlist_for(cat_id, after)
+
+        c.lock_submission_editing(now=NOW)
+
+        assert not c.accepts_waitlist_for(cat_id, after)
+        assert not c.is_any_nomination_waitlisting(after)
+
+    def test_payment_is_not_frozen(self) -> None:
+        # Долг остаётся долгом: заявитель, которому закрыли оплату, — это заявитель,
+        # которого организатор потом ловит вручную.
+        c, _ = self._open_festival()
+
+        c.lock_submission_editing(now=NOW)
+
+        assert c.is_payment_allowed(datetime(2026, 8, 15, tzinfo=UTC))
+
+    def test_locking_twice_keeps_the_first_instant(self) -> None:
+        # Заявителю отвечают, когда правки закрылись, а не когда организатор в
+        # последний раз нажал кнопку.
+        c, _ = self._open_festival()
+        later = datetime(2026, 9, 1, tzinfo=UTC)
+
+        c.lock_submission_editing(now=NOW)
+        again = c.lock_submission_editing(now=later)
+
+        assert again == []
+        assert c.editing_locked_at == NOW
+
+    def test_unlocking_gives_the_calendar_back(self) -> None:
+        c, cat_id = self._open_festival()
+        at = datetime(2026, 8, 15, tzinfo=UTC)
+        c.lock_submission_editing(now=NOW)
+
+        events = c.unlock_submission_editing(now=NOW)
+
+        assert isinstance(events[0], SubmissionEditingUnlocked)
+        assert not c.is_editing_locked
+        assert c.accepts_submissions_for(cat_id, at)
+        assert c.is_music_upload_allowed(at)
+
+    def test_unlocking_an_open_festival_changes_nothing(self) -> None:
+        c, _ = self._open_festival()
+
+        assert c.unlock_submission_editing(now=NOW) == []
+
+    def test_a_completed_festival_has_nothing_left_to_lock(self) -> None:
+        c = _completed()
+
+        with pytest.raises(CompetitionAlreadyCompletedError):
+            c.lock_submission_editing(now=NOW)
 
 
 class TestMaterialUploadWindow:

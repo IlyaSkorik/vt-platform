@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from apps.competitions.application.dto.commands import (
     CompleteCompetitionCommand,
+    LockSubmissionEditingCommand,
     MarkConfiguredCommand,
     MarkReadyCommand,
     PublishCompetitionCommand,
     RevertToConfiguredCommand,
     RevertToDraftCommand,
     StartCompetitionCommand,
+    UnlockSubmissionEditingCommand,
 )
 from apps.competitions.application.dto.views import CompetitionDetailView
 
@@ -17,12 +19,14 @@ from ._support import CompetitionCommandHandler
 
 __all__ = (
     "CompleteCompetitionHandler",
+    "LockSubmissionEditingHandler",
     "MarkCompetitionConfiguredHandler",
     "MarkCompetitionReadyHandler",
     "PublishCompetitionHandler",
     "RevertCompetitionToConfiguredHandler",
     "RevertCompetitionToDraftHandler",
     "StartCompetitionHandler",
+    "UnlockSubmissionEditingHandler",
 )
 
 
@@ -134,5 +138,27 @@ class CompleteCompetitionHandler(CompetitionCommandHandler):
         events = competition.complete(
             now=self._clock.utcnow(),
         )
+
+        return self._persist(competition, events)
+
+
+class LockSubmissionEditingHandler(CompetitionCommandHandler):
+    """Freeze everything applicants may still change, across the festival."""
+
+    def handle(self, command: LockSubmissionEditingCommand) -> CompetitionDetailView:
+        competition = self._require(command.competition_id)
+
+        events = competition.lock_submission_editing(now=self._clock.utcnow())
+
+        return self._persist(competition, events)
+
+
+class UnlockSubmissionEditingHandler(CompetitionCommandHandler):
+    """Lift the freeze; the festival's own dates govern again."""
+
+    def handle(self, command: UnlockSubmissionEditingCommand) -> CompetitionDetailView:
+        competition = self._require(command.competition_id)
+
+        events = competition.unlock_submission_editing(now=self._clock.utcnow())
 
         return self._persist(competition, events)

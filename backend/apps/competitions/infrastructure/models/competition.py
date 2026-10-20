@@ -75,6 +75,11 @@ class CompetitionModel(BasePersistenceModel):
     deadline_document_upload = models.DateTimeField(null=True, blank=True, default=None)
     deadline_correction = models.DateTimeField(null=True, blank=True, default=None)
 
+    # The organizer's freeze on everything applicants may still change. Not a deadline
+    # (those are announced in advance; this is thrown on the day), so it is kept beside
+    # them rather than among them — see ``Competition._editing_locked_at``.
+    editing_locked_at = models.DateTimeField(null=True, blank=True, default=None)
+
     # Cohesive value bags stored as JSON (see module docstring).
     settings = models.JSONField(default=dict)
     contacts_config = models.JSONField(default=dict)

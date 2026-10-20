@@ -278,3 +278,58 @@ def test_upload_requirements_carry_the_media_limits() -> None:
         # Whether the video is a condition of entry travels too: the wizard labels the
         # control and blocks submission on it, and it must not guess.
         assert isinstance(requirement["mediaRequired"], bool)
+
+
+def test_the_file_windows_are_open_while_the_festival_is() -> None:
+    # Unset upload deadlines mean no cut-off, and the projection says so plainly —
+    # the cabinet renders its upload cards off these three and nothing else.
+    competition_id = _seed_competition()
+
+    data = APIClient().get(_url(competition_id)).data["data"]
+
+    assert data["editingLocked"] is False
+    assert data["musicUploadOpen"] is True
+    assert data["mediaUploadOpen"] is True
+    assert data["documentUploadOpen"] is True
+
+
+def test_the_material_stays_open_after_registration_closes() -> None:
+    """Приём кончился — файлы живут дальше, это и есть смысл отдельных сроков.
+
+    Видео и фото раньше закрывались вместе с приёмом: номер, попавший в фестиваль в
+    последний день, уже не мог заменить присланный файл.
+    """
+    from datetime import UTC, datetime
+
+    from apps.competitions.infrastructure.models import CategoryModel, CompetitionModel
+
+    competition = CompetitionModel.objects.create(organizer_id=uuid7(), status="PUBLISHED", title="Spring", season="2025/2026")
+    CategoryModel.objects.create(
+        competition=competition,
+        name="Vocal",
+        registration_opens_at=datetime(2000, 1, 1, tzinfo=UTC),
+        registration_closes_at=datetime(2001, 1, 1, tzinfo=UTC),
+    )
+
+    data = APIClient().get(_url(str(competition.id))).data["data"]
+
+    assert data["registrationOpen"] is False
+    assert data["mediaUploadOpen"] is True
+    assert data["musicUploadOpen"] is True
+
+
+def test_the_organizer_s_freeze_closes_everything_in_the_projection() -> None:
+    from datetime import UTC, datetime
+
+    from apps.competitions.infrastructure.models import CompetitionModel
+
+    competition_id = _seed_competition()
+    CompetitionModel.objects.filter(id=competition_id).update(editing_locked_at=datetime(2026, 5, 1, tzinfo=UTC))
+
+    data = APIClient().get(_url(competition_id)).data["data"]
+
+    assert data["editingLocked"] is True
+    assert data["registrationOpen"] is False
+    assert data["musicUploadOpen"] is False
+    assert data["mediaUploadOpen"] is False
+    assert data["documentUploadOpen"] is False

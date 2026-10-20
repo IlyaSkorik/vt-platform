@@ -233,6 +233,7 @@ class CompetitionMapper:
                 document_upload=model.deadline_document_upload,
                 correction=model.deadline_correction,
             ),
+            editing_locked_at=model.editing_locked_at,
             categories=[
                 Category.rehydrate(
                     category_id=CategoryId.from_uuid(row.id),
@@ -398,6 +399,7 @@ class CompetitionMapper:
             "deadline_music_upload": deadlines.music_upload,
             "deadline_document_upload": deadlines.document_upload,
             "deadline_correction": deadlines.correction,
+            "editing_locked_at": entity.editing_locked_at,
             "settings": settings_to_json(entity.settings),
             "contacts_config": contacts_config_to_json(entity.contacts_config),
             "landing_config": landing_config_to_json(entity.landing_config),

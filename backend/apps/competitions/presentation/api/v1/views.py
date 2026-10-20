@@ -47,6 +47,7 @@ from apps.competitions.application.dto.commands import (
     EnableAdditionalServiceCommand,
     EnableNominationWaitlistCommand,
     HideInformationBlockCommand,
+    LockSubmissionEditingCommand,
     MakeRegulationCurrentCommand,
     MarkConfiguredCommand,
     MarkReadyCommand,
@@ -74,6 +75,7 @@ from apps.competitions.application.dto.commands import (
     SetPrimaryContactCommand,
     StartCompetitionCommand,
     StopNominationRegistrationCommand,
+    UnlockSubmissionEditingCommand,
     UnpublishDocumentCommand,
     UpdateAdditionalServiceCommand,
     UpdateAgeCategoryCommand,
@@ -114,6 +116,7 @@ from apps.competitions.application.handlers import (
     EnableAdditionalServiceHandler,
     EnableNominationWaitlistHandler,
     HideInformationBlockHandler,
+    LockSubmissionEditingHandler,
     MakeRegulationCurrentHandler,
     MarkCompetitionConfiguredHandler,
     MarkCompetitionReadyHandler,
@@ -141,6 +144,7 @@ from apps.competitions.application.handlers import (
     SetPrimaryContactHandler,
     StartCompetitionHandler,
     StopNominationRegistrationHandler,
+    UnlockSubmissionEditingHandler,
     UnpublishDocumentHandler,
     UpdateAdditionalServiceHandler,
     UpdateAgeCategoryHandler,
@@ -652,6 +656,20 @@ class CompetitionViewSet(viewsets.ViewSet):
             ResumeNominationRegistrationCommand(competition_id=pk, category_id=category_id),
             request,
         )
+
+    @extend_schema(methods=["POST"], tags=[_TAG], operation_id="lockSubmissionEditing", request=None, responses=_detail_ok())
+    @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="unlockSubmissionEditing", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post", "delete"], url_path="editing-lock")
+    def editing_lock(self, request: Request, pk: str) -> Response:
+        """Freeze (POST) or release (DELETE) everything applicants may still change.
+
+        One switch for the whole festival, unlike registration, which is scheduled per
+        nomination: it is thrown when the list is final and the programme is about to
+        be built from it, and at that point "кроме вокала" is not a thing anybody means.
+        """
+        if request.method == "DELETE":
+            return self._run(UnlockSubmissionEditingHandler, UnlockSubmissionEditingCommand(competition_id=pk), request)
+        return self._run(LockSubmissionEditingHandler, LockSubmissionEditingCommand(competition_id=pk), request)
 
     @extend_schema(methods=["POST"], tags=[_TAG], operation_id="enableNominationWaitlist", request=None, responses=_detail_ok())
     @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="disableNominationWaitlist", request=None, responses=_detail_ok())

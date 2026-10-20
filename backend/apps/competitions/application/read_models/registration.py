@@ -186,6 +186,18 @@ class RegistrationView:
     #: field is absent rather than shown and rejected. When true the note stays
     #: optional — it is an opportunity to say something, never a question to answer.
     participant_comment_enabled: bool
+    #: Whether the organizer has frozen everything the applicant may change. Separate
+    #: from ``registration_open`` because it is a different sentence to the applicant —
+    #: a closed registration still leaves the files open, and this is what does not.
+    editing_locked: bool
+    #: Whether each kind of file may be attached *right now*: the upload deadline, the
+    #: freeze and a finished festival, resolved into the one answer the cabinet needs.
+    #: Projected rather than derived on the client from ``deadlines`` below, because
+    #: the dates alone cannot see the freeze and the client would be rebuilding a rule
+    #: the backend already owns — and getting a different answer the day it mattered.
+    music_upload_open: bool
+    media_upload_open: bool
+    document_upload_open: bool
     deadlines: RegistrationDeadlinesView
     nominations: list[RegistrationNominationView] = field(default_factory=list)
     disciplines: list[RegistrationDisciplineView] = field(default_factory=list)
@@ -347,6 +359,10 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
         allow_multiple_performances=settings.allow_multiple_performances,
         collect_payer_details=settings.collect_payer_details,
         participant_comment_enabled=settings.participant_comment_enabled,
+        editing_locked=competition.is_editing_locked,
+        music_upload_open=competition.is_music_upload_allowed(now),
+        media_upload_open=competition.is_media_upload_allowed(now),
+        document_upload_open=competition.is_document_upload_allowed(now),
         deadlines=RegistrationDeadlinesView(
             application=competition.deadlines.application,
             payment=competition.deadlines.payment,

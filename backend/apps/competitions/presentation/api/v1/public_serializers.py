@@ -382,6 +382,13 @@ class RegistrationSerializer(serializers.Serializer[object]):
     allowMultiplePerformances = serializers.BooleanField(source="allow_multiple_performances")
     collectPayerDetails = serializers.BooleanField(source="collect_payer_details")
     participantCommentEnabled = serializers.BooleanField(source="participant_comment_enabled")
+    #: The organizer's freeze, and what each file window says *today*. The cabinet
+    #: shows uploads long after the wizard is over, so these travel with the same
+    #: projection: one request already answers "can this applicant still act?".
+    editingLocked = serializers.BooleanField(source="editing_locked")
+    musicUploadOpen = serializers.BooleanField(source="music_upload_open")
+    mediaUploadOpen = serializers.BooleanField(source="media_upload_open")
+    documentUploadOpen = serializers.BooleanField(source="document_upload_open")
     deadlines = RegistrationDeadlinesSerializer()
     nominations = RegistrationNominationSerializer(many=True)
     disciplines = RegistrationDisciplineSerializer(many=True)
