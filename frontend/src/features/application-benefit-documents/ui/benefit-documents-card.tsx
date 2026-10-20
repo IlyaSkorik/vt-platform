@@ -61,7 +61,7 @@ export function BenefitDocumentsCard({
   // The entry's own stage, and then the festival's window for paperwork. Gated on the
   // holder submission rather than the order: the domain hangs attachments off an entry,
   // and what ends the applicant's window is the deadline, not the organizer's verdict.
-  const closed = fileWindowClosedReason(registration, "document");
+  const closed = fileWindowClosedReason(registration, "document", holder?.nominationId);
   const canEdit = holder != null && acceptsFiles(holder.status) && closed === null;
 
   if (!holderId || (!canEdit && documents.length === 0)) {

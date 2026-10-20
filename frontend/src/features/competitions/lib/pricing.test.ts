@@ -58,7 +58,6 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
       documentUpload: null,
       correction: null,
     },
-    editingLockedAt: null,
     categories: [
       {
         id: "cat-1",
@@ -69,6 +68,7 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
         registrationClosesAt: null,
         registrationStopped: false,
         waitlistEnabled: false,
+        editingLockedAt: null,
       },
       {
         id: "cat-2",
@@ -79,6 +79,7 @@ function competition(partial: Partial<CompetitionDetail> = {}): CompetitionDetai
         registrationClosesAt: null,
         registrationStopped: false,
         waitlistEnabled: false,
+        editingLockedAt: null,
       },
     ],
     disciplines: [

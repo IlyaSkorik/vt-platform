@@ -8,10 +8,15 @@
  * knowing its own rules.
  *
  * **The dates are not consulted.** The projection already carries the answer per
- * kind (`musicUploadOpen` and friends), computed by the backend from the deadline,
- * the organizer's freeze and whether the festival is over. Recomputing it here from
- * `deadlines` would be a second implementation of a rule that has three inputs and
- * only one of them is a date.
+ * kind (`musicUploadOpen` and friends), computed by the backend from the deadline
+ * and whether the festival is over. Recomputing it here from `deadlines` would be a
+ * second implementation of a rule the backend owns.
+ *
+ * **The freeze is a genre's, the window is the festival's**, and this is the one
+ * place they meet. The organizer closes editing in вокал while хореография still
+ * takes entries, so the answer depends on which genre the entry in front of us is
+ * in — the backend cannot fold the two together without closing every genre's files
+ * over one genre's decision.
  */
 import type { Registration } from "@/shared/api/generated/model-public-catalog";
 
@@ -41,6 +46,9 @@ export type FileWindow = "music" | "media" | "document";
 /**
  * Why files of this kind cannot be changed right now, or `null` when they can.
  *
+ * `nominationId` is the genre of the entry being asked about — `null` or `undefined`
+ * for an entry that names no genre yet, which no freeze can have closed.
+ *
  * `undefined` while the projection is still loading answers `null` — the controls
  * stay as they are and the server, which owns the rule, refuses if it has to. The
  * alternative is a card that flickers from "закрыто" to "открыто" on every load.
@@ -48,6 +56,7 @@ export type FileWindow = "music" | "media" | "document";
 export function fileWindowClosedReason(
   registration: Registration | undefined,
   window: FileWindow,
+  nominationId: string | null | undefined,
 ): string | null {
   if (!registration) {
     return null;
@@ -55,8 +64,11 @@ export function fileWindowClosedReason(
   // The freeze first: an applicant looking at an upload deadline that is still a
   // week away would read «срок истёк» as a bug, and it would send them to argue
   // about dates with the person who did not change any.
-  if (registration.editingLocked) {
-    return "Организатор закрыл редактирование заявок. Файлы больше не меняются — напишите организатору.";
+  const nomination = nominationId
+    ? registration.nominations.find((entry) => entry.id === nominationId)
+    : undefined;
+  if (nomination?.editingLocked) {
+    return `Организатор закрыл редактирование заявок в жанре «${nomination.name}». Файлы больше не меняются — напишите организатору.`;
   }
   const open = {
     music: registration.musicUploadOpen,

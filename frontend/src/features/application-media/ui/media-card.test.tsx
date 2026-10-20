@@ -34,6 +34,7 @@ vi.mock("@/entities/application", async (importOriginal) => ({
 }));
 
 const SUBMISSION = "01900000-0000-7000-8000-000000000001";
+const NOMINATION = "01900000-0000-7000-8000-0000000000dd";
 const FORMAT = "01900000-0000-7000-8000-0000000000aa";
 const INPUT_LABEL = "Видео и фото: Катюша";
 
@@ -44,7 +45,9 @@ function anApplication(status = "ACCEPTED"): ApplicationResource {
     id: "01900000-0000-7000-8000-0000000000ff",
     competitionId: "01900000-0000-7000-8000-0000000000ee",
     status: "PAID",
-    submissions: [{ submissionId: SUBMISSION, status, performanceTitle: "Катюша" }],
+    submissions: [
+      { submissionId: SUBMISSION, status, performanceTitle: "Катюша", nominationId: NOMINATION },
+    ],
   } as unknown as ApplicationResource;
 }
 
@@ -65,10 +68,11 @@ function stubSubmission(attachments: unknown[]): void {
 function stubRegistration(overrides: Record<string, unknown> = {}, mediaMode = "FILE_ONLY"): void {
   vi.mocked(useRegistration).mockReturnValue({
     data: {
-      editingLocked: false,
       musicUploadOpen: true,
       mediaUploadOpen: true,
       documentUploadOpen: true,
+      // Замок живёт на жанре: карточка спрашивает его про жанр своего номера.
+      nominations: [{ id: NOMINATION, name: "Вокал", editingLocked: false }],
       uploadRequirements: [
         {
           participationFormatId: FORMAT,
@@ -140,8 +144,11 @@ describe("MediaCard", () => {
     expect(screen.getByText("фото")).toBeInTheDocument();
   });
 
-  it("says who closed it when the organizer froze the festival", () => {
-    stubRegistration({ editingLocked: true, mediaUploadOpen: false });
+  it("says who closed it when the organizer froze the entry's genre", () => {
+    stubRegistration({
+      mediaUploadOpen: false,
+      nominations: [{ id: NOMINATION, name: "Вокал", editingLocked: true }],
+    });
     stubSubmission([aFile("f1", "VIDEO", "uploads/2026/nomer.mp4")]);
 
     render(<MediaCard application={anApplication("ACCEPTED")} />);

@@ -390,10 +390,11 @@ async function resumeNominationRegistration(
 
 async function setSubmissionEditingLock(
   competitionId: string,
+  categoryId: string,
   locked: boolean,
 ): Promise<CompetitionDetail> {
   try {
-    const path = `competitions/${competitionId}/editing-lock`;
+    const path = `competitions/${competitionId}/categories/${categoryId}/editing-lock`;
     // POST закрывает, DELETE открывает — одна настройка, прочитанная в обе стороны,
     // как у листа ожидания рядом.
     const response = await (locked ? apiClient.post(path) : apiClient.delete(path)).json<unknown>();
@@ -1196,19 +1197,24 @@ export function useResumeNominationRegistrationMutation(): UseMutationResult<
 }
 
 /**
- * Заморозить (или разморозить) всё, что может менять заявитель, на весь фестиваль.
+ * Заморозить (или разморозить) всё, что может менять заявитель, в одном жанре.
  *
- * Не по жанрам, в отличие от приёма: её нажимают, глядя на итоговый список, перед
- * тем как собрать из него программу и отдать архив фонограмм звукорежиссёру.
+ * По жанрам, как и приём: фестиваль заканчивает жанры по одному — вокал судят в
+ * субботу и его программу уже собирают, пока хореография ещё принимает заявки.
  */
 export function useSetSubmissionEditingLockMutation(): UseMutationResult<
   CompetitionDetail,
   ApiError,
-  { competitionId: string; locked: boolean }
+  { competitionId: string; categoryId: string; locked: boolean }
 > {
   const queryClient = useQueryClient();
-  return useMutation<CompetitionDetail, ApiError, { competitionId: string; locked: boolean }>({
-    mutationFn: ({ competitionId, locked }) => setSubmissionEditingLock(competitionId, locked),
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; categoryId: string; locked: boolean }
+  >({
+    mutationFn: ({ competitionId, categoryId, locked }) =>
+      setSubmissionEditingLock(competitionId, categoryId, locked),
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);
     },

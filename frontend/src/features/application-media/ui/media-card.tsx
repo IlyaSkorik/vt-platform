@@ -82,9 +82,18 @@ function refusalMessage(error: unknown, hint: string, maxBytes: number | undefin
 function PerformanceMedia({
   reference,
   registration,
+  explain,
 }: {
   reference: _SubmissionRef;
   registration: Registration | undefined;
+  /**
+   * Whether this row says why its window is shut.
+   *
+   * ``false`` when every number of the order gives the same answer and the card has
+   * already said it once above the list — the freeze is a genre's, so two numbers of
+   * one order legitimately differ and then each speaks for itself.
+   */
+  explain: boolean;
 }): React.JSX.Element | null {
   const { data: submission } = useSubmissionDetail(reference.submissionId);
   const upload = useUploadSubmissionAttachment(reference.submissionId);
@@ -97,7 +106,7 @@ function PerformanceMedia({
   const requirement = (registration?.uploadRequirements ?? []).find(
     (entry) => entry.participationFormatId === submission?.performance?.participationFormatId,
   );
-  const closed = fileWindowClosedReason(registration, "media");
+  const closed = fileWindowClosedReason(registration, "media", reference.nominationId);
   const canEdit = acceptsFiles(reference.status) && closed === null;
 
   if (!takesFiles(requirement) && files.length === 0) {
@@ -161,6 +170,7 @@ function PerformanceMedia({
             {reference.performanceTitle || "Без названия"}
           </p>
           <p className="text-xs text-muted-foreground">{hint}</p>
+          {explain && closed ? <p className="text-xs text-muted-foreground">{closed}</p> : null}
         </div>
         {canEdit && takesFiles(requirement) ? (
           <Button
@@ -238,7 +248,14 @@ export function MediaCard({
   application: ApplicationResource;
 }): React.JSX.Element | null {
   const { data: registration } = useRegistration(application.competitionId);
-  const closed = fileWindowClosedReason(registration, "media");
+  // Общей плашкой — только то, что одинаково у всех номеров: замок теперь жанровый,
+  // и два номера одной заявки честно отвечают по-разному. Разное каждый говорит сам.
+  const reasons = application.submissions.map((reference) =>
+    fileWindowClosedReason(registration, "media", reference.nominationId),
+  );
+  const shared = reasons.every((reason) => reason !== null && reason === reasons[0])
+    ? reasons[0]
+    : null;
 
   if (application.submissions.length === 0) {
     return null;
@@ -254,11 +271,15 @@ export function MediaCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {closed ? <Alert variant="info">{closed}</Alert> : null}
+        {shared ? <Alert variant="info">{shared}</Alert> : null}
         {application.submissions.map((reference, index) => (
           <div key={reference.submissionId} className="flex flex-col gap-4">
             {index > 0 ? <Divider /> : null}
-            <PerformanceMedia reference={reference} registration={registration} />
+            <PerformanceMedia
+              reference={reference}
+              registration={registration}
+              explain={shared === null}
+            />
           </div>
         ))}
       </CardContent>

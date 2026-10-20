@@ -1,15 +1,27 @@
-import { CalendarClock, CircleCheck, ListOrdered } from "lucide-react";
+import { CalendarClock, CircleCheck, ListOrdered, Lock, LockOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   useDisableNominationWaitlistMutation,
   useEnableNominationWaitlistMutation,
   useResumeNominationRegistrationMutation,
   useScheduleNominationRegistrationMutation,
+  useSetSubmissionEditingLockMutation,
   useStopNominationRegistrationMutation,
 } from "@/features/competitions";
 import { ApiError } from "@/shared/api";
 import type { _Category } from "@/shared/api/generated/model-competitions";
-import { Badge, Button, DateTimePicker, toast } from "@/shared/ui";
+import {
+  Badge,
+  Button,
+  DateTimePicker,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  toast,
+} from "@/shared/ui";
 
 interface NominationRegistrationProps {
   competitionId: string;
@@ -102,6 +114,8 @@ export function NominationRegistration({
   const resume = useResumeNominationRegistrationMutation();
   const enableWaitlist = useEnableNominationWaitlistMutation();
   const disableWaitlist = useDisableNominationWaitlistMutation();
+  const editingLock = useSetSubmissionEditingLockMutation();
+  const [confirmingLock, setConfirmingLock] = useState(false);
 
   const [opensAt, setOpensAt] = useState(() => isoToLocalInput(category.registrationOpensAt));
   const [closesAt, setClosesAt] = useState(() => isoToLocalInput(category.registrationClosesAt));
@@ -114,6 +128,7 @@ export function NominationRegistration({
 
   const state = deriveState(category);
   const closedNow = isClosedNow(category);
+  const locked = category.editingLockedAt !== null;
   const invalidRange = opensAt !== "" && closesAt !== "" && new Date(closesAt) < new Date(opensAt);
 
   const handleSaveWindow = async (): Promise<void> => {
@@ -152,6 +167,20 @@ export function NominationRegistration({
     }
   };
 
+  const handleSetLock = async (locked: boolean): Promise<void> => {
+    try {
+      await editingLock.mutateAsync({ competitionId, categoryId: category.id, locked });
+      setConfirmingLock(false);
+      toast.success(
+        locked
+          ? `Редактирование в жанре «${category.name}» закрыто`
+          : `Редактирование в жанре «${category.name}» открыто`,
+      );
+    } catch (error) {
+      toast.error(apiErrorMessage(error, "Не удалось изменить замок редактирования"));
+    }
+  };
+
   const handleToggleWaitlist = async (): Promise<void> => {
     const mutation = category.waitlistEnabled ? disableWaitlist : enableWaitlist;
     try {
@@ -174,6 +203,14 @@ export function NominationRegistration({
           {category.name}
         </div>
         <div className="flex items-center gap-2">
+          {/* Своя плашка, а не «регистрация закрыта»: закрытый приём и замороженная
+              правка — разные ответы заявителю, и организатор смотрит сюда, чтобы
+              понять, что ещё можно поменять в жанре. */}
+          {locked ? (
+            <Badge variant="warning" size="sm">
+              Правки закрыты {formatInstant(category.editingLockedAt)}
+            </Badge>
+          ) : null}
           {category.waitlistEnabled ? (
             <Badge variant={closedNow ? "info" : "secondary"} size="sm">
               {closedNow ? "Лист ожидания открыт" : "Лист ожидания наготове"}
@@ -251,7 +288,65 @@ export function NominationRegistration({
           <ListOrdered className="size-3.5" aria-hidden="true" />
           {category.waitlistEnabled ? "Выключить лист ожидания" : "Включить лист ожидания"}
         </Button>
+        {/* Закрытие спрашивает, открытие — нет: вернуть людям доступ должно быть
+            легче, чем отнять, и решение закрыть обычно принимают за день до срока. */}
+        {locked ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => void handleSetLock(false)}
+            loading={editingLock.isPending}
+            disabled={disabled}
+          >
+            <LockOpen className="size-3.5" aria-hidden="true" />
+            Открыть редактирование
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            size="sm"
+            variant="danger"
+            onClick={() => setConfirmingLock(true)}
+            loading={editingLock.isPending}
+            disabled={disabled}
+          >
+            <Lock className="size-3.5" aria-hidden="true" />
+            Закрыть редактирование
+          </Button>
+        )}
       </div>
+      <p className="text-muted-foreground text-xs">
+        {locked
+          ? "Заявители этого жанра не меняют ни состав, ни файлы. Вас замок не касается: правьте заявки и догружайте файлы за участника как обычно."
+          : "Закрытый приём не трогает файлы: фонограммы, видео и документы участник меняет до своих сроков загрузки. «Закрыть редактирование» останавливает и это — в этом жанре."}
+      </p>
+      <Dialog open={confirmingLock} onOpenChange={setConfirmingLock}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Закрыть редактирование в жанре «{category.name}»?</DialogTitle>
+            <DialogDescription>
+              Заявители этого жанра перестанут менять состав участников и файлы — фонограммы, видео,
+              документы, — даже если сроки загрузки ещё не вышли и даже если вы сами вернули заявку
+              на доработку. Приём новых заявок в жанр тоже остановится. Оплату это не трогает.
+              Другие жанры продолжают работать как раньше. Открыть обратно можно в любой момент.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmingLock(false)}>
+              Отмена
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              loading={editingLock.isPending}
+              onClick={() => void handleSetLock(true)}
+            >
+              Закрыть редактирование
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <p className="text-muted-foreground text-xs">
         {category.waitlistEnabled
           ? "Пока приём закрыт, участники могут встать в лист ожидания — без оплаты и вне основной программы. Перевести их в конкурс или отменить можно в обработке заявок."

@@ -64,11 +64,21 @@ function PerformancePhonograms({
   reference,
   requirements,
   closed,
+  explain,
 }: {
   reference: _SubmissionRef;
   requirements: RegistrationUploadRequirement[];
   /** Why the window is shut, or ``null`` while a track may still be sent. */
   closed: string | null;
+  /**
+   * Whether this row says the reason itself.
+   *
+   * ``false`` when every number of the order gives the same answer and the card has
+   * already said it once above the list. Separate from ``closed`` because the two
+   * are different questions: whether the controls are offered is never "already
+   * mentioned", and conflating them is how the buttons came back on a frozen genre.
+   */
+  explain: boolean;
 }): React.JSX.Element {
   const { data: submission } = useSubmissionDetail(reference.submissionId);
   const upload = useUploadSubmissionAttachment(reference.submissionId);
@@ -126,6 +136,9 @@ function PerformancePhonograms({
             {reference.performanceTitle || "Без названия"}
           </p>
           <p className="text-xs text-muted-foreground">{hint}</p>
+          {/* Под своим номером, а не общей плашкой: сюда попадают только причины,
+              которые у номеров разные — иначе карточка сказала бы это один раз. */}
+          {explain && closed ? <p className="text-xs text-muted-foreground">{closed}</p> : null}
         </div>
         {canEdit ? (
           <Button
@@ -205,9 +218,16 @@ export function PhonogramsCard({
   application: ApplicationResource;
 }): React.JSX.Element | null {
   const { data: registration } = useRegistration(application.competitionId);
-  // Said once, above the list: the reason is the festival's, not any one number's,
-  // and repeating it under every performance would be the same sentence three times.
-  const closed = fileWindowClosedReason(registration, "music");
+  // Per entry, not once above the list: the freeze is a genre's now, so two numbers
+  // of the same order legitimately differ. Said once only when every number gives
+  // the same answer — otherwise it is the same sentence three times, which was the
+  // reason it used to live above the list.
+  const reasons = application.submissions.map((reference) =>
+    fileWindowClosedReason(registration, "music", reference.nominationId),
+  );
+  const shared = reasons.every((reason) => reason !== null && reason === reasons[0])
+    ? reasons[0]
+    : null;
 
   if (application.submissions.length === 0) {
     return null;
@@ -223,14 +243,15 @@ export function PhonogramsCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {closed ? <Alert variant="info">{closed}</Alert> : null}
+        {shared ? <Alert variant="info">{shared}</Alert> : null}
         {application.submissions.map((reference, index) => (
           <div key={reference.submissionId} className="flex flex-col gap-4">
             {index > 0 ? <Divider /> : null}
             <PerformancePhonograms
               reference={reference}
               requirements={registration?.uploadRequirements ?? []}
-              closed={closed}
+              closed={reasons[index] ?? null}
+              explain={shared === null}
             />
           </div>
         ))}

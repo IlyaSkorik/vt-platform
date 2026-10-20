@@ -16,7 +16,6 @@ import {
   PageSection,
 } from "@/shared/ui";
 import { PublicationChecklistPanel } from "@/widgets/competition-workspace/ui/publication-checklist-panel";
-import { EditingLockCard } from "./editing-lock-card";
 import { NominationRegistration } from "./nomination-registration";
 
 interface RegistrationSectionProps {
@@ -54,15 +53,9 @@ export function RegistrationSection({
             </Alert>
           ) : null}
 
-          <EditingLockCard
-            competitionId={competition.id}
-            editingLockedAt={competition.editingLockedAt}
-            disabled={isCompleted}
-          />
-
           <PageSection
             title="Регистрация по номинациям"
-            description="Задайте окно приёма заявок для каждого жанра или остановите приём досрочно. Приём в жанре открыт только внутри его окна; общего срока регистрации нет."
+            description="Задайте окно приёма заявок для каждого жанра, остановите приём досрочно или закройте в жанре правки целиком. Общего срока регистрации нет — каждый жанр живёт по своему окну."
           >
             <Card className="shadow-none">
               <CardHeader className="pb-3">
@@ -108,7 +101,12 @@ export function RegistrationSection({
               <p>3. Кнопка «Остановить регистрацию» закрывает приём досрочно, не трогая даты.</p>
               <p>
                 4. Закрытый приём не трогает файлы: фонограммы, видео и документы участник меняет до
-                своих сроков загрузки. «Закрыть редактирование полностью» останавливает и это.
+                своих сроков загрузки.
+              </p>
+              <p>
+                5. «Закрыть редактирование» останавливает и это — в одном жанре. Нажимают, когда
+                список жанра окончателен и из него собирают программу; остальные жанры продолжают
+                принимать заявки.
               </p>
             </CardContent>
           </Card>

@@ -1676,6 +1676,125 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Business rule violation.
+  /api/v1/competitions/{id}/categories/{category_id}/editing-lock:
+    post:
+      operationId: lockSubmissionEditing
+      description: |-
+        Freeze (POST) or release (DELETE) what applicants may change in one genre.
+
+        Beside this nomination's registration controls, and scheduled per nomination
+        for the same reason they are: a festival finishes its genres one at a time, and
+        the genre being turned into a programme on Saturday must be able to freeze
+        without closing the one still taking entries.
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+    delete:
+      operationId: unlockSubmissionEditing
+      description: |-
+        Freeze (POST) or release (DELETE) what applicants may change in one genre.
+
+        Beside this nomination's registration controls, and scheduled per nomination
+        for the same reason they are: a festival finishes its genres one at a time, and
+        the genre being turned into a programme on Saturday must be able to freeze
+        without closing the one still taking entries.
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
   /api/v1/competitions/{id}/categories/{category_id}/registration:
     put:
       operationId: scheduleNominationRegistration
@@ -2906,113 +3025,6 @@ paths:
         schema:
           type: string
         required: true
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - Competitions
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionDetailResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Validation failed.
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Not organization staff.
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Competition or element not found.
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Lifecycle or configuration conflict.
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Business rule violation.
-  /api/v1/competitions/{id}/editing-lock:
-    post:
-      operationId: lockSubmissionEditing
-      description: |-
-        Freeze (POST) or release (DELETE) everything applicants may still change.
-
-        One switch for the whole festival, unlike registration, which is scheduled per
-        nomination: it is thrown when the list is final and the programme is about to
-        be built from it, and at that point "кроме вокала" is not a thing anybody means.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - Competitions
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionDetailResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Validation failed.
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Not organization staff.
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Competition or element not found.
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Lifecycle or configuration conflict.
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompetitionProblemDetail'
-          description: Business rule violation.
-    delete:
-      operationId: unlockSubmissionEditing
-      description: |-
-        Freeze (POST) or release (DELETE) everything applicants may still change.
-
-        One switch for the whole festival, unlike registration, which is scheduled per
-        nomination: it is thrown when the list is final and the programme is about to
-        be built from it, and at that point "кроме вокала" is not a thing anybody means.
-      parameters:
       - in: path
         name: id
         schema:
@@ -10604,6 +10616,49 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProgramProblemDetail'
           description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/items/arrange/undo:
+    post:
+      operationId: programsUndoArrange
+      description: '``POST`` to put back the running order the last rebuild replaced.'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
   /api/v1/staff/programs/{program_id}/items/fill:
     post:
       operationId: programsFillItems
@@ -14295,11 +14350,6 @@ components:
           $ref: '#/components/schemas/_LandingConfig'
         deadlines:
           $ref: '#/components/schemas/_Deadlines'
-        editingLockedAt:
-          type:
-          - string
-          - 'null'
-          format: date-time
         participationFormats:
           type: array
           items:
@@ -14375,7 +14425,6 @@ components:
       - description
       - disciplines
       - documents
-      - editingLockedAt
       - id
       - informationBlocks
       - landingConfig
@@ -17898,6 +17947,8 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ArrangementResource'
           - type: 'null'
+        canUndoArrange:
+          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -17910,6 +17961,7 @@ components:
       - arrangement
       - availableColumns
       - bufferSeconds
+      - canUndoArrange
       - competitionId
       - createdAt
       - endsAt
@@ -19616,8 +19668,6 @@ components:
           type: boolean
         participantCommentEnabled:
           type: boolean
-        editingLocked:
-          type: boolean
         musicUploadOpen:
           type: boolean
         mediaUploadOpen:
@@ -19672,7 +19722,6 @@ components:
       - deadlines
       - disciplines
       - documentUploadOpen
-      - editingLocked
       - mediaUploadOpen
       - musicUploadOpen
       - nominations
@@ -19891,8 +19940,11 @@ components:
           type: boolean
         waitlistOpen:
           type: boolean
+        editingLocked:
+          type: boolean
       required:
       - description
+      - editingLocked
       - id
       - name
       - registrationClosesAt
@@ -21900,8 +21952,14 @@ components:
           type: boolean
         waitlistEnabled:
           type: boolean
+        editingLockedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
       required:
       - description
+      - editingLockedAt
       - id
       - name
       - registrationClosesAt
@@ -24024,6 +24082,11 @@ components:
           type: string
         nomination:
           type: string
+        nominationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
         discipline:
           type: string
         status:
@@ -24040,6 +24103,7 @@ components:
       - currency
       - discipline
       - nomination
+      - nominationId
       - participantDisplayName
       - performanceTitle
       - priceAmount

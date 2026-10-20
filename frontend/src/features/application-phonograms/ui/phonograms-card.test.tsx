@@ -27,6 +27,7 @@ vi.mock("@/entities/application", async (importOriginal) => ({
 
 const SUBMISSION = "01900000-0000-7000-8000-000000000001";
 const FORMAT = "01900000-0000-7000-8000-0000000000aa";
+const NOMINATION = "01900000-0000-7000-8000-0000000000dd";
 const INPUT_LABEL = "Фонограммы: Катюша";
 
 const upload = vi.fn();
@@ -36,7 +37,9 @@ function anApplication(status = "ACCEPTED"): ApplicationResource {
     id: "01900000-0000-7000-8000-0000000000ff",
     competitionId: "01900000-0000-7000-8000-0000000000ee",
     status: "PAID",
-    submissions: [{ submissionId: SUBMISSION, status, performanceTitle: "Катюша" }],
+    submissions: [
+      { submissionId: SUBMISSION, status, performanceTitle: "Катюша", nominationId: NOMINATION },
+    ],
   } as unknown as ApplicationResource;
 }
 
@@ -59,10 +62,11 @@ beforeEach(() => {
   upload.mockResolvedValue(undefined);
   vi.mocked(useRegistration).mockReturnValue({
     data: {
-      editingLocked: false,
       musicUploadOpen: true,
       mediaUploadOpen: true,
       documentUploadOpen: true,
+      // Замок живёт на жанре: карточка спрашивает его про жанр своего номера.
+      nominations: [{ id: NOMINATION, name: "Вокал", editingLocked: false }],
       uploadRequirements: [
         {
           participationFormatId: FORMAT,
@@ -122,11 +126,15 @@ describe("PhonogramsCard", () => {
     ]);
   });
 
-  it("says so and offers nothing once the organizer has frozen the festival", () => {
+  it("says so and offers nothing once the organizer has frozen the genre", () => {
     // Приём может быть ещё открыт, а срок загрузки — через неделю: единственный
     // честный ответ здесь тот, что это решение организатора.
     vi.mocked(useRegistration).mockReturnValue({
-      data: { editingLocked: true, musicUploadOpen: false, uploadRequirements: [] },
+      data: {
+        musicUploadOpen: false,
+        nominations: [{ id: NOMINATION, name: "Вокал", editingLocked: true }],
+        uploadRequirements: [],
+      },
     } as unknown as ReturnType<typeof useRegistration>);
     stubSubmission([aTrack("t1", "uploads/2026/final.mp3")]);
 
@@ -138,7 +146,11 @@ describe("PhonogramsCard", () => {
 
   it("names the deadline, not the organizer, when it is the deadline that passed", () => {
     vi.mocked(useRegistration).mockReturnValue({
-      data: { editingLocked: false, musicUploadOpen: false, uploadRequirements: [] },
+      data: {
+        musicUploadOpen: false,
+        nominations: [{ id: NOMINATION, name: "Вокал", editingLocked: false }],
+        uploadRequirements: [],
+      },
     } as unknown as ReturnType<typeof useRegistration>);
     stubSubmission([]);
 
