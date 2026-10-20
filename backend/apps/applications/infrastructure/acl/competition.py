@@ -170,7 +170,11 @@ class DjangoCompetitionCatalog:
             # A benefit certificate is paperwork like any other document, so it
             # rides the competition's document-upload deadline.
             return competition.is_document_upload_allowed(now)
-        return competition.is_application_allowed(now)
+        # Video and photographs. They used to fall through to the *application*
+        # deadline, which closed the material of the act together with the door to the
+        # festival — an entry accepted on the last day could no longer have its video
+        # replaced. They ride the upload window now, like the track they go with.
+        return competition.is_media_upload_allowed(now)
 
     def participation_policy(
         self,

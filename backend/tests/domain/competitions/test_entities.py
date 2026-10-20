@@ -1098,6 +1098,32 @@ class TestNominationRegistration:
             c.schedule_nomination_registration(category_id=CategoryId.generate(), closes_at=datetime(2026, 8, 1, tzinfo=UTC), now=NOW)
 
 
+class TestMaterialUploadWindow:
+    """Фонограмма, видео и фотографии закрываются своим сроком, а не сроком заявок.
+
+    Раньше видео и фото падали на срок приёма: номер, попавший в фестиваль в
+    последний день, уже не мог заменить присланное видео — ровно обратное тому, зачем
+    сроки загрузки вообще стоят отдельно и позже.
+    """
+
+    def test_material_outlives_the_close_of_registration(self) -> None:
+        c, cat_id = _published()
+        c.schedule_nomination_registration(category_id=cat_id, closes_at=datetime(2026, 8, 31, tzinfo=UTC), now=NOW)
+        after_the_close = datetime(2026, 9, 15, tzinfo=UTC)
+        assert not c.accepts_submissions_for(cat_id, after_the_close)
+
+        assert c.is_music_upload_allowed(after_the_close)
+        assert c.is_media_upload_allowed(after_the_close)
+        assert c.is_document_upload_allowed(after_the_close)
+
+    def test_video_and_photographs_follow_the_track_s_own_deadline(self) -> None:
+        c, _ = _published()
+        c.update_deadlines(deadlines=RegistrationDeadlines(music_upload=datetime(2026, 9, 1, tzinfo=UTC)), now=NOW)
+
+        assert c.is_media_upload_allowed(datetime(2026, 8, 20, tzinfo=UTC))
+        assert not c.is_media_upload_allowed(datetime(2026, 9, 2, tzinfo=UTC))
+
+
 class TestNominationWaitlist:
     def test_waitlist_off_by_default(self) -> None:
         c, cat_id = _published()

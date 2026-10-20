@@ -1974,6 +1974,18 @@ class Competition:
     def is_music_upload_allowed(self, now: datetime) -> bool:
         return not self.is_completed() and self._deadlines.is_open(DeadlineKind.MUSIC_UPLOAD, now)
 
+    def is_media_upload_allowed(self, now: datetime) -> bool:
+        """Whether video and photographs may still be attached at ``now``.
+
+        Rides the music-upload deadline rather than one of its own: to an organizer a
+        backing track, a video and the photographs are one thing — материал
+        выступления — and they set one date for it. They used to ride the *application*
+        deadline instead, which meant the material closed together with the door to the
+        festival: the applicant who got in on the last day could no longer replace the
+        video they had sent, and that is the opposite of what the deadline is for.
+        """
+        return not self.is_completed() and self._deadlines.is_open(DeadlineKind.MUSIC_UPLOAD, now)
+
     def is_document_upload_allowed(self, now: datetime) -> bool:
         return not self.is_completed() and self._deadlines.is_open(DeadlineKind.DOCUMENT_UPLOAD, now)
 

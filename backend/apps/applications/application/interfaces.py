@@ -234,8 +234,11 @@ class CompetitionCatalog(Protocol):
     def accepts_upload(self, *, competition_id: CompetitionId, attachment_kind: str, now: datetime) -> bool:
         """Whether uploads of ``attachment_kind`` are still allowed at ``now``.
 
-        Honours the music-upload and document-upload deadlines; kinds without a
-        dedicated deadline follow the application deadline.
+        Honours the music-upload deadline (tracks, video and photographs: one window
+        over the material of the act) and the document-upload one (paperwork and
+        benefit certificates). Deliberately independent of the application deadline:
+        the windows are later than it on purpose, because an entry that got in on the
+        last day still has a track to send.
         """
         ...
 
