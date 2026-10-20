@@ -74,6 +74,7 @@ from shared.spreadsheet import SheetColumn, write_workbook, xlsx_response
 _TAG = "Competition Program"
 
 __all__ = [
+    "ProgramArrangeUndoView",
     "ProgramArrangeView",
     "ProgramCandidatesView",
     "ProgramCollectionView",
@@ -184,6 +185,7 @@ def _program_json(view: dto.ProgramDetailView) -> dict[str, Any]:
         "totalSeconds": view.total_seconds,
         "endsAt": view.ends_at,
         "arrangement": _arrangement_json(view.arrangement),
+        "canUndoArrange": view.can_undo_arrange,
         "createdAt": view.created_at,
         "updatedAt": view.updated_at,
         "version": view.version,
@@ -473,6 +475,23 @@ class ProgramArrangeView(_StaffView):
         payload = _arrangement_payload(data) if data else None
         try:
             program = build_program_service().arrange_program(ArrangeProgramCommand(program_id=program_id, settings=payload))
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        return problems.envelope(request, _program_json(program))
+
+
+class ProgramArrangeUndoView(_StaffView):
+    """``POST`` to put back the running order the last rebuild replaced."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="programsUndoArrange",
+        request=None,
+        responses={200: ProgramDetailSerializer, **_PROBLEM_RESPONSES},
+    )
+    def post(self, request: Request, program_id: str) -> Response:
+        try:
+            program = build_program_service().undo_arrange(program_id)
         except ProgramError as exc:
             return self._problem(exc, request)
         return problems.envelope(request, _program_json(program))

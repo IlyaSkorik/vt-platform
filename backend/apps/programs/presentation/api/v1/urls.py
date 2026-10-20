@@ -10,6 +10,7 @@ from __future__ import annotations
 from django.urls import path
 
 from .views import (
+    ProgramArrangeUndoView,
     ProgramArrangeView,
     ProgramCandidatesView,
     ProgramCollectionView,
@@ -41,6 +42,7 @@ urlpatterns = [
     path("staff/programs/<str:program_id>/items", ProgramItemCollectionView.as_view(), name="items"),
     path("staff/programs/<str:program_id>/items/fill", ProgramItemsFillView.as_view(), name="items-fill"),
     path("staff/programs/<str:program_id>/items/arrange", ProgramArrangeView.as_view(), name="items-arrange"),
+    path("staff/programs/<str:program_id>/items/arrange/undo", ProgramArrangeUndoView.as_view(), name="items-arrange-undo"),
     path("staff/programs/<str:program_id>/items/order", ProgramItemOrderView.as_view(), name="items-order"),
     path("staff/programs/<str:program_id>/items/numbers", ProgramItemNumbersView.as_view(), name="items-numbers"),
     path("staff/programs/<str:program_id>/items/<str:item_id>", ProgramItemDetailView.as_view(), name="item-detail"),

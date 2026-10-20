@@ -313,6 +313,8 @@ class ProgramDetailSerializer(serializers.Serializer[dict[str, object]]):
     endsAt = serializers.DateTimeField(allow_null=True)
     #: Null for a programme that was only ever built by hand.
     arrangement = ArrangementResourceSerializer(allow_null=True)
+    #: True only between a rebuild and the undo that consumes it.
+    canUndoArrange = serializers.BooleanField()
     createdAt = serializers.DateTimeField()
     updatedAt = serializers.DateTimeField()
     version = serializers.IntegerField()

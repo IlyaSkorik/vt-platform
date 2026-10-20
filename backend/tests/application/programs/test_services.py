@@ -33,6 +33,7 @@ from apps.programs.application.services import ProgramService
 from apps.programs.domain.exceptions import (
     ExportUnavailableError,
     InvalidProgramDataError,
+    NoRestorePointError,
     PerformanceAlreadyInProgramError,
     PerformanceNotAvailableError,
     ProgramHasSharesError,
@@ -1033,3 +1034,63 @@ class TestArrangingAProgramme:
         program = env.service.arrange_program(ArrangeProgramCommand(program_id=program_id))
 
         assert [item.title for item in program.items] == ["Катюша"]
+
+
+class TestUndoingARebuild:
+    """«Отменить» after a regeneration that was not meant (VT-86).
+
+    Regeneration warns before it replaces, but understanding a warning and meaning to
+    press the button are different things. One step back, offered once.
+    """
+
+    def test_the_hand_built_order_comes_back(self) -> None:
+        env = Env(_candidate("Катюша", 200), _candidate("Калинка", 180))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+        before = env.service.arrange_program(ArrangeProgramCommand(program_id=program_id))
+        env.service.add_block(AddBlockCommand(program_id=program_id, kind="BREAK", title="Обед", duration_seconds=900))
+        arranged_by_hand = env.service.get_program(program_id)
+
+        env.service.arrange_program(ArrangeProgramCommand(program_id=program_id))
+        restored = env.service.undo_arrange(program_id)
+
+        assert [item.id for item in restored.items] == [item.id for item in arranged_by_hand.items]
+        assert len(restored.items) == len(before.items) + 1
+
+    def test_the_undo_is_offered_only_between_a_rebuild_and_itself(self) -> None:
+        env = Env(_candidate("Катюша", 200))
+        program_id = env.program()
+
+        assert not env.service.get_program(program_id).can_undo_arrange
+
+        arranged = env.service.arrange_program(ArrangeProgramCommand(program_id=program_id))
+        assert arranged.can_undo_arrange
+
+        assert not env.service.undo_arrange(program_id).can_undo_arrange
+
+    def test_undoing_twice_is_refused_rather_than_silently_doing_nothing(self) -> None:
+        env = Env(_candidate("Катюша", 200))
+        program_id = env.program()
+        env.service.arrange_program(ArrangeProgramCommand(program_id=program_id))
+        env.service.undo_arrange(program_id)
+
+        with pytest.raises(NoRestorePointError):
+            env.service.undo_arrange(program_id)
+
+    def test_a_programme_that_was_never_rebuilt_has_nothing_to_undo(self) -> None:
+        env = Env(_candidate("Катюша", 200))
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        with pytest.raises(NoRestorePointError):
+            env.service.undo_arrange(program_id)
+
+    def test_undoing_an_empty_programmes_first_build_empties_it_again(self) -> None:
+        """«Собрать программу» on a blank programme is as undoable as any other rebuild."""
+        env = Env(_candidate("Катюша", 200))
+        program_id = env.program()
+        env.service.arrange_program(ArrangeProgramCommand(program_id=program_id))
+
+        restored = env.service.undo_arrange(program_id)
+
+        assert restored.items == ()

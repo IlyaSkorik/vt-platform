@@ -199,6 +199,10 @@ class ProgramDetailView:
     #: The generation rules this programme carries, or ``None`` if it was only ever
     #: built by hand. What the generator dialog prefills from.
     arrangement: ArrangementView | None
+    #: Whether the last rebuild can still be undone. True only between a rebuild and
+    #: the undo that consumes it, and never for a published programme, whose numbers
+    #: may not move. The one input the «Отменить» button needs.
+    can_undo_arrange: bool
     created_at: datetime
     updated_at: datetime
     version: int

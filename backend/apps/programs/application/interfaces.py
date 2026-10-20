@@ -19,7 +19,7 @@ from datetime import datetime
 from typing import Protocol
 
 from apps.programs.application.dto import ProgramTableView
-from apps.programs.domain.entities import Program
+from apps.programs.domain.entities import Program, ProgramItem
 
 __all__ = [
     "CatalogApplicant",
@@ -112,6 +112,21 @@ class ProgramRepository(Protocol):
 
         The public edge needs no aggregate loaded by id and no organizer context - a
         slug is the whole of its input.
+        """
+        ...
+
+    def items_retired_at(self, program_id: uuid.UUID, moment: datetime) -> tuple[ProgramItem, ...]:
+        """The slots this program retired in one write, in the order they then stood.
+
+        A replaced slot is soft-deleted rather than erased, and every row a single
+        write retires carries that write's instant. So one timestamp addresses a whole
+        past running order, which is what lets a rebuild be undone without the
+        aggregate having to carry a copy of itself around - see
+        :meth:`~apps.programs.domain.entities.Program.restore_order`.
+
+        Returns the rows themselves, not copies: their ids, numbers and filled-in cells
+        are the originals, so restoring them revives the rows rather than writing new
+        ones.
         """
         ...
 

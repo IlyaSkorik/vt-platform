@@ -70,6 +70,7 @@ from apps.programs.domain.entities import Program, ProgramItem, ProgramShare
 from apps.programs.domain.exceptions import (
     ExportUnavailableError,
     InvalidProgramDataError,
+    NoRestorePointError,
     PerformanceNotAvailableError,
     ProgramConcurrencyError,
     ProgramNotFoundError,
@@ -477,6 +478,26 @@ class ProgramService:
         )
         plan = arrange(candidates=candidates, settings=settings, buffer=program.buffer)
         program.rebuild([_arranged_to_item(entry) for entry in plan], settings=settings, now=now)
+        self._programs.save(program)
+        return self._detail(program)
+
+    def undo_arrange(self, program_id: str) -> ProgramDetailView:
+        """Put back the running order the last rebuild replaced.
+
+        Regeneration is a replacement and says so, but "I understood the warning" and "I
+        meant to press that" are different things, and only the second one is a decision.
+        The replaced slots are soft-deleted rather than erased, so the whole of the
+        previous order is still on disk under the instant it was retired at; this reads it
+        back and hands it to the aggregate.
+
+        Deliberately not a general undo stack. One step, consumed when used, and only for
+        the one action that destroys an afternoon of work in a single click.
+        """
+        now = self._clock.utcnow()
+        program = self._load(program_id)
+        if program.rebuilt_at is None:
+            raise NoRestorePointError("Отменять нечего: программу не пересобирали, либо отмену уже применили.")
+        program.restore_order(self._programs.items_retired_at(program.id, program.rebuilt_at), now=now)
         self._programs.save(program)
         return self._detail(program)
 
@@ -1128,6 +1149,7 @@ class ProgramService:
             total_seconds=total,
             ends_at=program.starts_at + timedelta(seconds=total) if program.starts_at is not None else None,
             arrangement=_arrangement_view(program.arrangement),
+            can_undo_arrange=program.can_undo_rebuild,
             created_at=program.created_at,
             updated_at=program.updated_at,
             version=program.version,

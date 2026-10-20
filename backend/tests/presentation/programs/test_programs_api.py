@@ -1121,3 +1121,66 @@ class TestArrangeEndpoint:
         program = _create_program(staff_client, scope)
         response = outsider_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange", {}, format="json")
         assert response.status_code == 403
+
+
+class TestUndoArrangeEndpoint:
+    """«Отменить» — the one step back a regeneration leaves behind (VT-86)."""
+
+    def test_the_previous_order_comes_back_whole(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=180)
+        program = _create_program(staff_client, scope)
+        staff_client.post(f"{_PROGRAMS}/{program['id']}/items/fill", {}, format="json")
+        by_hand = staff_client.post(
+            f"{_PROGRAMS}/{program['id']}/items",
+            {"kind": "BREAK", "title": "Обед", "durationSeconds": 900},
+            format="json",
+        )
+        assert by_hand.status_code in (200, 201), by_hand.data
+        before = staff_client.get(f"{_PROGRAMS}/{program['id']}").data["data"]["items"]
+
+        staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange", {}, format="json")
+        response = staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange/undo", {}, format="json")
+
+        assert response.status_code == 200, response.data
+        assert [item["id"] for item in response.data["data"]["items"]] == [item["id"] for item in before]
+
+    def test_the_programme_says_whether_the_undo_is_on_offer(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=180)
+        program = _create_program(staff_client, scope)
+
+        assert program["canUndoArrange"] is False
+
+        arranged = staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange", {}, format="json")
+        assert arranged.data["data"]["canUndoArrange"] is True
+
+        undone = staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange/undo", {}, format="json")
+        assert undone.data["data"]["canUndoArrange"] is False
+
+    def test_a_stale_undo_button_is_a_conflict_not_a_silent_no_op(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        # Two windows open, both showing «Отменить»; the second press must say so
+        # rather than appear to work and change nothing.
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=180)
+        program = _create_program(staff_client, scope)
+        staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange", {}, format="json")
+        staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange/undo", {}, format="json")
+
+        response = staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange/undo", {}, format="json")
+
+        assert response.status_code == 409, response.data
+        assert response.data["type"].endswith("conflict")
+
+    def test_a_published_programme_is_refused_the_undo(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=180)
+        program = _create_program(staff_client, scope)
+        staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange", {}, format="json")
+        staff_client.post(f"{_PROGRAMS}/{program['id']}/shares", {"name": "Экран"}, format="json")
+
+        response = staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange/undo", {}, format="json")
+
+        assert response.status_code == 409, response.data
+        reloaded = staff_client.get(f"{_PROGRAMS}/{program['id']}")
+        assert reloaded.data["data"]["canUndoArrange"] is False
