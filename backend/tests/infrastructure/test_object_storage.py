@@ -12,13 +12,14 @@ being unguessable. That is asserted here too.
 from __future__ import annotations
 
 import uuid
+from typing import Any, ClassVar
 
 import pytest
-from django.core.files.storage import default_storage, storages
+from django.core.files.storage import FileSystemStorage, default_storage, storages
 from django.test import override_settings
 
 from apps.applications.presentation.api.v1.files import file_url
-from apps.diplomas.infrastructure.pdf.workspace import _unguessable, storage_key_of
+from apps.diplomas.infrastructure.pdf.workspace import DjangoPrintPackageWorkspace, _unguessable, storage_key_of
 
 #: A bucket that does not exist, reached through an endpoint that is never called: every
 #: assertion below is about URLs and keys, which django-storages computes locally.
@@ -98,3 +99,55 @@ class TestDiplomaKeysCannotBeGuessed:
         with override_settings(SECRET_KEY="the-original-secret"):
             original = _unguessable("print", competition, "VT-2026-000001")
         assert _unguessable("print", competition, "VT-2026-000001") != original
+
+
+class _RecordingStorage(FileSystemStorage):
+    """Stands in for the ``replaceable`` alias and remembers what went through it."""
+
+    keys: ClassVar[list[str]] = []
+
+    def save(self, name: str | None, content: Any, max_length: int | None = None) -> str:
+        _RecordingStorage.keys.append(str(name))
+        return str(super().save(name, content, max_length))
+
+
+RECORDING_STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "replaceable": {"BACKEND": "tests.infrastructure.test_object_storage._RecordingStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+
+class TestReplacedFilesAreWrittenThroughTheirOwnStorage:
+    """The few keys this platform writes *back* to must not be cached as immutable.
+
+    A re-rendered diploma and a repeated print run both land on the key they already
+    had — deliberately, because the reference is in the database. The default storage
+    tells caches that a key is good for a year, which for these is a browser handing the
+    organizer the previous run's archive and never asking the server about it. They are
+    written through ``replaceable``, whose only difference is the header it sets.
+    """
+
+    def setup_method(self) -> None:
+        _RecordingStorage.keys.clear()
+        storages._storages.pop("replaceable", None)  # type: ignore[attr-defined]  # private cache; no public reset exists
+
+    def teardown_method(self) -> None:
+        for key in _RecordingStorage.keys:
+            default_storage.delete(key)
+        _RecordingStorage.keys.clear()
+        storages._storages.pop("replaceable", None)  # type: ignore[attr-defined]  # private cache; no public reset exists
+
+    @override_settings(STORAGES=RECORDING_STORAGES)
+    def test_a_re_rendered_diploma_goes_through_it(self) -> None:
+        reference = DjangoPrintPackageWorkspace().store_official_pdf(competition_id=uuid.uuid4(), number="VT-2026-000001", data=b"%PDF-1.4\n")
+
+        assert storage_key_of(reference) in _RecordingStorage.keys
+
+    @override_settings(STORAGES=RECORDING_STORAGES)
+    def test_the_generation_archive_goes_through_it(self) -> None:
+        # The one the organizer actually clicks: one key per competition, replaced by
+        # every run, and the whole reason this alias exists.
+        reference = DjangoPrintPackageWorkspace().store_zip(competition_id=uuid.uuid4(), items=[])
+
+        assert storage_key_of(reference) in _RecordingStorage.keys

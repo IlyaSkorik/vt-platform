@@ -42,5 +42,6 @@ MAIL_RATE_LIMIT_PER_MINUTE = 0
 # Whitenoise manifest storage requires collectstatic; use plain storage in tests.
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "replaceable": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }

@@ -24,7 +24,7 @@ from urllib.parse import unquote
 
 from django.conf import settings
 from django.core.files.base import ContentFile, File
-from django.core.files.storage import default_storage
+from django.core.files.storage import Storage, default_storage, storages
 from django.utils.text import slugify
 
 from apps.diplomas.application.interfaces import TemplateAssets
@@ -80,6 +80,23 @@ def _reference_base() -> str:
 def _reference(key: str) -> str:
     """The URL a stored file is reachable at - whatever the configured storage says."""
     return default_storage.url(key)
+
+
+def _replaceable() -> Storage:
+    """The storage to write a key that will be written again through.
+
+    Same bucket, same keys, same URLs - it differs only in the ``Cache-Control`` it
+    puts on the object. Everything written here is written *back* sooner or later: a
+    corrected protocol re-renders a diploma onto its own key, and every print run
+    replaces the competition's archive. The default storage promises a year of
+    ``immutable`` for those URLs, which is exactly how a browser answers the next
+    download out of its own disk cache - reproducibly in Opera, and sooner or later
+    everywhere - and hands the organizer the archive from the previous run.
+
+    Reading, deleting and minting a URL still go through ``default_storage``: the two
+    instances address the same objects, and only the write carries the header.
+    """
+    return storages["replaceable"]
 
 
 def _unguessable(*parts: str) -> str:
@@ -145,7 +162,7 @@ class DjangoPrintPackageWorkspace:
         key = f"diplomas/print/{competition_id}/{token}/{number}.pdf"
         if default_storage.exists(key):
             default_storage.delete(key)
-        default_storage.save(key, ContentFile(data))
+        _replaceable().save(key, ContentFile(data))
         return _reference(key)
 
     def store_official_pdf(self, *, competition_id: uuid.UUID, number: str, data: bytes) -> str:
@@ -160,7 +177,7 @@ class DjangoPrintPackageWorkspace:
             # Re-rendered by a corrected protocol: the participant's URL must not change,
             # so the object behind it is replaced in place.
             default_storage.delete(key)
-        default_storage.save(key, ContentFile(data))
+        _replaceable().save(key, ContentFile(data))
         return _reference(key)
 
     def store_document_pdf(
@@ -186,7 +203,7 @@ class DjangoPrintPackageWorkspace:
         key = f"diplomas/documents/{competition_id}/{document_type.lower()}/{token}/{submission_id}{suffix}.pdf"
         if default_storage.exists(key):
             default_storage.delete(key)
-        default_storage.save(key, ContentFile(data))
+        _replaceable().save(key, ContentFile(data))
         return _reference(key)
 
     def store_zip(self, *, competition_id: uuid.UUID, items: list[tuple[str, str]], extras: Sequence[tuple[str, bytes]] = ()) -> str:
@@ -236,5 +253,5 @@ class DjangoPrintPackageWorkspace:
                 default_storage.delete(key)
             # A file object rather than bytes: the storage reads it in chunks, so the
             # archive is never resident in full - locally or on the way to a bucket.
-            default_storage.save(key, File(spool, name=PurePosixPath(key).name))
+            _replaceable().save(key, File(spool, name=PurePosixPath(key).name))
         return _reference(key)
