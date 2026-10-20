@@ -328,6 +328,15 @@ export interface Program {
   endsAt: string | null;
   /** The rules this programme was generated from — `null` if it was only built by hand. */
   arrangement: ArrangementSettings | null;
+  /**
+   * Whether the last «Пересобрать» can still be put back.
+   *
+   * True only between a rebuild and the undo that consumes it, and never for a
+   * published programme — its numbers have been told to participants and may not move.
+   * The server owns this: the replaced rows are still on disk, and only it knows
+   * whether they are still addressable.
+   */
+  canUndoArrange: boolean;
   createdAt: string;
   updatedAt: string;
   version: number;

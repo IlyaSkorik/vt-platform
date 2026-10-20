@@ -235,6 +235,21 @@ export function useArrangeProgram(
   );
 }
 
+/**
+ * Put back the running order the last «Пересобрать» replaced.
+ *
+ * One step back, not a history: the server holds a single restore point and spends it
+ * here. Guarded by `program.canUndoArrange` rather than by anything this client
+ * remembers, so a second window that already undid it is answered with a conflict.
+ */
+export function useUndoArrange(programId: string): UseMutationResult<Program, ApiError, void> {
+  return useProgramMutation<void>(programId, () =>
+    request<Envelope<Program>>(`staff/programs/${programId}/items/arrange/undo`, {
+      method: "post",
+    }),
+  );
+}
+
 /** Insert a break (or any other standalone block). */
 export function useAddBlock(
   programId: string,

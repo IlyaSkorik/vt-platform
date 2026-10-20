@@ -31,6 +31,7 @@ export {
   useRenumberItems,
   useReorderItems,
   useResetProgress,
+  useUndoArrange,
   useUpdateProgram,
   useUpdateShare,
 } from "./api";

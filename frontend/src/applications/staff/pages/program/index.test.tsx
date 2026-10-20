@@ -33,6 +33,7 @@ import {
   useRenameColumn,
   useRenumberItems,
   useReorderItems,
+  useUndoArrange,
   useUpdateProgram,
 } from "@/features/program-builder";
 
@@ -50,6 +51,7 @@ vi.mock("@/features/program-builder", async (importOriginal) => ({
   useUpdateProgram: vi.fn(),
   useAddPerformance: vi.fn(),
   useArrangeProgram: vi.fn(),
+  useUndoArrange: vi.fn(),
   useAddBlock: vi.fn(),
   useEditItem: vi.fn(),
   useFillProgram: vi.fn(),
@@ -119,6 +121,7 @@ const createShare = vi.fn();
 const addPerformance = vi.fn();
 const fillProgram = vi.fn();
 const arrangeProgram = vi.fn();
+const undoArrange = vi.fn();
 const removeItem = vi.fn();
 const removeShare = vi.fn();
 const deleteProgram = vi.fn();
@@ -195,6 +198,8 @@ function aProgram(overrides: Partial<Program> = {}): Program {
     endsAt: "2026-08-01T10:07:40Z",
     // Built by hand, like every programme that predates the generator.
     arrangement: null,
+    // Nothing to undo: no rebuild has happened in these fixtures unless one says so.
+    canUndoArrange: false,
     createdAt: "2026-08-01T09:00:00Z",
     updatedAt: "2026-08-01T09:00:00Z",
     version: 3,
@@ -259,6 +264,7 @@ function stub(
   vi.mocked(useEditItem).mockReturnValue(mutation(editItem));
   vi.mocked(useFillProgram).mockReturnValue(mutation(fillProgram));
   vi.mocked(useArrangeProgram).mockReturnValue(mutation(arrangeProgram));
+  vi.mocked(useUndoArrange).mockReturnValue(mutation(undoArrange));
   vi.mocked(useRemoveItem).mockReturnValue(mutation(removeItem));
   vi.mocked(useReorderItems).mockReturnValue(mutation(reorder));
   vi.mocked(useRenumberItems).mockReturnValue(mutation(renumber));
@@ -1668,6 +1674,24 @@ describe("StaffProgramPage — автосоставление", () => {
     await userEvent.click(within(dialog).getByRole("button", { name: "Отмена" }));
 
     expect(arrangeProgram).not.toHaveBeenCalled();
+  });
+
+  it("«Отменить пересборку» показывается, пока сервер держит точку возврата", async () => {
+    stub(draft({ arrangement: SAVED_RULES, canUndoArrange: true }));
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Отменить пересборку/ }));
+
+    expect(undoArrange).toHaveBeenCalledTimes(1);
+  });
+
+  it("без точки возврата отменять нечего, и кнопки нет", async () => {
+    // Кнопка живёт по ответу сервера, а не по тому, что помнит эта вкладка: точку
+    // возврата мог потратить соседний экран.
+    stub(draft({ arrangement: SAVED_RULES, canUndoArrange: false }));
+    await renderPage();
+
+    expect(screen.queryByRole("button", { name: /Отменить пересборку/ })).not.toBeInTheDocument();
   });
 
   it("опубликованную программу пересобрать нельзя", async () => {

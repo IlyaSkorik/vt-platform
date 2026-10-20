@@ -17,6 +17,7 @@ import {
   Plus,
   Send,
   Trash2,
+  Undo2,
   Wand2,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -68,6 +69,7 @@ import {
   useRenameColumn,
   useRenumberItems,
   useReorderItems,
+  useUndoArrange,
   useUpdateProgram,
 } from "@/features/program-builder";
 import { ArrangeProgramDialog } from "@/features/program-builder/ui/arrange-dialog";
@@ -1629,13 +1631,13 @@ function CustomCell({
 }
 
 /**
- * «Собрать программу» и «Пересобрать» — автосоставление (VT-86).
+ * «Собрать программу», «Пересобрать» и «Отменить» — автосоставление (VT-86).
  *
- * Две кнопки, потому что это два разных действия: первая открывает правила,
+ * Две кнопки сборки, потому что это два разных действия: первая открывает правила,
  * вторая повторяет те, по которым программа уже стоит. Пересобирают чаще, чем собирают
  * впервые, — заявки идут до последнего дня, — и ради этого правила и живут на программе.
  *
- * После публикации обе выключены: пересборка выдаёт слоты заново, а номера уже названы
+ * После публикации всё выключено: пересборка выдаёт слоты заново, а номера уже названы
  * участникам. Сервер откажет и сам, но кнопка, которая заведомо упрётся в ошибку, —
  * это ошибка, показанная вместо объяснения.
  *
@@ -1644,18 +1646,38 @@ function CustomCell({
  * Раньше это стоило один клик по кнопке в общем ряду, и однажды так и вышло: по ней
  * нажали, не собираясь, и потеряли день расстановки. Теперь диалог называет, сколько
  * строк на кону, прежде чем их заменить.
+ *
+ * **И её можно отменить.** Диалог предупреждает, но «я прочитал предупреждение» и
+ * «я хотел это сделать» — разные вещи, и решением является только второе. Сервер держит
+ * одну точку возврата, поэтому кнопка живёт, пока он говорит `canUndoArrange`, а не пока
+ * висит тост: паника случается не в те пять секунд, что он на экране.
  */
 function ArrangeControls({ program }: { program: Program }): React.JSX.Element {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const arrange = useArrangeProgram(program.id);
+  const undo = useUndoArrange(program.id);
+
+  const undoArrange = () =>
+    undo.mutate(undefined, {
+      onSuccess: (next) =>
+        toast.success(`Пересборка отменена: вернулось ${next.items.length} строк`),
+      // Точку возврата мог потратить соседний экран — отказ сервера точнее
+      // того, что знает эта вкладка.
+      onError: (error) => toast.error(error.message || "Не удалось отменить пересборку"),
+    });
 
   const run = (input?: Parameters<typeof arrange.mutate>[0]) =>
     arrange.mutate(input, {
       onSuccess: (next) => {
         setOpen(false);
         setConfirming(false);
-        toast.success(`Программа собрана: ${next.items.length} строк`);
+        toast.success(`Программа собрана: ${next.items.length} строк`, {
+          // Тост — для того, кто понял сразу; кнопка в панели — для всех остальных.
+          action: next.canUndoArrange
+            ? { label: "Отменить", onClick: () => undoArrange() }
+            : undefined,
+        });
       },
       onError: () => toast.error("Не удалось собрать программу"),
     });
@@ -1680,6 +1702,11 @@ function ArrangeControls({ program }: { program: Program }): React.JSX.Element {
           Пересобрать
         </Button>
       ) : null}
+      {program.canUndoArrange ? (
+        <Button variant="ghost" size="sm" loading={undo.isPending} onClick={undoArrange}>
+          <Undo2 className="size-4" /> Отменить пересборку
+        </Button>
+      ) : null}
       <Dialog open={confirming} onOpenChange={setConfirming}>
         <DialogContent>
           <DialogHeader>
@@ -1687,7 +1714,8 @@ function ArrangeControls({ program }: { program: Program }): React.JSX.Element {
             <DialogDescription>
               Сейчас в программе строк: {program.items.length}. Все они будут заменены строками,
               собранными по сохранённым правилам: перерывы, которые вы подвинули руками, изменённая
-              длительность номеров и заполненные ячейки пропадут. Колонки останутся.
+              длительность номеров и заполненные ячейки пропадут. Колонки останутся. Это можно будет
+              отменить кнопкой «Отменить пересборку».
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
