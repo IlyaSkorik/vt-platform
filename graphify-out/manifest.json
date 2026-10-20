@@ -3095,8 +3095,8 @@
     "semantic_hash": "4616a41e93c24e9d5e6c5ded3754db37"
   },
   "backend/config/settings/base.py": {
-    "mtime": 1792353772.8052585,
-    "ast_hash": "f07f2906cd8480d8fda72597f881069e",
+    "mtime": 1792483809.5171244,
+    "ast_hash": "8da680f7f581cd8fa337f4c0db7987d4",
     "semantic_hash": ""
   },
   "backend/config/settings/development.py": {
@@ -3115,8 +3115,8 @@
     "semantic_hash": ""
   },
   "backend/config/settings/testing.py": {
-    "mtime": 1785860600.8516164,
-    "ast_hash": "11931e7f84f2d14996e9faafa581a77d",
+    "mtime": 1792483816.7160761,
+    "ast_hash": "8d1472c56b150fa5818f46fc07289567",
     "semantic_hash": ""
   },
   "backend/config/urls.py": {
@@ -7490,8 +7490,8 @@
     "semantic_hash": ""
   },
   "backend/apps/diplomas/infrastructure/pdf/workspace.py": {
-    "mtime": 1786807784.0527074,
-    "ast_hash": "ea6789cb496b10aeabb0053425f1f94a",
+    "mtime": 1792484392.868314,
+    "ast_hash": "e48155eb6ea3bc9ce839ef9b655cd1b1",
     "semantic_hash": ""
   },
   "backend/apps/diplomas/presentation/api/v1/diplomas/print_package.py": {
@@ -8345,8 +8345,8 @@
     "semantic_hash": ""
   },
   "backend/tests/infrastructure/test_object_storage.py": {
-    "mtime": 1786124235.4605436,
-    "ast_hash": "278e2a7225c0c0ccfb492dcf71659efd",
+    "mtime": 1792484109.3249297,
+    "ast_hash": "54abf9404449eab8a3878501dfb99227",
     "semantic_hash": ""
   },
   "docs/devops/OPS-007-object-storage.md": {
@@ -8790,8 +8790,8 @@
     "semantic_hash": ""
   },
   "backend/config/archive.py": {
-    "mtime": 1791877913.0243657,
-    "ast_hash": "2795059177c1bb7110f31d08b8f994c4",
+    "mtime": 1792483893.540286,
+    "ast_hash": "4bb523f55cafb617af3127ff83eda1e3",
     "semantic_hash": ""
   },
   "backend/tests/presentation/applications/test_documents_archive_api.py": {
@@ -11745,8 +11745,8 @@
     "semantic_hash": ""
   },
   "backend/tests/infrastructure/test_zip_response_streaming.py": {
-    "mtime": 1791877913.0282319,
-    "ast_hash": "92538edddd7d319c66718f58274eedf4",
+    "mtime": 1792483960.6718771,
+    "ast_hash": "080fd767d7b417308280ba71af29b155",
     "semantic_hash": ""
   },
   "backend/apps/notifications/infrastructure/migrations/0005_program_published_kind.py": {
