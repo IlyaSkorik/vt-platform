@@ -9,6 +9,7 @@ import {
   useRegistration,
 } from "@/entities/application";
 import { BenefitDocumentsCard } from "@/features/application-benefit-documents";
+import { MediaCard } from "@/features/application-media";
 import { PhonogramsCard } from "@/features/application-phonograms";
 import { ReceiptCard } from "@/features/application-receipt";
 import {
@@ -207,6 +208,8 @@ export function ApplicationEditPage(): React.JSX.Element {
         ) : null}
 
         <PhonogramsCard application={application} />
+
+        <MediaCard application={application} />
 
         {composable ? (
           <PayerCard
