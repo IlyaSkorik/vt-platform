@@ -62,7 +62,7 @@ class ProgramMapper:
             nomination_id=model.nomination_id,
             starts_at=model.starts_at,
             buffer=TimeBuffer(int(model.buffer_seconds)),
-            items=[ProgramMapper._item_to_entity(row) for row in sorted(items, key=lambda row: row.position)],
+            items=[ProgramMapper.item_to_entity(row) for row in sorted(items, key=lambda row: row.position)],
             shares=[ProgramMapper._share_to_entity(row) for row in sorted(shares, key=lambda row: row.created_at)],
             custom_columns=[ProgramMapper._column_to_entity(row) for row in sorted(columns or [], key=lambda row: row.position)],
             numbers_issued=int(model.numbers_issued),
@@ -70,6 +70,7 @@ class ProgramMapper:
             deleted_at=model.deleted_at,
             version=model.version,
             arrangement=ProgramMapper._arrangement_to_entity(model.arrangement),
+            rebuilt_at=model.rebuilt_at,
         )
 
     @staticmethod
@@ -84,6 +85,7 @@ class ProgramMapper:
             "numbers_issued": program.numbers_issued,
             "numbers_frozen_at": program.numbers_frozen_at,
             "arrangement": ProgramMapper._arrangement_fields(program.arrangement),
+            "rebuilt_at": program.rebuilt_at,
             "created_at": program.created_at,
             "updated_at": program.updated_at,
             "deleted_at": program.deleted_at,
@@ -180,7 +182,7 @@ class ProgramMapper:
         return ArrangementBlock.of(str(raw.get("title") or ""), seconds=int(raw.get("duration_seconds") or 0))
 
     @staticmethod
-    def _item_to_entity(row: ProgramItemModel) -> ProgramItem:
+    def item_to_entity(row: ProgramItemModel) -> ProgramItem:
         kind = ProgramItemKind(row.kind)
         duration = ItemDuration(int(row.duration_seconds))
         # Rows written before numbers existed fall back to their ordinal, which is what

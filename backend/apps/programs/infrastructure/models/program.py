@@ -68,6 +68,11 @@ class ProgramModel(BasePersistenceModel):
     # a generation setting, and the set of knobs is expected to grow. An empty object
     # means "this programme was only ever built by hand".
     arrangement = models.JSONField(default=dict, blank=True)
+    # When a rebuild last replaced the whole running order. The rows it replaced carry
+    # this same instant as their ``deleted_at``, which is what makes one timestamp
+    # enough to find the state again - see ``Program.restore_order``. Null once the
+    # undo has used it up, or when no rebuild has happened.
+    rebuilt_at = models.DateTimeField(null=True, blank=True, default=None, editable=False)
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "programs_program"

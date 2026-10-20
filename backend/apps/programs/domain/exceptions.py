@@ -11,6 +11,7 @@ __all__ = [
     "ExportUnavailableError",
     "InvalidProgramDataError",
     "ItemNotInProgramError",
+    "NoRestorePointError",
     "PerformanceAlreadyInProgramError",
     "PerformanceNotAvailableError",
     "ProgramColumnNotFoundError",
@@ -103,6 +104,17 @@ class ProgramNumbersFrozenError(ProgramError):
     """
 
     code = "program_numbers_frozen"
+
+
+class NoRestorePointError(ProgramError):
+    """Raised when a programme is asked to undo a rebuild it never had.
+
+    The restore point is the one a rebuild leaves behind, and it is consumed by the
+    undo that uses it. So this is what «Отменить» answers with when the button was
+    stale - already used in another window, or left over from before a reload.
+    """
+
+    code = "program_no_restore_point"
 
 
 class ProgramColumnNotFoundError(ProgramError):
