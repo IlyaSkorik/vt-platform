@@ -16,6 +16,7 @@ import {
   PageSection,
 } from "@/shared/ui";
 import { PublicationChecklistPanel } from "@/widgets/competition-workspace/ui/publication-checklist-panel";
+import { EditingLockCard } from "./editing-lock-card";
 import { NominationRegistration } from "./nomination-registration";
 
 interface RegistrationSectionProps {
@@ -52,6 +53,12 @@ export function RegistrationSection({
               Регистрацию завершённого фестиваля изменить нельзя.
             </Alert>
           ) : null}
+
+          <EditingLockCard
+            competitionId={competition.id}
+            editingLockedAt={competition.editingLockedAt}
+            disabled={isCompleted}
+          />
 
           <PageSection
             title="Регистрация по номинациям"
@@ -99,6 +106,10 @@ export function RegistrationSection({
               <p>1. У каждого жанра своё окно приёма заявок (начало и конец).</p>
               <p>2. Вне окна или до его настройки приём в жанре закрыт.</p>
               <p>3. Кнопка «Остановить регистрацию» закрывает приём досрочно, не трогая даты.</p>
+              <p>
+                4. Закрытый приём не трогает файлы: фонограммы, видео и документы участник меняет до
+                своих сроков загрузки. «Закрыть редактирование полностью» останавливает и это.
+              </p>
             </CardContent>
           </Card>
           <PublicationChecklistPanel checklist={checklist} onNavigateSection={onNavigateSection} />

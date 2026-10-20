@@ -388,6 +388,21 @@ async function resumeNominationRegistration(
   }
 }
 
+async function setSubmissionEditingLock(
+  competitionId: string,
+  locked: boolean,
+): Promise<CompetitionDetail> {
+  try {
+    const path = `competitions/${competitionId}/editing-lock`;
+    // POST закрывает, DELETE открывает — одна настройка, прочитанная в обе стороны,
+    // как у листа ожидания рядом.
+    const response = await (locked ? apiClient.post(path) : apiClient.delete(path)).json<unknown>();
+    return unwrapCompetitionDetail(response);
+  } catch (error) {
+    throw await toApiError(error);
+  }
+}
+
 async function enableNominationWaitlist(
   competitionId: string,
   categoryId: string,
@@ -1174,6 +1189,26 @@ export function useResumeNominationRegistrationMutation(): UseMutationResult<
   return useMutation<CompetitionDetail, ApiError, { competitionId: string; categoryId: string }>({
     mutationFn: ({ competitionId, categoryId }) =>
       resumeNominationRegistration(competitionId, categoryId),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+/**
+ * Заморозить (или разморозить) всё, что может менять заявитель, на весь фестиваль.
+ *
+ * Не по жанрам, в отличие от приёма: её нажимают, глядя на итоговый список, перед
+ * тем как собрать из него программу и отдать архив фонограмм звукорежиссёру.
+ */
+export function useSetSubmissionEditingLockMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; locked: boolean }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<CompetitionDetail, ApiError, { competitionId: string; locked: boolean }>({
+    mutationFn: ({ competitionId, locked }) => setSubmissionEditingLock(competitionId, locked),
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);
     },
