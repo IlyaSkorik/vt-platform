@@ -1631,22 +1631,30 @@ function CustomCell({
 /**
  * «Собрать программу» и «Пересобрать» — автосоставление (VT-86).
  *
- * Две кнопки, потому что это два разных действия: первое открывает правила, второе
- * повторяет те, по которым программа уже стоит. Пересобирают чаще, чем собирают впервые,
- * — заявки идут до последнего дня, — и ради этого правила и живут на программе.
+ * Две кнопки, потому что это два разных действия: первая открывает правила,
+ * вторая повторяет те, по которым программа уже стоит. Пересобирают чаще, чем собирают
+ * впервые, — заявки идут до последнего дня, — и ради этого правила и живут на программе.
  *
  * После публикации обе выключены: пересборка выдаёт слоты заново, а номера уже названы
  * участникам. Сервер откажет и сам, но кнопка, которая заведомо упрётся в ошибку, —
  * это ошибка, показанная вместо объяснения.
+ *
+ * **Пересборка спрашивает.** Она заменяет состав целиком — руками подвинутый перерыв,
+ * растянутый номер, заполненная «Микрофон» уходят вместе со строками, которые их несли.
+ * Раньше это стоило один клик по кнопке в общем ряду, и однажды так и вышло: по ней
+ * нажали, не собираясь, и потеряли день расстановки. Теперь диалог называет, сколько
+ * строк на кону, прежде чем их заменить.
  */
 function ArrangeControls({ program }: { program: Program }): React.JSX.Element {
   const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const arrange = useArrangeProgram(program.id);
 
   const run = (input?: Parameters<typeof arrange.mutate>[0]) =>
     arrange.mutate(input, {
       onSuccess: (next) => {
         setOpen(false);
+        setConfirming(false);
         toast.success(`Программа собрана: ${next.items.length} строк`);
       },
       onError: () => toast.error("Не удалось собрать программу"),
@@ -1667,16 +1675,37 @@ function ArrangeControls({ program }: { program: Program }): React.JSX.Element {
           variant="ghost"
           size="sm"
           loading={arrange.isPending}
-          onClick={() => run(undefined)}
+          onClick={() => setConfirming(true)}
         >
           Пересобрать
         </Button>
       ) : null}
+      <Dialog open={confirming} onOpenChange={setConfirming}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Пересобрать программу заново?</DialogTitle>
+            <DialogDescription>
+              Сейчас в программе строк: {program.items.length}. Все они будут заменены строками,
+              собранными по сохранённым правилам: перерывы, которые вы подвинули руками, изменённая
+              длительность номеров и заполненные ячейки пропадут. Колонки останутся.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirming(false)}>
+              Отмена
+            </Button>
+            <Button variant="danger" loading={arrange.isPending} onClick={() => run(undefined)}>
+              Пересобрать
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <ArrangeProgramDialog
         open={open}
         onOpenChange={setOpen}
         saved={program.arrangement}
         pending={arrange.isPending}
+        replaces={program.items.length}
         onSubmit={(input) => run(input)}
       />
     </>

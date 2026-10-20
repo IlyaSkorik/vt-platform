@@ -1569,6 +1569,22 @@ describe("StaffProgramPage — автосоставление", () => {
     return aProgram({ numbersFrozen: false, numbersFrozenAt: null, ...overrides });
   }
 
+  /** Any saved rules — what makes «Пересобрать» appear at all. */
+  const SAVED_RULES = {
+    grouping: ["NOMINATION"],
+    orderWithinGroup: "TITLE",
+    breakRule: "NONE",
+    breakAfterSeconds: 0,
+    breakAfterItems: 0,
+    breakTitle: null,
+    breakDurationSeconds: null,
+    repeatGap: 3,
+    openingTitle: null,
+    openingDurationSeconds: null,
+    awardTitle: null,
+    awardDurationSeconds: null,
+  } satisfies Program["arrangement"];
+
   it("отправляет правила, выбранные в форме", async () => {
     stub(draft());
     await renderPage();
@@ -1618,30 +1634,40 @@ describe("StaffProgramPage — автосоставление", () => {
 
   it("«Пересобрать» повторяет сохранённые правила без формы", async () => {
     // Пересобирают чаще, чем собирают впервые: заявки идут до последнего дня.
-    stub(
-      draft({
-        arrangement: {
-          grouping: ["NOMINATION"],
-          orderWithinGroup: "TITLE",
-          breakRule: "NONE",
-          breakAfterSeconds: 0,
-          breakAfterItems: 0,
-          breakTitle: null,
-          breakDurationSeconds: null,
-          repeatGap: 3,
-          openingTitle: null,
-          openingDurationSeconds: null,
-          awardTitle: null,
-          awardDurationSeconds: null,
-        },
-      }),
-    );
+    stub(draft({ arrangement: SAVED_RULES }));
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Пересобрать" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Пересобрать" }));
+
+    expect(arrangeProgram).toHaveBeenCalledTimes(1);
+    expect(arrangeProgram.mock.calls[0]?.[0]).toBeUndefined();
+  });
+
+  it("«Пересобрать» сначала спрашивает и называет, сколько строк на кону", async () => {
+    // Кнопка стоит в общем ряду, а заменяет состав целиком: однажды по ней нажали,
+    // не собираясь, и потеряли день расстановки.
+    stub(draft({ arrangement: SAVED_RULES }));
     await renderPage();
 
     await userEvent.click(screen.getByRole("button", { name: "Пересобрать" }));
 
-    expect(arrangeProgram).toHaveBeenCalledTimes(1);
-    expect(arrangeProgram.mock.calls[0]?.[0]).toBeUndefined();
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/Сейчас в программе строк: 2/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/заполненные ячейки пропадут/)).toBeInTheDocument();
+    expect(arrangeProgram).not.toHaveBeenCalled();
+  });
+
+  it("отказ в диалоге не трогает программу", async () => {
+    stub(draft({ arrangement: SAVED_RULES }));
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Пересобрать" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Отмена" }));
+
+    expect(arrangeProgram).not.toHaveBeenCalled();
   });
 
   it("опубликованную программу пересобрать нельзя", async () => {
