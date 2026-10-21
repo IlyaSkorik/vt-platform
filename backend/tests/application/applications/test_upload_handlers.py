@@ -13,7 +13,7 @@ from apps.applications.application.exceptions import (
     SubmissionNotFoundError,
     UnsupportedFileTypeError,
 )
-from apps.applications.domain.entities import Performance, Submission
+from apps.applications.domain.entities import Submission
 from apps.applications.domain.value_objects import (
     AgeCategoryId,
     CompetitionId,
@@ -22,6 +22,7 @@ from apps.applications.domain.value_objects import (
     NominationId,
     ParticipantGroupId,
     ParticipationFormatId,
+    Performance,
     PerformanceTitle,
     SubmissionId,
     UserId,
