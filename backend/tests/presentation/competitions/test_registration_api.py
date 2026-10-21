@@ -330,9 +330,7 @@ def test_the_organizer_s_freeze_shows_on_the_genre_it_was_thrown_on() -> None:
     from apps.competitions.infrastructure.models import CategoryModel
 
     competition_id = _seed_competition(waitlisted_nomination=True)
-    CategoryModel.objects.filter(competition_id=competition_id, name="Vocal").update(
-        editing_locked_at=datetime(2026, 5, 1, tzinfo=UTC)
-    )
+    CategoryModel.objects.filter(competition_id=competition_id, name="Vocal").update(editing_locked_at=datetime(2026, 5, 1, tzinfo=UTC))
 
     data = APIClient().get(_url(competition_id)).data["data"]
 
