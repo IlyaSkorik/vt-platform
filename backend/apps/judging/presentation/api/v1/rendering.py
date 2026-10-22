@@ -10,6 +10,7 @@ down for a reason, and handing it to JSON as a number would undo that at the las
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 from typing import Any
 
@@ -18,8 +19,11 @@ from apps.judging.application import dto
 __all__ = [
     "board_json",
     "jury_member_json",
+    "jury_seat_json",
+    "running_order_json",
     "scoring_state_json",
     "setup_json",
+    "tally_application_json",
     "tally_json",
     "task_json",
 ]
@@ -27,6 +31,10 @@ __all__ = [
 
 def _score(value: Decimal | None) -> str | None:
     return None if value is None else str(value)
+
+
+def _date(value: date | None) -> str | None:
+    return None if value is None else value.isoformat()
 
 
 def _criterion_json(item: dto.CriterionView) -> dict[str, Any]:
@@ -106,6 +114,49 @@ def jury_member_json(view: dto.JuryMemberView) -> dict[str, Any]:
         "invitedAt": view.invited_at,
         "acceptedAt": view.accepted_at,
         "invitationPath": view.invitation_path,
+    }
+
+
+def jury_seat_json(view: dto.JurySeatView) -> dict[str, Any]:
+    """One festival on the judge's own picker."""
+    return {
+        "competitionId": view.competition_id,
+        "title": view.title,
+        "onlineJudging": view.online_judging,
+        "isChair": view.is_chair,
+        "categoryNames": list(view.category_names),
+        "startsOn": _date(view.starts_on),
+        "endsOn": _date(view.ends_on),
+        "venue": view.venue,
+        "pendingCount": view.pending_count,
+        "hasOpenAct": view.has_open_act,
+    }
+
+
+def running_order_json(view: dto.RunningOrderEntryView) -> dict[str, Any]:
+    """One act on the host's screen, in programme order."""
+    return {
+        "submissionId": view.submission_id,
+        "number": view.number,
+        "title": view.title,
+        "categoryName": view.category_name,
+        "disciplineName": view.discipline_name,
+        "ageCategoryName": view.age_category_name,
+        "organization": view.organization,
+        "status": view.status,
+        "submittedCount": view.submitted_count,
+        "expectedJudges": view.expected_judges,
+        "score": _score(view.score),
+        "awardLabel": view.award_label,
+    }
+
+
+def tally_application_json(view: dto.TallyApplicationView) -> dict[str, Any]:
+    """What the push into protocols did — including where it had nowhere to land."""
+    return {
+        "rowsChanged": view.rows_changed,
+        "protocolsCreated": view.protocols_created,
+        "missingProtocols": list(view.missing_protocols),
     }
 
 

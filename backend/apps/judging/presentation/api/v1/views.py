@@ -45,8 +45,11 @@ from apps.judging.domain.exceptions import JudgingError
 from apps.judging.presentation.api.v1 import problems
 from apps.judging.presentation.api.v1.rendering import (
     jury_member_json,
+    jury_seat_json,
+    running_order_json,
     scoring_state_json,
     setup_json,
+    tally_application_json,
     tally_json,
     task_json,
 )
@@ -60,13 +63,17 @@ from apps.judging.presentation.api.v1.serializers import (
     JudgingSetupEnvelopeSerializer,
     JuryListEnvelopeSerializer,
     JuryMemberEnvelopeSerializer,
+    JurySeatListEnvelopeSerializer,
     JuryTaskEnvelopeSerializer,
     JuryTaskListEnvelopeSerializer,
+    RunningOrderEnvelopeSerializer,
     ScoringRulesRequestSerializer,
     ScoringStateEnvelopeSerializer,
     ScoringStateListEnvelopeSerializer,
     ScoringStateRequestSerializer,
     SubmitScorecardRequestSerializer,
+    TallyApplicationEnvelopeSerializer,
+    TallyApplyRequestSerializer,
     TallyEnvelopeSerializer,
     TallyScopeRequestSerializer,
     UpdateJuryRequestSerializer,
@@ -81,6 +88,7 @@ __all__ = [
     "JudgingAwardScaleView",
     "JudgingBoardSettingsView",
     "JudgingCriteriaView",
+    "JudgingRunningOrderView",
     "JudgingScoringRulesView",
     "JudgingSetupView",
     "JudgingTallyApplyView",
@@ -88,6 +96,7 @@ __all__ = [
     "JudgingTallyView",
     "JuryAssignmentsView",
     "JuryCollectionView",
+    "JuryCompetitionListView",
     "JuryDetailView",
     "JuryInvitationAcceptView",
     "JuryMemberReinviteView",
@@ -517,6 +526,31 @@ class ScoringStateListView(_StaffView):
         return problems.envelope(request, [scoring_state_json(item) for item in states], meta={"total": len(states)})
 
 
+class JudgingRunningOrderView(_StaffView):
+    """``GET /api/v1/staff/judging/running-order`` — the host's screen, in programme order.
+
+    Separate from the tally for the reason the service spells out: a tally is sorted
+    by score and a programme is not. The host announcing number 14 needs it where 14
+    sits, not wherever its marks have put it.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="judgingRunningOrder",
+        parameters=[_COMPETITION_PARAM],
+        responses={200: RunningOrderEnvelopeSerializer, **_PROBLEM_RESPONSES},
+    )
+    def get(self, request: Request) -> Response:
+        competition_id, failure = self._require_competition(request)
+        if failure is not None:
+            return failure
+        try:
+            entries = build_scoring_service().running_order(str(competition_id))
+        except JudgingError as exc:
+            return self._problem(exc, request)
+        return problems.envelope(request, [running_order_json(item) for item in entries], meta={"total": len(entries)})
+
+
 class JudgingTallyView(_StaffView):
     """``GET /api/v1/staff/judging/tally`` — every act reckoned, grouped and awarded."""
 
@@ -548,27 +582,49 @@ class JudgingTallyApplyView(_StaffView):
     @extend_schema(
         tags=[_TAG],
         operation_id="judgingTallyApply",
-        request=None,
+        request=TallyApplyRequestSerializer,
         parameters=[_COMPETITION_PARAM],
-        responses={
-            200: OpenApiResponse(description="How many protocol rows were changed."),
-            **_PROBLEM_RESPONSES,
-        },
+        responses={200: TallyApplicationEnvelopeSerializer, **_PROBLEM_RESPONSES},
     )
     def post(self, request: Request) -> Response:
         competition_id, failure = self._require_competition(request)
         if failure is not None:
             return failure
+        serializer = TallyApplyRequestSerializer(data=request.data or {})
+        if not serializer.is_valid():
+            return problems.validation_problem(serializer.errors, instance=request.get_full_path(), request=request)
         try:
-            changed = build_scoring_service().apply_to_protocols(str(competition_id))
+            applied = build_scoring_service().apply_to_protocols(str(competition_id), create_missing=bool(serializer.validated_data["createMissing"]))
         except JudgingError as exc:
             return self._problem(exc, request)
-        return problems.envelope(request, {"rowsChanged": changed})
+        return problems.envelope(request, tally_application_json(applied))
 
 
 # ---------------------------------------------------------------------------
 # The judge's tablet
 # ---------------------------------------------------------------------------
+
+
+class JuryCompetitionListView(_JuryView):
+    """``GET /api/v1/jury/competitions`` — the festivals this account judges.
+
+    The judge's entry point, and the reason it exists at all: the organizer's festival
+    list is staff-only, so without this a panel member who closed the tab has no way of
+    finding the thing they were invited to. Answers with an empty list rather than a
+    403 for somebody who is on no panel — not being a judge is not an error.
+    """
+
+    @extend_schema(
+        tags=[_JURY_TAG],
+        operation_id="juryCompetitions",
+        responses={200: JurySeatListEnvelopeSerializer, **_PROBLEM_RESPONSES},
+    )
+    def get(self, request: Request) -> Response:
+        try:
+            seats = build_scoring_service().seats_for_judge(self._user_id(request))
+        except JudgingError as exc:
+            return self._problem(exc, request)
+        return problems.envelope(request, [jury_seat_json(item) for item in seats], meta={"total": len(seats)})
 
 
 class JuryTaskListView(_JuryView):

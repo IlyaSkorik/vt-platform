@@ -16,7 +16,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import UTC, datetime
 
-from apps.judging.application.interfaces import DirectoryNomination, DirectoryPerformance
+from apps.judging.application.interfaces import DirectoryCompetition, DirectoryNomination, DirectoryPerformance, ProtocolApplication
 from apps.judging.domain.entities import JudgingSetup, JuryMember, PerformanceScoring, Scorecard
 from apps.judging.domain.value_objects import JuryMemberStatus, PerformanceScoringStatus
 
@@ -178,6 +178,12 @@ class StubCompetitionDirectory:
     def competition_title(self, competition_id: uuid.UUID) -> str:
         return self._title
 
+    def competitions(self, competition_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, DirectoryCompetition]:
+        return {
+            identifier: DirectoryCompetition(competition_id=identifier, title=self._title, online_judging=self.online)
+            for identifier in competition_ids
+        }
+
     def online_judging_enabled(self, competition_id: uuid.UUID) -> bool:
         return self.online
 
@@ -198,11 +204,17 @@ class StubPerformanceDirectory:
 
 
 class RecordingProtocolWriter:
-    """Records what would have been written into Results, and how much of it landed."""
+    """Records what would have been written into Results, and how much of it landed.
 
-    def __init__(self, *, rows_changed: int | None = None) -> None:
+    ``missing`` names the genres that have no protocol open, so a test can exercise the
+    answer an organizer actually needs: not "nothing changed" but "there is nowhere to
+    write this yet".
+    """
+
+    def __init__(self, *, rows_changed: int | None = None, missing: Sequence[uuid.UUID] = ()) -> None:
         self.calls: list[tuple[uuid.UUID, uuid.UUID, list[tuple[uuid.UUID, str | None]]]] = []
         self._rows_changed = rows_changed
+        self._missing = set(missing)
 
     def apply_awards(
         self,
@@ -211,9 +223,17 @@ class RecordingProtocolWriter:
         nomination_id: uuid.UUID,
         awards: Sequence[tuple[uuid.UUID, str | None]],
         now: datetime,
-    ) -> int:
+        create_missing: bool = False,
+    ) -> ProtocolApplication:
         self.calls.append((competition_id, nomination_id, list(awards)))
-        return self._rows_changed if self._rows_changed is not None else len(awards)
+        if nomination_id in self._missing:
+            if not create_missing:
+                return ProtocolApplication(rows_changed=0, protocol_existed=False)
+            self._missing.discard(nomination_id)
+            rows = self._rows_changed if self._rows_changed is not None else len(awards)
+            return ProtocolApplication(rows_changed=rows, protocol_existed=True, protocol_created=True)
+        rows = self._rows_changed if self._rows_changed is not None else len(awards)
+        return ProtocolApplication(rows_changed=rows, protocol_existed=True)
 
 
 class RecordingNotifier:

@@ -47,17 +47,22 @@ from apps.judging.application.dto import (
     JudgeScoreView,
     JudgingSetupView,
     JuryMemberView,
+    JurySeatView,
     JuryTaskView,
     NominationView,
     PerformanceTallyView,
+    RunningOrderEntryView,
     ScorecardView,
     ScoringStateView,
+    TallyApplicationView,
     TallyGroupView,
     TallySheetView,
 )
 from apps.judging.application.interfaces import (
+    AccountDirectory,
     Clock,
     CompetitionDirectory,
+    DirectoryCompetition,
     DirectoryNomination,
     DirectoryPerformance,
     JudgingSetupRepository,
@@ -198,6 +203,7 @@ class JudgingConfigurationService(_SetupMixin):
         slugs: SlugFactory,
         tokens: TokenFactory,
         notifier: JuryNotifier | None = None,
+        accounts: AccountDirectory | None = None,
     ) -> None:
         self._setups = setups
         self._members = members
@@ -206,6 +212,11 @@ class JudgingConfigurationService(_SetupMixin):
         self._uuids = uuids
         self._slugs = slugs
         self._tokens = tokens
+        # Optional for the same reason the notifier is: a test that seats a panel need
+        # not stand up Identity. Absent, an invitation is accepted by whoever follows
+        # the link — which is the behaviour this shipped with and is why it is wired in
+        # the composition root rather than left to each caller.
+        self._accounts = accounts
         # Optional so a test that configures criteria need not stand up a mail gateway.
         # An invitation with no notifier is still recorded and its link still returned —
         # an organizer can copy it and send it themselves, which is what they do anyway
@@ -463,14 +474,26 @@ class JudgingConfigurationService(_SetupMixin):
         self._members.delete(member.id)
 
     def accept_invitation(self, *, token: str, user_id: str) -> JuryMemberView:
-        """Attach the account that followed an invitation link."""
+        """Attach the account that followed an invitation link.
+
+        The address is checked when the caller supplies one. An invitation is a seat on
+        a named person's behalf, and the letter it arrived in is forwardable — without
+        this, the first colleague somebody forwards it to becomes the judge, and the
+        organizer sees the right name in the panel with the wrong person behind it.
+        """
         member = self._members.by_invitation_token(token)
         if member is None:
             raise JuryMemberNotFoundError("Приглашение не найдено или уже использовано.")
-        existing = self._members.by_user(competition_id=member.competition_id, user_id=_uuid(user_id, what="userId"))
+        identifier = _uuid(user_id, what="userId")
+        email = None if self._accounts is None else self._accounts.email_for(identifier)
+        if email is not None and email != member.email:
+            raise InvalidJudgingDataError(
+                f"Приглашение отправлено на адрес {member.email}. Войдите под этим адресом или попросите организатора пригласить вас заново."
+            )
+        existing = self._members.by_user(competition_id=member.competition_id, user_id=identifier)
         if existing is not None and existing.id != member.id:
             raise InvalidJudgingDataError("Этот аккаунт уже состоит в жюри фестиваля.")
-        member.accept(user_id=_uuid(user_id, what="userId"), now=self._clock.utcnow())
+        member.accept(user_id=identifier, now=self._clock.utcnow())
         self._members.save(member)
         names = {str(item.category_id): item.name for item in self._competitions.nominations(member.competition_id)}
         return _member_view(member, names)
@@ -568,9 +591,75 @@ class ScoringService(_SetupMixin):
         identifier = _uuid(competition_id, what="competitionId")
         return tuple(_scoring_view(item) for item in self._scorings.by_competition(identifier))
 
+    def running_order(self, competition_id: str) -> tuple[RunningOrderEntryView, ...]:
+        """The programme, in programme order, with each act's state on it.
+
+        The host's list, and separate from :meth:`tally` on purpose. A tally is sorted
+        by score so results read top-down; a host announces numbers in the order the
+        hall will hear them, and a screen that reorders itself every time an act is
+        marked is one the host stops trusting by the third number.
+        """
+        identifier = _uuid(competition_id, what="competitionId")
+        self._require_online(identifier)
+        setup = self._setup_for(identifier)
+        tally = TallyService(setup)
+        performances = self._performances.performances(identifier)
+        cards = self._scorecards.by_submissions(competition_id=identifier, submission_ids=[item.submission_id for item in performances])
+        members = self._members.by_competition(identifier)
+        states = {item.submission_id: item.status.value for item in self._scorings.by_competition(identifier)}
+
+        entries: list[RunningOrderEntryView] = []
+        for performance in performances:
+            result = tally.tally(
+                facts=_facts(performance),
+                scorecards=cards.get(performance.submission_id, ()),
+                expected_judges=self._expected_judges(members, performance.category_id),
+            )
+            entries.append(
+                RunningOrderEntryView(
+                    submission_id=str(performance.submission_id),
+                    number=performance.number,
+                    title=performance.title,
+                    category_name=performance.category_name,
+                    discipline_name=performance.discipline_name,
+                    age_category_name=performance.age_category_name,
+                    organization=performance.organization,
+                    status=states.get(performance.submission_id, PerformanceScoringStatus.PENDING.value),
+                    submitted_count=result.submitted_count,
+                    expected_judges=result.expected_judges,
+                    score=result.score,
+                    award_label=result.award_label,
+                )
+            )
+        return tuple(entries)
+
     # ------------------------------------------------------------------
     # The judge's tablet
     # ------------------------------------------------------------------
+
+    def seats_for_judge(self, user_id: str) -> tuple[JurySeatView, ...]:
+        """Every festival this account judges — the judge's way back into the platform.
+
+        Only accepted seats, and only festivals still on online judging: a revoked
+        member and a festival switched back to protocols both mean "there is nothing
+        here for you", and listing either would hand somebody a screen that refuses
+        every button on it.
+
+        Soonest first, with undated festivals last. A judge opens this on the morning
+        of the thing they are judging.
+        """
+        identifier = _uuid(user_id, what="userId")
+        seats = self._members.competitions_for_user(identifier)
+        if not seats:
+            return ()
+        festivals = self._competitions.competitions([member.competition_id for member in seats])
+        views: list[JurySeatView] = []
+        for member in seats:
+            festival = festivals.get(member.competition_id)
+            if festival is None or not festival.online_judging:
+                continue
+            views.append(self._seat_view(member, festival))
+        return tuple(sorted(views, key=_seat_sort))
 
     def tasks_for_judge(self, *, competition_id: str, user_id: str) -> tuple[JuryTaskView, ...]:
         """Every act this judge is seated for, with their own marks filled in.
@@ -744,14 +833,20 @@ class ScoringService(_SetupMixin):
             unawarded_count=unawarded,
         )
 
-    def apply_to_protocols(self, competition_id: str) -> int:
+    def apply_to_protocols(self, competition_id: str, *, create_missing: bool = False) -> TallyApplicationView:
         """Write the computed awards into the protocols the organizer publishes.
 
-        Returns how many rows were changed. The push is deliberately one-way and
-        repeatable: the protocol stays editable afterwards, so an organizer who fixes a
-        row by hand keeps that fix until somebody presses this again, and pressing it
-        again is how they discard it. Nothing is published here — publication stays the
-        deliberate act it has always been.
+        The push is deliberately one-way and repeatable: the protocol stays editable
+        afterwards, so an organizer who fixes a row by hand keeps that fix until
+        somebody presses this again, and pressing it again is how they discard it.
+        Nothing is published here — publication stays the deliberate act it has always
+        been.
+
+        What it reports back matters as much as what it writes. A genre with no
+        protocol open is named rather than counted as "nothing to change": those are
+        different situations, and only one of them is finished. ``create_missing``
+        opens those protocols from the programme first, which is what an online-judged
+        festival means by "протоколы заполняются сами".
         """
         if self._protocols is None:
             raise SetupNotFoundError("Перенос в протоколы недоступен.")
@@ -780,15 +875,24 @@ class ScoringService(_SetupMixin):
                 continue
             by_category.setdefault(performance.category_id, []).append((performance.submission_id, result.award_code))
 
+        names = {str(item.category_id): item.name for item in self._competitions.nominations(identifier)}
         changed = 0
+        created = 0
+        missing: list[str] = []
         for category_id, awards in by_category.items():
-            changed += self._protocols.apply_awards(
+            applied = self._protocols.apply_awards(
                 competition_id=identifier,
                 nomination_id=category_id,
                 awards=awards,
                 now=now,
+                create_missing=create_missing,
             )
-        return changed
+            changed += applied.rows_changed
+            if applied.protocol_created:
+                created += 1
+            if not applied.protocol_existed:
+                missing.append(names.get(str(category_id), "Без жанра"))
+        return TallyApplicationView(rows_changed=changed, protocols_created=created, missing_protocols=tuple(sorted(missing)))
 
     # ------------------------------------------------------------------
     # The hall's board
@@ -867,6 +971,34 @@ class ScoringService(_SetupMixin):
     # Internals
     # ------------------------------------------------------------------
 
+    def _seat_view(self, member: JuryMember, festival: DirectoryCompetition) -> JurySeatView:
+        """One row of the judge's own festival list, with how much is left on it."""
+        performances = [item for item in self._performances.performances(member.competition_id) if member.judges(item.category_id)]
+        own_cards = self._scorecards.by_member(competition_id=member.competition_id, jury_member_id=member.id)
+        scored = {card.submission_id for card in own_cards if card.is_submitted}
+        states = {item.submission_id: item for item in self._scorings.by_competition(member.competition_id)}
+        names = {str(item.category_id): item.name for item in self._competitions.nominations(member.competition_id)}
+        pending = 0
+        has_open = False
+        for performance in performances:
+            state = states.get(performance.submission_id)
+            if state is not None and state.is_open:
+                has_open = True
+            if performance.submission_id not in scored:
+                pending += 1
+        return JurySeatView(
+            competition_id=str(member.competition_id),
+            title=festival.title,
+            online_judging=festival.online_judging,
+            is_chair=member.is_chair,
+            category_names=tuple(names[str(item)] for item in member.category_ids if str(item) in names),
+            starts_on=festival.starts_on,
+            ends_on=festival.ends_on,
+            venue=festival.venue,
+            pending_count=pending,
+            has_open_act=has_open,
+        )
+
     def _require_seat(self, competition_id: uuid.UUID, user_id: str) -> JuryMember:
         member = self._members.by_user(competition_id=competition_id, user_id=_uuid(user_id, what="userId"))
         if member is None or member.status is JuryMemberStatus.REVOKED:
@@ -909,6 +1041,11 @@ class ScoringService(_SetupMixin):
 # ---------------------------------------------------------------------------
 # View helpers
 # ---------------------------------------------------------------------------
+
+
+def _seat_sort(seat: JurySeatView) -> tuple[int, str, str]:
+    """Soonest festival first; the undated ones last, alphabetically."""
+    return (1, "", seat.title.lower()) if seat.starts_on is None else (0, seat.starts_on.isoformat(), seat.title.lower())
 
 
 def _criterion_view(criterion: Criterion) -> CriterionView:

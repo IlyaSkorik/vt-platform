@@ -26,11 +26,15 @@ __all__ = [
     "JudgingSetupEnvelopeSerializer",
     "JuryListEnvelopeSerializer",
     "JuryMemberEnvelopeSerializer",
+    "JurySeatListEnvelopeSerializer",
     "JuryTaskListEnvelopeSerializer",
+    "RunningOrderEnvelopeSerializer",
     "ScoringRulesRequestSerializer",
     "ScoringStateEnvelopeSerializer",
     "ScoringStateListEnvelopeSerializer",
     "SubmitScorecardRequestSerializer",
+    "TallyApplicationEnvelopeSerializer",
+    "TallyApplyRequestSerializer",
     "TallyEnvelopeSerializer",
     "TallyScopeRequestSerializer",
     "UpdateJuryRequestSerializer",
@@ -166,6 +170,12 @@ class ScoringStateRequestSerializer(serializers.Serializer[dict[str, object]]):
     closePrevious = serializers.BooleanField(required=False, default=True)
 
 
+class TallyApplyRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """``createMissing`` opens a protocol for a genre that has none, from the programme."""
+
+    createMissing = serializers.BooleanField(required=False, default=False)
+
+
 class SubmitScorecardRequestSerializer(serializers.Serializer[dict[str, object]]):
     """One judge's sheet: a mark per criterion id, plus a note to the organizer."""
 
@@ -247,6 +257,40 @@ class _JuryMemberSerializer(serializers.Serializer[dict[str, object]]):
     invitedAt = serializers.DateTimeField(allow_null=True)
     acceptedAt = serializers.DateTimeField(allow_null=True)
     invitationPath = serializers.CharField(allow_null=True)
+
+
+class _JurySeatSerializer(serializers.Serializer[dict[str, object]]):
+    competitionId = serializers.CharField()
+    title = serializers.CharField()
+    onlineJudging = serializers.BooleanField()
+    isChair = serializers.BooleanField()
+    categoryNames = serializers.ListField(child=serializers.CharField())
+    startsOn = serializers.DateField(allow_null=True)
+    endsOn = serializers.DateField(allow_null=True)
+    venue = serializers.CharField(allow_null=True)
+    pendingCount = serializers.IntegerField()
+    hasOpenAct = serializers.BooleanField()
+
+
+class _RunningOrderEntrySerializer(serializers.Serializer[dict[str, object]]):
+    submissionId = serializers.CharField()
+    number = serializers.IntegerField()
+    title = serializers.CharField()
+    categoryName = serializers.CharField(allow_null=True)
+    disciplineName = serializers.CharField(allow_null=True)
+    ageCategoryName = serializers.CharField(allow_null=True)
+    organization = serializers.CharField(allow_null=True)
+    status = serializers.CharField()
+    submittedCount = serializers.IntegerField()
+    expectedJudges = serializers.IntegerField()
+    score = serializers.CharField(allow_null=True)
+    awardLabel = serializers.CharField(allow_null=True)
+
+
+class _TallyApplicationSerializer(serializers.Serializer[dict[str, object]]):
+    rowsChanged = serializers.IntegerField()
+    protocolsCreated = serializers.IntegerField()
+    missingProtocols = serializers.ListField(child=serializers.CharField())
 
 
 class _JudgeScoreSerializer(serializers.Serializer[dict[str, object]]):
@@ -377,6 +421,25 @@ class JuryTaskListEnvelopeSerializer(serializers.Serializer[dict[str, object]]):
 
 class JuryTaskEnvelopeSerializer(serializers.Serializer[dict[str, object]]):
     data = _JuryTaskSerializer()  # type: ignore[assignment]
+    meta = _MetaSerializer()
+
+
+class JurySeatListEnvelopeSerializer(serializers.Serializer[dict[str, object]]):
+    """The festivals this account judges — the judge's own way back in."""
+
+    data = _JurySeatSerializer(many=True)  # type: ignore[assignment]
+    meta = _MetaSerializer()
+
+
+class RunningOrderEnvelopeSerializer(serializers.Serializer[dict[str, object]]):
+    """The programme in programme order — the host's screen."""
+
+    data = _RunningOrderEntrySerializer(many=True)  # type: ignore[assignment]
+    meta = _MetaSerializer()
+
+
+class TallyApplicationEnvelopeSerializer(serializers.Serializer[dict[str, object]]):
+    data = _TallyApplicationSerializer()  # type: ignore[assignment]
     meta = _MetaSerializer()
 
 

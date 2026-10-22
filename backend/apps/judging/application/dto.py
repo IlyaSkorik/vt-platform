@@ -18,7 +18,7 @@ Three audiences are served here and they see deliberately different things:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 __all__ = [
@@ -31,11 +31,14 @@ __all__ = [
     "JudgeScoreView",
     "JudgingSetupView",
     "JuryMemberView",
+    "JurySeatView",
     "JuryTaskView",
     "NominationView",
     "PerformanceTallyView",
+    "RunningOrderEntryView",
     "ScorecardView",
     "ScoringStateView",
+    "TallyApplicationView",
     "TallyGroupView",
     "TallySheetView",
 ]
@@ -200,6 +203,30 @@ class ScorecardView:
     submitted: bool
 
 
+@dataclass(frozen=True, slots=True)
+class JurySeatView:
+    """One festival this account is seated on, for the judge's own picker.
+
+    The judge's entry point into the platform. Without it a panel member who closed
+    the tab has no way back in: the organizer's festival list is staff-only, and a
+    jury member is a guest of the organization rather than an employee of it.
+    """
+
+    competition_id: str
+    title: str
+    online_judging: bool
+    is_chair: bool
+    category_names: tuple[str, ...]
+    starts_on: date | None
+    ends_on: date | None
+    venue: str | None
+    #: Acts this judge still owes a sheet for — the number that decides whether the
+    #: festival reads as «идёт» or as done.
+    pending_count: int
+    #: Whether the host has an act open right now, so the list can say «сейчас идёт».
+    has_open_act: bool
+
+
 # ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
@@ -229,6 +256,40 @@ class TallyGroupView:
     heading: str
     category_id: str | None
     tallies: tuple[PerformanceTallyView, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class RunningOrderEntryView:
+    """One act on the host's screen, in the order the hall will hear it.
+
+    Deliberately *not* a tally row. The tally sorts by score, best first, because that
+    is how results are read; a host needs the programme in programme order, or the
+    number they are about to announce walks up the screen the moment it is marked.
+    """
+
+    submission_id: str
+    number: int
+    title: str
+    category_name: str | None
+    discipline_name: str | None
+    age_category_name: str | None
+    organization: str | None
+    status: str
+    submitted_count: int
+    expected_judges: int
+    score: Decimal | None
+    award_label: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class TallyApplicationView:
+    """What pressing «Перенести в протоколы» actually did."""
+
+    rows_changed: int
+    protocols_created: int
+    #: Genres whose protocol does not exist, by name — what the organizer must open
+    #: before the push has anywhere to land.
+    missing_protocols: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
