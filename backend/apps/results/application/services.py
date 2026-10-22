@@ -287,6 +287,15 @@ class ProtocolService:
         self._protocols.save(protocol)
         return self._detail(protocol)
 
+    def has_protocol(self, *, competition_id: uuid.UUID, nomination_id: uuid.UUID) -> bool:
+        """Whether this nomination has a protocol open at all.
+
+        Asked by the Judging context before it pushes a tally: "nothing changed" and
+        "there was nowhere to write" are different answers, and only one of them means
+        the organizer still has work to do.
+        """
+        return self._protocols.get_for_nomination(competition_id=competition_id, nomination_id=nomination_id) is not None
+
     def apply_awards_by_submission(
         self,
         *,
