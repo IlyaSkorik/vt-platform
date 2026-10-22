@@ -44,6 +44,11 @@ import { useCompetitionPicker } from "./competition-picker";
  * Pressing «Перенести в протоколы» is repeatable and does not publish anything: it
  * writes the computed award onto each act's row and leaves the protocol editable, so a
  * hand correction survives until somebody deliberately presses this again.
+ *
+ * A genre with no protocol open is reported by name rather than counted as "nothing to
+ * change" — that conflation is how an organizer reaches a ceremony with empty protocols
+ * believing the tally landed. The second press opens those protocols from the programme
+ * and writes into them.
  */
 export function TallySection(): React.JSX.Element {
   const { competitionId, picker } = useCompetitionPicker();
@@ -53,6 +58,8 @@ export function TallySection(): React.JSX.Element {
 
   const [expanded, setExpanded] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  //: Genres the last push found no protocol for — what the second press would open.
+  const [missing, setMissing] = useState<string[]>([]);
 
   const setup = setupQuery.data;
   const tally = tallyQuery.data;
@@ -62,13 +69,22 @@ export function TallySection(): React.JSX.Element {
     (act) => act.expectedJudges > 0 && act.submittedCount < act.expectedJudges,
   ).length;
 
-  const handleApply = async (): Promise<void> => {
+  const handleApply = async (createMissing: boolean): Promise<void> => {
     try {
-      const result = await apply.mutateAsync();
+      const result = await apply.mutateAsync({ createMissing });
+      setMissing(result.missingProtocols);
+      if (result.missingProtocols.length > 0) {
+        // Not an error and not a success: the push did what it could, and the rest has
+        // nowhere to land yet. The dialog stays open with the offer to open them.
+        toast.warning(`Нет протокола: ${result.missingProtocols.join(", ")}`);
+        return;
+      }
+      const opened =
+        result.protocolsCreated > 0 ? `Создано протоколов: ${result.protocolsCreated}. ` : "";
       toast.success(
         result.rowsChanged === 0
-          ? "Изменять нечего: строки протоколов уже совпадают с итогами"
-          : `Обновлено строк в протоколах: ${result.rowsChanged}`,
+          ? `${opened}Изменять нечего: строки протоколов уже совпадают с итогами`
+          : `${opened}Обновлено строк в протоколах: ${result.rowsChanged}`,
       );
       setConfirming(false);
     } catch (error) {
@@ -121,7 +137,13 @@ export function TallySection(): React.JSX.Element {
         <p className="text-muted-foreground text-sm">
           {AGGREGATION_LABELS[tally.aggregation]} · выступлений: {acts.length}
         </p>
-        <Button type="button" onClick={() => setConfirming(true)}>
+        <Button
+          type="button"
+          onClick={() => {
+            setMissing([]);
+            setConfirming(true);
+          }}
+        >
           <FileDown className="size-4" aria-hidden="true" />
           Перенести в протоколы
         </Button>
@@ -256,13 +278,33 @@ export function TallySection(): React.JSX.Element {
               вы уже правили награду вручную, перенос её перезапишет.
             </DialogDescription>
           </DialogHeader>
+          {missing.length > 0 ? (
+            <Alert variant="warning" title="Протокол ещё не создан">
+              Переносить некуда в жанрах: {missing.join(", ")}. Можно создать эти протоколы по
+              программе и сразу записать в них итоги — строки возьмутся из порядка выступлений.
+            </Alert>
+          ) : null}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setConfirming(false)}>
               Отмена
             </Button>
-            <Button type="button" loading={apply.isPending} onClick={() => void handleApply()}>
-              Перенести
-            </Button>
+            {missing.length > 0 ? (
+              <Button
+                type="button"
+                loading={apply.isPending}
+                onClick={() => void handleApply(true)}
+              >
+                Создать протоколы и перенести
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                loading={apply.isPending}
+                onClick={() => void handleApply(false)}
+              >
+                Перенести
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
