@@ -1,4 +1,4 @@
-import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Gavel, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { SiteFooter } from "@/app/layouts/site-footer";
@@ -10,10 +10,12 @@ import {
   type ParticipantNavItem,
 } from "@/applications/participant/navigation";
 import { WorkspaceSwitcher } from "@/applications/workspace-switcher";
+import { useJurySeats } from "@/features/judging";
 import { NotificationBell } from "@/features/notifications";
 import { APP_NAME, ROUTES } from "@/shared/config";
 import { cn } from "@/shared/lib";
 import {
+  Badge,
   BrandMark,
   Button,
   Drawer,
@@ -37,6 +39,58 @@ function findParticipantItem(pathname: string): ParticipantNavItem {
     PARTICIPANT_NAVIGATION.find(
       (item) => pathname === item.path || pathname.startsWith(`${item.path}/`),
     ) ?? fallback
+  );
+}
+
+/**
+ * The way a judge gets back to their marks.
+ *
+ * Only rendered for an account that actually holds a seat, and that is the whole
+ * design: judging is not something a participant account does, so the item would be a
+ * dead end for nearly everybody. Without it a jury member who closed the tab has only
+ * the invitation e-mail to find their way back by — which is how a panel ends up
+ * phoning the organizer on the morning of a festival.
+ */
+function JudgingNavLink({
+  collapsed,
+  onNavigate,
+}: {
+  collapsed: boolean;
+  onNavigate?: (() => void) | undefined;
+}): React.JSX.Element | null {
+  const seatsQuery = useJurySeats();
+  const seats = seatsQuery.data ?? [];
+  if (seats.length === 0) {
+    return null;
+  }
+  const live = seats.some((seat) => seat.hasOpenAct);
+
+  return (
+    <NavLink
+      to={ROUTES.jury}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        cn(
+          "flex min-h-10 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+          collapsed && "justify-center px-2",
+          isActive
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+        )
+      }
+    >
+      <Gavel className="size-4 shrink-0" aria-hidden="true" />
+      {!collapsed && (
+        <>
+          <span className="truncate">Судейство</span>
+          {live ? (
+            <Badge variant="success" className="ml-auto">
+              идёт
+            </Badge>
+          ) : null}
+        </>
+      )}
+    </NavLink>
   );
 }
 
@@ -72,6 +126,7 @@ function ParticipantNav({
           </NavLink>
         );
       })}
+      <JudgingNavLink collapsed={collapsed} onNavigate={onNavigate} />
     </nav>
   );
 }

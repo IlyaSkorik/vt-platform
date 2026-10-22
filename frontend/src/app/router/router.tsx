@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate, Outlet, type RouteObject } from "react-router";
 import { AuthLayout } from "@/app/layouts/auth-layout";
+import { JuryLayout } from "@/app/layouts/jury-layout";
 import { MinimalLayout } from "@/app/layouts/minimal-layout";
 import { NotFoundLayout } from "@/app/layouts/not-found-layout";
 import { PublicLayout } from "@/app/layouts/public-layout";
@@ -209,7 +210,9 @@ export const routes: RouteObject[] = [
             // A judge's own screen. Authenticated but deliberately outside both
             // workspaces: a jury member is a guest of the organization, not an
             // employee, and the staff shell would hand them everything else with it.
-            element: <MinimalLayout />,
+            // Its own shell rather than the minimal one, which centres a 384px column
+            // — right for an invitation card, wrong for a programme of forty acts.
+            element: <JuryLayout />,
             children: [
               {
                 path: ROUTES.jury.slice(1),

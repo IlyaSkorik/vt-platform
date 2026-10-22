@@ -3,19 +3,21 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { type JuryTask, useJuryTasks, useSubmitScorecard } from "@/features/judging";
+import {
+  type JurySeat,
+  type JuryTask,
+  useJurySeats,
+  useJuryTasks,
+  useSubmitScorecard,
+} from "@/features/judging";
 
 import { JuryScoringPage } from "./index";
 
 vi.mock("@/features/judging", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/judging")>()),
+  useJurySeats: vi.fn(),
   useJuryTasks: vi.fn(),
   useSubmitScorecard: vi.fn(),
-}));
-
-vi.mock("@/features/competitions", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/features/competitions")>()),
-  useCompetitionsList: vi.fn(() => ({ data: [] })),
 }));
 
 /**
@@ -63,7 +65,31 @@ function task(overrides: Partial<JuryTask> = {}): JuryTask {
 
 const submit = vi.fn();
 
-function show(tasks: JuryTask[], state: { isLoading?: boolean; isError?: boolean } = {}) {
+function seat(overrides: Partial<JurySeat> = {}): JurySeat {
+  return {
+    competitionId: COMPETITION,
+    title: "Весна талантов",
+    onlineJudging: true,
+    isChair: false,
+    categoryNames: [],
+    startsOn: null,
+    endsOn: null,
+    venue: null,
+    pendingCount: 1,
+    hasOpenAct: true,
+    ...overrides,
+  };
+}
+
+function show(
+  tasks: JuryTask[],
+  state: { isLoading?: boolean; isError?: boolean; seats?: JurySeat[] } = {},
+) {
+  vi.mocked(useJurySeats).mockReturnValue({
+    data: state.seats ?? [seat()],
+    isLoading: false,
+  } as ReturnType<typeof useJurySeats>);
+
   vi.mocked(useJuryTasks).mockReturnValue({
     data: tasks,
     isLoading: state.isLoading ?? false,
@@ -79,6 +105,31 @@ function show(tasks: JuryTask[], state: { isLoading?: boolean; isError?: boolean
     <MemoryRouter initialEntries={[`/jury/${COMPETITION}`]}>
       <Routes>
         <Route path="/jury/:competitionId" element={<JuryScoringPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
+/** The judge's own entry point: `/jury` with no festival in the address. */
+function showWithoutRoute(seats: JurySeat[], tasks: JuryTask[] = []) {
+  vi.mocked(useJurySeats).mockReturnValue({
+    data: seats,
+    isLoading: false,
+  } as ReturnType<typeof useJurySeats>);
+  vi.mocked(useJuryTasks).mockReturnValue({
+    data: tasks,
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useJuryTasks>);
+  vi.mocked(useSubmitScorecard).mockReturnValue({
+    mutateAsync: submit,
+    isPending: false,
+  } as unknown as ReturnType<typeof useSubmitScorecard>);
+
+  render(
+    <MemoryRouter initialEntries={["/jury"]}>
+      <Routes>
+        <Route path="/jury" element={<JuryScoringPage />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -154,6 +205,28 @@ describe("JuryScoringPage", () => {
 
     expect(screen.getByText("Ждём ведущего")).toBeInTheDocument();
     expect(screen.getByText("Журавли")).toBeInTheDocument();
+  });
+
+  it("opens the only festival a judge sits on, without making them pick it", () => {
+    // The regression this screen shipped with: the picker was fed the organizer's
+    // festival list, which answers a jury member with a 403, so it was always empty
+    // and there was nothing to score.
+    showWithoutRoute([seat()], [task()]);
+
+    expect(screen.queryByLabelText("Фестиваль")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /7.*Журавли/ })).toBeInTheDocument();
+  });
+
+  it("offers a choice to a judge who sits on more than one", () => {
+    showWithoutRoute([seat(), seat({ competitionId: "c-2", title: "Осенний бал" })]);
+
+    expect(screen.getByLabelText("Фестиваль")).toBeInTheDocument();
+  });
+
+  it("says where an invitation comes from when the account holds no seat at all", () => {
+    showWithoutRoute([]);
+
+    expect(screen.getByText("Вас пока не пригласили в жюри")).toBeInTheDocument();
   });
 
   it("explains an account that holds no seat here", () => {
