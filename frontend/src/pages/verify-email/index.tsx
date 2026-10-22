@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router";
 import { useVerifyEmail } from "@/features/auth";
 import { ApiError } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
+import { readPostAuthRedirect } from "@/shared/lib";
 import { Alert, Button, LoadingState } from "@/shared/ui";
 
 /**
@@ -203,16 +204,23 @@ function VerificationResult({
  * The single call-to-action for a terminal screen. "resend" and "retry" both
  * route to login: the resend endpoint requires an authenticated session, and a
  * retry of a failed confirmation starts from a fresh sign-in.
+ *
+ * The sign-in link carries whatever the account was on its way to before it had to
+ * register — a jury invitation, usually. This is the far end of the detour described
+ * in `post-auth-redirect`, and the last screen that can keep it from being lost.
  */
 function OutcomeAction({
   action,
 }: {
   action: VerificationResultProps["action"];
 }): React.JSX.Element {
+  const parked = readPostAuthRedirect();
+  const loginPath =
+    parked == null ? ROUTES.login : `${ROUTES.login}?next=${encodeURIComponent(parked)}`;
   if (action.kind === "retry") {
     return (
       <Button asChild className="w-full">
-        <Link to={ROUTES.login} reloadDocument>
+        <Link to={loginPath} reloadDocument>
           Повторить попытку
         </Link>
       </Button>
@@ -221,7 +229,7 @@ function OutcomeAction({
   const label = action.kind === "resend" ? "Отправить письмо повторно" : "Перейти ко входу";
   return (
     <Button asChild className="w-full">
-      <Link to={ROUTES.login}>{label}</Link>
+      <Link to={loginPath}>{label}</Link>
     </Button>
   );
 }

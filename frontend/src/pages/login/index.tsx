@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { useAuth } from "@/app/providers";
 import { LoginForm } from "@/features/auth";
 import { ROUTES } from "@/shared/config";
+import { authPathWithNext, clearPostAuthRedirect, readPostAuthRedirect } from "@/shared/lib";
 
 interface LocationState {
   from?: { pathname?: string; search?: string };
@@ -30,10 +31,15 @@ export function LoginPage(): React.JSX.Element {
   const params = new URLSearchParams(location.search);
   const stateFrom =
     state?.from?.pathname != null ? `${state.from.pathname}${state.from.search ?? ""}` : null;
-  const from = safeNext(params.get("next")) ?? safeNext(stateFrom) ?? ROUTES.cabinet;
+  // The parked destination is the last resort and the one that survives registration:
+  // somebody invited onto a jury signs up, confirms their address from a second e-mail,
+  // and arrives here with no `?next=` left anywhere. See `post-auth-redirect`.
+  const from =
+    safeNext(params.get("next")) ?? safeNext(stateFrom) ?? readPostAuthRedirect() ?? ROUTES.cabinet;
 
   const handleSuccess = async (): Promise<void> => {
     await refresh();
+    clearPostAuthRedirect();
     navigate(from, { replace: true });
   };
 
@@ -52,7 +58,10 @@ export function LoginPage(): React.JSX.Element {
         </Link>
         <span>
           Нет аккаунта?{" "}
-          <Link to={ROUTES.register} className="text-primary hover:underline">
+          <Link
+            to={authPathWithNext(ROUTES.register, from === ROUTES.cabinet ? null : from)}
+            className="text-primary hover:underline"
+          >
             Зарегистрироваться
           </Link>
         </span>
