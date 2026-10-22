@@ -14,11 +14,12 @@ second switch to remember.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from typing import Any
 
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import CategoryModel, DisciplineModel
-from apps.judging.application.interfaces import DirectoryNomination
+from apps.judging.application.interfaces import DirectoryCompetition, DirectoryNomination
 
 __all__ = ["DjangoCompetitionDirectory"]
 
@@ -65,6 +66,31 @@ class DjangoCompetitionDirectory:
     def competition_title(self, competition_id: uuid.UUID) -> str:
         title = CompetitionModel.objects.filter(id=competition_id, deleted_at__isnull=True).values_list("title", flat=True).first()
         return _clean(title) or "Фестиваль"
+
+    def competitions(self, competition_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, DirectoryCompetition]:
+        """Resolve several festivals at once — one query, whatever the panel's size."""
+        if not competition_ids:
+            return {}
+        rows = CompetitionModel.objects.filter(id__in=list(competition_ids), deleted_at__isnull=True).values(
+            "id",
+            "title",
+            "settings",
+            "competition_start",
+            "competition_end",
+            "venue_name",
+        )
+        resolved: dict[uuid.UUID, DirectoryCompetition] = {}
+        for row in rows:
+            settings = row["settings"] if isinstance(row["settings"], dict) else {}
+            resolved[row["id"]] = DirectoryCompetition(
+                competition_id=row["id"],
+                title=_clean(row["title"]) or "Фестиваль",
+                online_judging=_clean(settings.get("judging_mode")) == _ONLINE,
+                starts_on=row["competition_start"],
+                ends_on=row["competition_end"],
+                venue=_clean(row["venue_name"]) or None,
+            )
+        return resolved
 
     def online_judging_enabled(self, competition_id: uuid.UUID) -> bool:
         """Whether this festival's jury scores on the platform.

@@ -235,6 +235,21 @@ export function useArrangeProgram(
   );
 }
 
+/**
+ * Put back the running order the last «Пересобрать» replaced.
+ *
+ * One step back, not a history: the server holds a single restore point and spends it
+ * here. Guarded by `program.canUndoArrange` rather than by anything this client
+ * remembers, so a second window that already undid it is answered with a conflict.
+ */
+export function useUndoArrange(programId: string): UseMutationResult<Program, ApiError, void> {
+  return useProgramMutation<void>(programId, () =>
+    request<Envelope<Program>>(`staff/programs/${programId}/items/arrange/undo`, {
+      method: "post",
+    }),
+  );
+}
+
 /** Insert a break (or any other standalone block). */
 export function useAddBlock(
   programId: string,
@@ -378,6 +393,25 @@ export async function downloadProgramPdf(
   await saveAuthenticatedDownload(
     `staff/programs/${programId}/export.pdf${query}`,
     `${fallbackName}.pdf`,
+  );
+}
+
+/**
+ * Download the programme as one flat .xlsx sheet of the chosen columns.
+ *
+ * The same table as the PDF and the same column choice, in the format the programme is
+ * actually worked in: sorted, filtered, pasted into somebody else's template. Written
+ * сплошником — every slot one row, in running order, nothing merged or grouped.
+ */
+export async function downloadProgramXlsx(
+  programId: string,
+  columns: ColumnKey[],
+  fallbackName: string,
+): Promise<void> {
+  const query = columns.length > 0 ? `?columns=${encodeURIComponent(columns.join(","))}` : "";
+  await saveAuthenticatedDownload(
+    `staff/programs/${programId}/export.xlsx${query}`,
+    `${fallbackName}.xlsx`,
   );
 }
 

@@ -7,6 +7,7 @@ import {
   Columns3,
   Copy,
   FileDown,
+  FileSpreadsheet,
   GripVertical,
   Link2,
   ListOrdered,
@@ -16,6 +17,7 @@ import {
   Plus,
   Send,
   Trash2,
+  Undo2,
   Wand2,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -29,6 +31,7 @@ import {
   downloadProgramMedia,
   downloadProgramMusic,
   downloadProgramPdf,
+  downloadProgramXlsx,
   GROUPING_AXES,
   GROUPING_AXIS_LABELS,
   type GroupingAxis,
@@ -53,6 +56,7 @@ import {
   useArrangeProgram,
   useCreateProgram,
   useCreateShare,
+  useDeleteProgram,
   useEditItem,
   useFillCells,
   useFillProgram,
@@ -65,6 +69,7 @@ import {
   useRenameColumn,
   useRenumberItems,
   useReorderItems,
+  useUndoArrange,
   useUpdateProgram,
 } from "@/features/program-builder";
 import { ArrangeProgramDialog } from "@/features/program-builder/ui/arrange-dialog";
@@ -235,7 +240,7 @@ export function StaffProgramPage(): React.JSX.Element {
                 </div>
               )}
               {programId ? (
-                <ProgramWorkspace programId={programId} />
+                <ProgramWorkspace programId={programId} onDeleted={() => setProgramId(null)} />
               ) : (
                 <EmptyState
                   title="Программа не выбрана"
@@ -366,19 +371,31 @@ function CreateProgramCard({
   );
 }
 
-function ProgramWorkspace({ programId }: { programId: string }): React.JSX.Element {
+function ProgramWorkspace({
+  programId,
+  onDeleted,
+}: {
+  programId: string;
+  onDeleted: () => void;
+}): React.JSX.Element {
   const { data: program, isLoading } = useProgram(programId);
   if (isLoading || !program) {
     return <LoadingState label="Загружаем программу…" size="sm" />;
   }
-  return <ProgramWorkspaceInner key={programId} program={program} />;
+  return <ProgramWorkspaceInner key={programId} program={program} onDeleted={onDeleted} />;
 }
 
-function ProgramWorkspaceInner({ program }: { program: Program }): React.JSX.Element {
+function ProgramWorkspaceInner({
+  program,
+  onDeleted,
+}: {
+  program: Program;
+  onDeleted: () => void;
+}): React.JSX.Element {
   return (
     // `min-w-0` all the way down to the scroll container, or the table's width wins.
     <div className="flex min-w-0 flex-col gap-4">
-      <ProgramSettings program={program} />
+      <ProgramSettings program={program} onDeleted={onDeleted} />
       <Divider />
       <RunningOrder program={program} />
       <Divider />
@@ -391,7 +408,13 @@ function ProgramWorkspaceInner({ program }: { program: Program }): React.JSX.Ele
   );
 }
 
-function ProgramSettings({ program }: { program: Program }): React.JSX.Element {
+function ProgramSettings({
+  program,
+  onDeleted,
+}: {
+  program: Program;
+  onDeleted: () => void;
+}): React.JSX.Element {
   const update = useUpdateProgram(program.id);
   const setBuffer = (bufferSeconds: number) =>
     update.mutate({ bufferSeconds }, { onError: () => toast.error("Не удалось изменить буфер") });
@@ -399,10 +422,13 @@ function ProgramSettings({ program }: { program: Program }): React.JSX.Element {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-semibold text-lg">{program.name}</h2>
-        <p className="text-muted-foreground text-sm">
-          {formatClock(program.startsAt)} – {formatClock(program.endsAt)} ·{" "}
-          {formatSpan(program.totalSeconds)}
-        </p>
+        <div className="flex flex-wrap items-baseline gap-3">
+          <p className="text-muted-foreground text-sm">
+            {formatClock(program.startsAt)} – {formatClock(program.endsAt)} ·{" "}
+            {formatSpan(program.totalSeconds)}
+          </p>
+          <DeleteProgram program={program} onDeleted={onDeleted} />
+        </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:max-w-xl">
         <Select
@@ -418,6 +444,87 @@ function ProgramSettings({ program }: { program: Program }): React.JSX.Element {
         <ProgramStart program={program} />
       </div>
     </div>
+  );
+}
+
+/**
+ * «Удалить программу» — и то, что стоит между кнопкой и удалением.
+ *
+ * Две вещи сразу, потому что по отдельности ни одна не работает.
+ *
+ * **Публичные ссылки держат программу.** Ссылка — это чья-то открытая вкладка:
+ * у звукорежиссёра за пультом, у ведущего, у участника в письме. Удаление уносит
+ * их все, и уносит молча — страница просто перестаёт открываться посреди
+ * фестиваля. Поэтому пока ссылки живы, кнопка не нажимается, и рядом написано,
+ * сколько их и что с ними делать: отозвать по одной внизу страницы — это и есть
+ * то решение организатора, которого здесь не хватает, он один знает, у кого какая.
+ *
+ * **Диалог, а не «вы уверены?».** Удаление необратимо и стоит рядом с обычными
+ * настройками, по которым кликают не глядя, поэтому подтверждение называет
+ * программу по имени и говорит, сколько в ней пунктов: «Вокал, 1 отделение» и
+ * «37 пунктов» — это то, по чему человек узнаёт, что держит не ту программу.
+ * Сами выступления остаются в заявках: удаляется расстановка, а не фестиваль.
+ */
+function DeleteProgram({
+  program,
+  onDeleted,
+}: {
+  program: Program;
+  onDeleted: () => void;
+}): React.JSX.Element {
+  const remove = useDeleteProgram();
+  const [open, setOpen] = useState(false);
+  const shares = program.shares.length;
+  const blocked = shares > 0;
+
+  const confirm = () => {
+    remove.mutate(program.id, {
+      onSuccess: () => {
+        setOpen(false);
+        onDeleted();
+        toast.success("Программа удалена");
+      },
+      // Сервер проверяет то же правило: ссылку могли создать в соседнем окне,
+      // пока это открыто, и его отказ точнее того, что здесь на экране.
+      onError: (error) => toast.error(error.message || "Не удалось удалить программу"),
+    });
+  };
+
+  return (
+    <>
+      {/* `outline`, не `ghost`: удаление ищут глазами, а призрачная кнопка —
+          текст до наведения, и на тач-экране наведения не бывает вовсе. */}
+      <Button variant="outline" size="xs" disabled={blocked} onClick={() => setOpen(true)}>
+        <Trash2 className="size-4" /> Удалить программу
+      </Button>
+      {/* Причина отказа — на экране, а не в `title`: выключенная кнопка не ловит
+          курсор (`disabled:pointer-events-none`), и подсказка к ней не всплывёт. */}
+      {blocked ? (
+        <p className="text-muted-foreground text-xs">
+          Сначала отзовите публичные ссылки ({shares}) — по ним программу читают прямо сейчас.
+        </p>
+      ) : null}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Удалить программу «{program.name}»?</DialogTitle>
+            <DialogDescription>
+              Пунктов в программе: {program.items.length}. Расстановка и перерывы будут удалены без
+              возможности восстановить. Сами заявки и выступления останутся — их можно будет
+              расставить заново в новой программе.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Отмена
+            </Button>
+            <Button variant="danger" loading={remove.isPending} onClick={confirm}>
+              Удалить программу
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -1524,25 +1631,53 @@ function CustomCell({
 }
 
 /**
- * «Собрать программу» и «Пересобрать» — автосоставление (VT-86).
+ * «Собрать программу», «Пересобрать» и «Отменить» — автосоставление (VT-86).
  *
- * Две кнопки, потому что это два разных действия: первое открывает правила, второе
- * повторяет те, по которым программа уже стоит. Пересобирают чаще, чем собирают впервые,
- * — заявки идут до последнего дня, — и ради этого правила и живут на программе.
+ * Две кнопки сборки, потому что это два разных действия: первая открывает правила,
+ * вторая повторяет те, по которым программа уже стоит. Пересобирают чаще, чем собирают
+ * впервые, — заявки идут до последнего дня, — и ради этого правила и живут на программе.
  *
- * После публикации обе выключены: пересборка выдаёт слоты заново, а номера уже названы
+ * После публикации всё выключено: пересборка выдаёт слоты заново, а номера уже названы
  * участникам. Сервер откажет и сам, но кнопка, которая заведомо упрётся в ошибку, —
  * это ошибка, показанная вместо объяснения.
+ *
+ * **Пересборка спрашивает.** Она заменяет состав целиком — руками подвинутый перерыв,
+ * растянутый номер, заполненная «Микрофон» уходят вместе со строками, которые их несли.
+ * Раньше это стоило один клик по кнопке в общем ряду, и однажды так и вышло: по ней
+ * нажали, не собираясь, и потеряли день расстановки. Теперь диалог называет, сколько
+ * строк на кону, прежде чем их заменить.
+ *
+ * **И её можно отменить.** Диалог предупреждает, но «я прочитал предупреждение» и
+ * «я хотел это сделать» — разные вещи, и решением является только второе. Сервер держит
+ * одну точку возврата, поэтому кнопка живёт, пока он говорит `canUndoArrange`, а не пока
+ * висит тост: паника случается не в те пять секунд, что он на экране.
  */
 function ArrangeControls({ program }: { program: Program }): React.JSX.Element {
   const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const arrange = useArrangeProgram(program.id);
+  const undo = useUndoArrange(program.id);
+
+  const undoArrange = () =>
+    undo.mutate(undefined, {
+      onSuccess: (next) =>
+        toast.success(`Пересборка отменена: вернулось ${next.items.length} строк`),
+      // Точку возврата мог потратить соседний экран — отказ сервера точнее
+      // того, что знает эта вкладка.
+      onError: (error) => toast.error(error.message || "Не удалось отменить пересборку"),
+    });
 
   const run = (input?: Parameters<typeof arrange.mutate>[0]) =>
     arrange.mutate(input, {
       onSuccess: (next) => {
         setOpen(false);
-        toast.success(`Программа собрана: ${next.items.length} строк`);
+        setConfirming(false);
+        toast.success(`Программа собрана: ${next.items.length} строк`, {
+          // Тост — для того, кто понял сразу; кнопка в панели — для всех остальных.
+          action: next.canUndoArrange
+            ? { label: "Отменить", onClick: () => undoArrange() }
+            : undefined,
+        });
       },
       onError: () => toast.error("Не удалось собрать программу"),
     });
@@ -1562,16 +1697,43 @@ function ArrangeControls({ program }: { program: Program }): React.JSX.Element {
           variant="ghost"
           size="sm"
           loading={arrange.isPending}
-          onClick={() => run(undefined)}
+          onClick={() => setConfirming(true)}
         >
           Пересобрать
         </Button>
       ) : null}
+      {program.canUndoArrange ? (
+        <Button variant="ghost" size="sm" loading={undo.isPending} onClick={undoArrange}>
+          <Undo2 className="size-4" /> Отменить пересборку
+        </Button>
+      ) : null}
+      <Dialog open={confirming} onOpenChange={setConfirming}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Пересобрать программу заново?</DialogTitle>
+            <DialogDescription>
+              Сейчас в программе строк: {program.items.length}. Все они будут заменены строками,
+              собранными по сохранённым правилам: перерывы, которые вы подвинули руками, изменённая
+              длительность номеров и заполненные ячейки пропадут. Колонки останутся. Это можно будет
+              отменить кнопкой «Отменить пересборку».
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirming(false)}>
+              Отмена
+            </Button>
+            <Button variant="danger" loading={arrange.isPending} onClick={() => run(undefined)}>
+              Пересобрать
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <ArrangeProgramDialog
         open={open}
         onOpenChange={setOpen}
         saved={program.arrangement}
         pending={arrange.isPending}
+        replaces={program.items.length}
         onSubmit={(input) => run(input)}
       />
     </>
@@ -1717,6 +1879,7 @@ function ColumnOrderStrip({
 function ExportPanel({ program }: { program: Program }): React.JSX.Element {
   const [columns, setColumns] = useState<ColumnKey[]>(DEFAULT_EXPORT_COLUMNS);
   const [busy, setBusy] = useState(false);
+  const [sheetBusy, setSheetBusy] = useState(false);
   const [musicBusy, setMusicBusy] = useState(false);
   const [mediaBusy, setMediaBusy] = useState(false);
 
@@ -1749,6 +1912,23 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
       toast.error("Не удалось сформировать PDF");
     } finally {
       setBusy(false);
+    }
+  };
+
+  /**
+   * The same table, as a spreadsheet.
+   *
+   * Shares the column choice with the PDF on purpose: the organizer picks the cut of the
+   * programme once and then decides what to do with it — print it, or keep working on it.
+   */
+  const downloadSheet = async () => {
+    setSheetBusy(true);
+    try {
+      await downloadProgramXlsx(program.id, chosen, program.name);
+    } catch {
+      toast.error("Не удалось сформировать Excel");
+    } finally {
+      setSheetBusy(false);
     }
   };
 
@@ -1824,13 +2004,24 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
           >
             <FileDown className="size-4" /> Скачать PDF
           </Button>
+          {/* Рядом с PDF и на тех же колонках: это одна и та же таблица, вопрос только
+              в том, печатают её или продолжают с ней работать. */}
+          <Button
+            variant="outline"
+            size="sm"
+            loading={sheetBusy}
+            disabled={chosen.length === 0}
+            onClick={() => void downloadSheet()}
+          >
+            <FileSpreadsheet className="size-4" /> Скачать Excel
+          </Button>
         </div>
       </div>
 
       {/* `min-w-0`: a `fieldset` has a built-in `min-width: min-content` that ignores its
           container, so a row of column names can widen the layout unless it is overridden. */}
       <fieldset className="flex min-w-0 flex-wrap gap-x-4 gap-y-2 rounded-md border border-border p-3">
-        <legend className="px-1 text-muted-foreground text-xs">Колонки в PDF</legend>
+        <legend className="px-1 text-muted-foreground text-xs">Колонки в выгрузке</legend>
         {program.availableColumns.map((column) => (
           <Checkbox
             key={column.key}
@@ -1841,13 +2032,14 @@ function ExportPanel({ program }: { program: Program }): React.JSX.Element {
         ))}
       </fieldset>
       <ColumnOrderStrip
-        label="Порядок колонок в PDF"
+        label="Порядок колонок в выгрузке"
         chosen={chosen}
         labels={available}
         onShift={shift}
       />
       <p className="text-muted-foreground text-xs">
-        Таблица печатается на A4 в альбомной ориентации, заголовок повторяется на каждой странице.
+        PDF печатается на A4 в альбомной ориентации, заголовок повторяется на каждой странице. Excel
+        выгружается сплошником: одна строка на выступление, в порядке программы.
       </p>
     </div>
   );
@@ -1900,7 +2092,9 @@ function CandidateList({ program }: { program: Program }): React.JSX.Element {
           <div className="min-w-0">
             <p className="font-medium text-sm">{candidate.title}</p>
             <p className="text-muted-foreground text-xs">
-              {[candidate.participants[0], candidate.organization].filter(Boolean).join(" · ")}
+              {[candidate.participants.join(", "), candidate.organization]
+                .filter(Boolean)
+                .join(" · ")}
             </p>
             {/* The composition and the age band decide where an act can go in the day,
                 so they belong on the card the organizer picks from — not one click away. */}

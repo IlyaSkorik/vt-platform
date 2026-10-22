@@ -55,7 +55,7 @@ class TestThePageBehindTheCode:
 
         assert response.status_code == 200
         assert response.data["data"]["accepting"] is True
-        assert response.data["data"]["organizationName"]
+        assert response.data["data"]["title"]
 
     def test_an_unknown_slug_is_a_dead_link(self, page: dict[str, Any]) -> None:
         assert visitor().get(public("ZZZZZZZZZZ")).status_code == 404

@@ -14,6 +14,7 @@ export const diplomaKeys = {
   printSummary: (competitionId: string) =>
     [...diplomaKeys.all, "print-summary", competitionId] as const,
   printJob: (jobId: string) => [...diplomaKeys.all, "print-job", jobId] as const,
+  documentJob: (jobId: string) => [...diplomaKeys.all, "document-job", jobId] as const,
   // Every scope of the history, for invalidating them all after a run.
   generationArchives: () => [...diplomaKeys.all, "generation-archive"] as const,
   // The whole history by default; a competition id narrows it to one competition.

@@ -69,16 +69,19 @@ from apps.programs.presentation.api.v1.serializers import (
     UpdateShareRequestSerializer,
 )
 from config.archive import ArchiveMember, zip_response
+from shared.spreadsheet import SheetColumn, write_workbook, xlsx_response
 
 _TAG = "Competition Program"
 
 __all__ = [
+    "ProgramArrangeUndoView",
     "ProgramArrangeView",
     "ProgramCandidatesView",
     "ProgramCollectionView",
     "ProgramColumnCollectionView",
     "ProgramColumnDetailView",
     "ProgramDetailView",
+    "ProgramExportSpreadsheetView",
     "ProgramExportView",
     "ProgramItemCellsView",
     "ProgramItemCollectionView",
@@ -102,6 +105,11 @@ _PROBLEM_RESPONSES = {
 def _pdf_name(title: str) -> str:
     """A filename a person recognises: the programme's own name, path-safe."""
     return f"{_download_stem(title)}.pdf"
+
+
+def _xlsx_name(title: str) -> str:
+    """The same name, for the spreadsheet copy of the same table."""
+    return f"{_download_stem(title)}.xlsx"
 
 
 def _download_stem(title: str) -> str:
@@ -143,7 +151,6 @@ def _item_json(item: dto.ProgramItemView) -> dict[str, Any]:
             "endsAt": item.schedule.ends_at,
         },
         "submissionId": item.submission_id,
-        "leadParticipant": item.lead_participant,
         "participants": list(item.participants),
         "participantCount": item.participant_count,
         "teachers": list(item.teachers),
@@ -178,6 +185,7 @@ def _program_json(view: dto.ProgramDetailView) -> dict[str, Any]:
         "totalSeconds": view.total_seconds,
         "endsAt": view.ends_at,
         "arrangement": _arrangement_json(view.arrangement),
+        "canUndoArrange": view.can_undo_arrange,
         "createdAt": view.created_at,
         "updatedAt": view.updated_at,
         "version": view.version,
@@ -472,6 +480,23 @@ class ProgramArrangeView(_StaffView):
         return problems.envelope(request, _program_json(program))
 
 
+class ProgramArrangeUndoView(_StaffView):
+    """``POST`` to put back the running order the last rebuild replaced."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="programsUndoArrange",
+        request=None,
+        responses={200: ProgramDetailSerializer, **_PROBLEM_RESPONSES},
+    )
+    def post(self, request: Request, program_id: str) -> Response:
+        try:
+            program = build_program_service().undo_arrange(program_id)
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        return problems.envelope(request, _program_json(program))
+
+
 class ProgramItemDetailView(_StaffView):
     """``PATCH`` and ``DELETE`` one slot."""
 
@@ -672,6 +697,48 @@ class ProgramExportView(_StaffView):
         # fallback for clients that ignore RFC 5987.
         response["Content-Disposition"] = f"attachment; filename=\"programme.pdf\"; filename*=UTF-8''{quote(_pdf_name(table.title))}"
         return response
+
+
+class ProgramExportSpreadsheetView(_StaffView):
+    """``GET`` the programme as one continuous .xlsx sheet of the chosen columns.
+
+    The PDF's sibling, and deliberately not a prettier version of it: a printed table
+    is laid out for a hall, while a spreadsheet is what the programme is *worked* in —
+    sorted, filtered, pasted into somebody else's template, sent to the sound desk with
+    a column added. So it is written flat: every row of the running order in order,
+    breaks and blocks included as the rows they are, with nothing merged, repeated or
+    split into sections. A grouped sheet looks tidier and sorts into nonsense.
+
+    Columns arrive the same way as the PDF's, so the two exports are one decision taken
+    twice rather than two settings to keep in step.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="programsExportXlsx",
+        parameters=[
+            OpenApiParameter(
+                "columns",
+                str,
+                required=False,
+                description="Comma-separated column keys (built-in names or custom:<uuid>), written left to right in the order given. Omit for all.",
+            )
+        ],
+        responses={200: OpenApiResponse(description="An .xlsx of the running order, one row per slot."), **_PROBLEM_RESPONSES},
+    )
+    def get(self, request: Request, program_id: str) -> HttpResponseBase | Response:
+        raw = (request.query_params.get("columns") or "").strip()
+        columns = tuple(key.strip() for key in raw.split(",") if key.strip())
+        try:
+            table = build_program_service().program_table(program_id=program_id, columns=columns)
+        except ProgramError as exc:
+            return self._problem(exc, request)
+        workbook = write_workbook(
+            columns=[SheetColumn(heading=column.label) for column in table.columns],
+            rows=table.rows,
+            sheet_title=table.title,
+        )
+        return xlsx_response(workbook, filename=_xlsx_name(table.title))
 
 
 class ProgramMusicArchiveView(_StaffView):

@@ -91,6 +91,7 @@ def ref_from_submission(submission: Submission) -> SubmissionRef:
         discipline=performance.discipline_id.json() if performance is not None else "",
         status=submission.status,
         price=submission.price_snapshot,
+        nomination_id=performance.nomination_id if performance is not None else None,
     )
 
 
@@ -122,6 +123,7 @@ def _apply_additional_performance_discount(
                     price=Money.of(new_amount, ref.price.currency),
                     calculated_at=ref.price.calculated_at,
                 ),
+                nomination_id=ref.nomination_id,
             )
         )
     return discounted

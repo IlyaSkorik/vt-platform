@@ -6,6 +6,7 @@ from .assignment import AssignmentModel
 from .base import BasePersistenceModel, uuid7
 from .diploma import DiplomaModel, DiplomaStatusChoices
 from .diploma_number_sequence import DiplomaNumberSequenceModel
+from .document_job import DocumentJobModel
 from .document_type import DocumentTypeChoices
 from .font_face import FontFaceModel, FontVariantChoices
 from .generation_run import GenerationRunModel
@@ -21,6 +22,7 @@ __all__ = [
     "DiplomaModel",
     "DiplomaNumberSequenceModel",
     "DiplomaStatusChoices",
+    "DocumentJobModel",
     "DocumentTypeChoices",
     "FontFaceModel",
     "FontVariantChoices",

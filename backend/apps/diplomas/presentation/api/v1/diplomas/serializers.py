@@ -21,6 +21,7 @@ __all__ = [
     "CreateTemplateRequestSerializer",
     "DiplomaResponseSerializer",
     "DiplomaSnapshotSerializer",
+    "DocumentJobResponseSerializer",
     "DocumentSlotSerializer",
     "GenerateDocumentsRequestSerializer",
     "GenerateDocumentsResponseSerializer",
@@ -32,6 +33,7 @@ __all__ = [
     "PrintPackageRequestSerializer",
     "PrintPackageSummaryResponseSerializer",
     "SaveLayoutRequestSerializer",
+    "SlotDisciplineSerializer",
     "TemplateDocumentResponseSerializer",
     "TemplateFieldResponseSerializer",
     "TemplateResponseSerializer",
@@ -194,17 +196,28 @@ class CreateTemplateRequestSerializer(serializers.Serializer[dict[str, object]])
 
 
 class CreateAssignmentRequestSerializer(serializers.Serializer[dict[str, object]]):
-    """Body for assigning one template to one or more nominations.
+    """Body for assigning one template to genres and/or single nominations.
 
-    Which slot of each nomination the assignment fills is derived from the
-    template's own ``type``, so a mismatch is not expressible. ``categoryIds`` is a
-    list because a competition's nominations usually share a design; a single
-    nomination is a list of one.
+    Which slot the assignment fills is derived from the template's own ``type``, so
+    a mismatch is not expressible. Both id lists are lists because a competition's
+    genres usually share a design; a single one is a list of one.
+
+    ``categoryIds`` files the template as a genre's default. ``disciplineIds`` files
+    it against single nominations, which print on it instead of their genre's
+    default — that is how a festival whose nominations are judged by different
+    juries gives each the sheet its jury signs. At least one of the two must be
+    non-empty; a request naming neither assigns nothing.
     """
 
     competitionId = serializers.UUIDField()
-    categoryIds = serializers.ListField(child=serializers.UUIDField(), allow_empty=False)
+    categoryIds = serializers.ListField(child=serializers.UUIDField(), required=False, default=list)
+    disciplineIds = serializers.ListField(child=serializers.UUIDField(), required=False, default=list)
     templateId = serializers.UUIDField()
+
+    def validate(self, attrs: dict[str, object]) -> dict[str, object]:
+        if not attrs.get("categoryIds") and not attrs.get("disciplineIds"):
+            raise serializers.ValidationError({"categoryIds": "Выберите хотя бы один жанр или номинацию."})
+        return attrs
 
 
 class TemplateResponseSerializer(serializers.Serializer[dict[str, object]]):
@@ -220,13 +233,17 @@ class TemplateResponseSerializer(serializers.Serializer[dict[str, object]]):
 
 
 class AssignmentResponseSerializer(serializers.Serializer[dict[str, object]]):
-    """A template assignment (competition + nomination + kind -> template)."""
+    """A template assignment (competition + genre [+ nomination] + kind -> template)."""
 
     id = serializers.UUIDField()
     competitionId = serializers.UUIDField()
     competition = serializers.CharField(allow_null=True)
     categoryId = serializers.UUIDField()
     nomination = serializers.CharField(allow_null=True)
+    #: The single nomination this assignment is narrowed to; null means the whole
+    #: genre, which is what every assignment was before nominations could carry one.
+    disciplineId = serializers.UUIDField(allow_null=True)
+    discipline = serializers.CharField(allow_null=True)
     templateId = serializers.UUIDField()
     templateName = serializers.CharField()
     #: Which document slot of the nomination this assignment fills.
@@ -269,6 +286,9 @@ class GenerateDocumentsResponseSerializer(serializers.Serializer[dict[str, objec
     regenerated = serializers.IntegerField()
     #: Entries that named nobody to address, so nothing was issued for them.
     withoutRecipient = serializers.IntegerField()
+    #: Entries skipped because neither their nomination nor their genre assigns a
+    #: template of this kind.
+    withoutTemplate = serializers.IntegerField()
     nominations = serializers.IntegerField()
     #: Documents the chosen nominations now hold — what a bundle would contain,
     #: which is more than ``created + regenerated`` on a repeat run.
@@ -279,6 +299,29 @@ class GenerateDocumentsResponseSerializer(serializers.Serializer[dict[str, objec
     #: The printable archive's ``/media/…`` path; null unless ``bundle`` was asked
     #: for (or the run produced nothing to archive).
     zipUrl = serializers.CharField(allow_null=True)
+
+
+class DocumentJobResponseSerializer(serializers.Serializer[dict[str, object]]):
+    """A document-generation job's status and result (poll until COMPLETED/FAILED).
+
+    ``result`` is the run's own summary, carried whole: a client that already knew
+    how to read a finished run reads the same object, only later. It is null while
+    the job is pending or running, and stays null on a failure — where ``error``
+    says what went wrong instead.
+    """
+
+    jobId = serializers.UUIDField()
+    competitionId = serializers.UUIDField()
+    categoryIds = serializers.ListField(child=serializers.UUIDField())
+    documentType = serializers.ChoiceField(choices=GENERATED_DOCUMENT_TYPES)
+    force = serializers.BooleanField()
+    bundle = serializers.BooleanField()
+    publish = serializers.BooleanField()
+    status = serializers.ChoiceField(choices=["PENDING", "RUNNING", "COMPLETED", "FAILED"])
+    result = GenerateDocumentsResponseSerializer(allow_null=True)
+    error = serializers.CharField(allow_null=True)
+    createdAt = serializers.DateTimeField()
+    updatedAt = serializers.DateTimeField()
 
 
 class GenerationRunResponseSerializer(serializers.Serializer[dict[str, object]]):
@@ -408,24 +451,42 @@ class PrintJobResponseSerializer(serializers.Serializer[dict[str, object]]):
     updatedAt = serializers.DateTimeField()
 
 
-class DocumentSlotSerializer(serializers.Serializer[dict[str, object]]):
-    """One nomination's readiness and forecast for a single document type."""
+class SlotDisciplineSerializer(serializers.Serializer[dict[str, object]]):
+    """One nomination that prints this kind on a template of its own."""
 
+    disciplineId = serializers.UUIDField()
+    discipline = serializers.CharField(allow_null=True)
+    templateId = serializers.UUIDField()
+    templateName = serializers.CharField()
+    # True when that template also has an uploaded PDF.
+    ready = serializers.BooleanField()
+
+
+class DocumentSlotSerializer(serializers.Serializer[dict[str, object]]):
+    """One genre's readiness and forecast for a single document type."""
+
+    #: The genre's default template; null when only its nominations assign one.
     templateId = serializers.UUIDField(allow_null=True)
     templateName = serializers.CharField(allow_null=True)
-    # True when a template of this type is assigned AND it has an uploaded PDF.
+    # True when a template of this type is assigned at either level AND it has an
+    # uploaded PDF.
     ready = serializers.BooleanField()
     existing = serializers.IntegerField()
     willCreate = serializers.IntegerField()
     # Entries a per-teacher type cannot address (no teacher named); else 0.
     withoutRecipient = serializers.IntegerField()
+    #: Entries this kind cannot be printed for: their nomination resolves to no
+    #: template, or to one with no PDF behind it.
+    withoutTemplate = serializers.IntegerField()
+    #: The nominations printing on something other than the genre's default.
+    disciplines = SlotDisciplineSerializer(many=True)
 
 
 class PrintPackageNominationSerializer(serializers.Serializer[dict[str, object]]):
-    """One nomination's stats, with a slot per document type.
+    """One genre's stats, with a slot per document type.
 
-    Readiness is per type because assignment is: a nomination can be ready to
-    print diplomas and have no thank-you template at all.
+    Readiness is per type because assignment is: a genre can be ready to print
+    diplomas and have no thank-you template at all.
     """
 
     categoryId = serializers.UUIDField()

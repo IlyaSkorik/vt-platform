@@ -5,6 +5,7 @@ export {
   downloadProgramMedia,
   downloadProgramMusic,
   downloadProgramPdf,
+  downloadProgramXlsx,
   fetchCandidates,
   fetchProgram,
   fetchPrograms,
@@ -30,6 +31,7 @@ export {
   useRenumberItems,
   useReorderItems,
   useResetProgress,
+  useUndoArrange,
   useUpdateProgram,
   useUpdateShare,
 } from "./api";

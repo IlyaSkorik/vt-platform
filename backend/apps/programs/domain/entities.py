@@ -32,8 +32,10 @@ from datetime import datetime
 from .exceptions import (
     InvalidProgramDataError,
     ItemNotInProgramError,
+    NoRestorePointError,
     PerformanceAlreadyInProgramError,
     ProgramColumnNotFoundError,
+    ProgramHasSharesError,
     ProgramItemNotFoundError,
     ProgramNumbersFrozenError,
     ProgramShareNotFoundError,
@@ -401,6 +403,11 @@ class Program:
     #: button rather than a settings form refilled from memory. ``None`` for a programme
     #: that was only ever built by hand.
     _arrangement: ArrangementSettings | None = None
+    #: When a rebuild last replaced the whole running order - and so the moment the rows
+    #: it replaced carry as their ``deleted_at``. That makes it the aggregate's one
+    #: restore point: the address of a state still on disk. ``None`` means there is
+    #: nothing to undo, because the undo consumed it or no rebuild has happened.
+    _rebuilt_at: datetime | None = None
     #: The version this aggregate was loaded at - the optimistic-concurrency
     #: pre-image the repository writes against. Transient (never persisted).
     _initial_version: int = 1
@@ -458,6 +465,7 @@ class Program:
         deleted_at: datetime | None = None,
         version: int = 1,
         arrangement: ArrangementSettings | None = None,
+        rebuilt_at: datetime | None = None,
     ) -> Program:
         """Reconstruct the aggregate from persistence (no re-validation)."""
         return cls(
@@ -478,6 +486,7 @@ class Program:
             _deleted_at=deleted_at,
             _version=version,
             _arrangement=arrangement,
+            _rebuilt_at=rebuilt_at,
             _initial_version=version,
         )
 
@@ -513,6 +522,20 @@ class Program:
     def arrangement(self) -> ArrangementSettings | None:
         """The rules this running order was last generated from, if it ever was."""
         return self._arrangement
+
+    @property
+    def rebuilt_at(self) -> datetime | None:
+        """The moment a rebuild last replaced the running order, if it can still be undone."""
+        return self._rebuilt_at
+
+    @property
+    def can_undo_rebuild(self) -> bool:
+        """Whether :meth:`restore_order` would be accepted right now.
+
+        Published programmes answer ``False`` even holding a restore point: undoing
+        would move numbers that participants have already been told.
+        """
+        return self._rebuilt_at is not None and not self.numbers_frozen
 
     @property
     def items(self) -> tuple[ProgramItem, ...]:
@@ -838,6 +861,11 @@ class Program:
         columns themselves stay; their values do not. That is the trade the "пересобрать"
         button makes, and the dialog says so before it is taken.
 
+        The trade is survivable because the replaced slots are retired rather than
+        erased, and this records the instant they were retired at. That stamp is the
+        whole of :meth:`restore_order` - see there for what the undo does and does not
+        promise.
+
         Refused outright once the numbers are frozen: they have been published, and no
         set of rules is worth telling a participant their number changed.
         """
@@ -846,6 +874,35 @@ class Program:
         self._items = list(items)
         self._renumber_following_order()
         self._arrangement = settings
+        self._touch(now)
+        # Stamped *after* ``_touch``, and with the same instant: the repository retires
+        # the replaced rows under ``updated_at``, so this is literally the address of
+        # the state that just left. See :meth:`restore_order`.
+        self._rebuilt_at = self._updated_at
+
+    def restore_order(self, items: Sequence[ProgramItem], *, now: datetime) -> None:
+        """Put the running order back as it stood before the last rebuild.
+
+        The undo of :meth:`rebuild`, and the reason that trade is survivable: a replaced
+        slot is retired rather than erased, so the order the organizer spent an afternoon
+        on is still addressable by the instant it was retired at. ``items`` is that state,
+        read back by the repository - hand-moved breaks, resized acts, filled-in cells and
+        all, because those rows are the originals and not copies of them.
+
+        Single-use by design. The restore point is cleared here, so «Отменить» answers
+        once and then stops offering: undoing an undo is a different question, and a
+        button that silently means both is one nobody can predict.
+
+        Refused once the numbers are frozen, for the same reason a rebuild is - see
+        :class:`ProgramNumbersFrozenError`.
+        """
+        if self._rebuilt_at is None:
+            raise NoRestorePointError("Отменять нечего: программу не пересобирали, либо отмену уже применили.")
+        if self.numbers_frozen:
+            raise ProgramNumbersFrozenError("Программа уже опубликована — номера закреплены, отменить пересборку нельзя.")
+        self._items = list(items)
+        self._renumber_following_order()
+        self._rebuilt_at = None
         self._touch(now)
 
     def freeze_numbers(self, *, now: datetime) -> None:
@@ -957,7 +1014,15 @@ class Program:
     # ------------------------------------------------------------------
 
     def delete(self, *, now: datetime) -> None:
-        """Soft-delete the program (and with it every public link into it)."""
+        """Soft-delete the program, provided no public link still leads into it.
+
+        Refused while any edition is published: deleting would take the sound desk's
+        copy, the host's copy and the one mailed to participants down with it, each of
+        them silently (see :class:`ProgramHasSharesError`). Revoking the links first is
+        the organizer's own confirmation that nobody is reading this any more.
+        """
+        if self._shares:
+            raise ProgramHasSharesError(f"Программа «{self._name}» опубликована по {len(self._shares)} ссылке(ам) — сначала отзовите их.")
         self._deleted_at = now
         self._touch(now)
 

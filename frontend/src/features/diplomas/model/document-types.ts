@@ -8,13 +8,16 @@ export type DocumentType = DocumentTypeEnum;
  * Element kinds a thank-you letter may carry — mirrors the backend policy, which
  * rejects a layout carrying anything else.
  *
- * A courtesy letter names who is being thanked, who taught them, and which event it
- * was for. It ranks nothing (no degree), is not registered (no number, issue date
- * or QR) and does not itemise the entry (no age, organization, nomination or work).
- * Free text carries whatever wording the organizer wants.
+ * A courtesy letter names who is being thanked and which event it was for. It ranks
+ * nothing (no degree), is not registered (no number, issue date or QR) and does not
+ * itemise an entry (no age, organization, nomination or work). Free text carries
+ * whatever wording the organizer wants.
+ *
+ * It names no participant either: one letter is issued per teacher per genre, and a
+ * teacher who entered five acts has five participants behind that one sheet — any
+ * one of them printed on it would be an arbitrary choice presented as a fact.
  */
 const THANK_YOU_FIELD_TYPES: ReadonlySet<TemplateFieldTypeId> = new Set([
-  "participant_name",
   "teacher",
   "competition_name",
   "competition_date",

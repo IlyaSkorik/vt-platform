@@ -171,6 +171,10 @@ class InvalidCollectiveMemberError(ValueObjectValidationError):
     """The provided collective roster is not usable (a name too long, or too many names)."""
 
 
+class InvalidParticipantOrganizationError(ValueObjectValidationError):
+    """The provided institution name is not usable (too long to print)."""
+
+
 class InvalidTeacherRoleError(ValueObjectValidationError):
     """The provided value is not a valid teacher role (empty or too long)."""
 

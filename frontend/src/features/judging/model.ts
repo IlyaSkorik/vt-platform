@@ -121,6 +121,52 @@ export interface JuryTask {
   maxTotal: string;
 }
 
+/**
+ * One festival this account judges.
+ *
+ * The judge's own list, and the only one they can read: the organizer's festival
+ * endpoint is staff-only, and a jury member is a guest of the organization rather
+ * than an employee of it.
+ */
+export interface JurySeat {
+  competitionId: string;
+  title: string;
+  onlineJudging: boolean;
+  isChair: boolean;
+  categoryNames: string[];
+  startsOn: string | null;
+  endsOn: string | null;
+  venue: string | null;
+  /** Acts this judge still owes a sheet for. */
+  pendingCount: number;
+  /** Whether the host has an act open right now. */
+  hasOpenAct: boolean;
+}
+
+/** One act on the host's screen, in the order the hall will hear it. */
+export interface RunningOrderEntry {
+  submissionId: string;
+  number: number;
+  title: string;
+  categoryName: string | null;
+  disciplineName: string | null;
+  ageCategoryName: string | null;
+  organization: string | null;
+  status: ScoringStatus;
+  submittedCount: number;
+  expectedJudges: number;
+  score: string | null;
+  awardLabel: string | null;
+}
+
+/** What pressing «Перенести в протоколы» actually did. */
+export interface TallyApplication {
+  rowsChanged: number;
+  protocolsCreated: number;
+  /** Genres with no protocol open — nowhere for the push to land. */
+  missingProtocols: string[];
+}
+
 export interface Scorecard {
   juryMemberId: string;
   juryMemberName: string;

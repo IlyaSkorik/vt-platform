@@ -16,7 +16,7 @@ from reportlab.pdfgen import canvas
 
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.competitions.infrastructure.models.competition import CompetitionModel
-from apps.competitions.infrastructure.models.taxonomy import CategoryModel
+from apps.competitions.infrastructure.models.taxonomy import CategoryModel, DisciplineModel
 from apps.diplomas.domain.exceptions import PrintTemplateNotReadyError
 from apps.diplomas.domain.value_objects import DiplomaStatus
 from apps.diplomas.infrastructure.models import DiplomaModel, TemplateDocumentModel, TemplateModel
@@ -58,11 +58,14 @@ def _template_with_pdf(name: str, document_type: str = "DIPLOMA", *, degree_fiel
     template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type=document_type, name=name)
     key = default_storage.save(f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf()))
     TemplateDocumentModel.objects.create(template=template, file_reference=f"/media/{key}", page_count=1)
+    # A thank-you letter names its recipient; it is issued once per teacher and so
+    # has no one participant to name.
+    addressed = document_type == "THANK_YOU"
     fields: list[dict[str, object]] = [
         {
             "page": 1,
-            "type": "participant_name",
-            "binding": "participant.display_name",
+            "type": "teacher" if addressed else "participant_name",
+            "binding": "teacher.display_name" if addressed else "participant.display_name",
             "x": 0.1,
             "y": 0.1,
             "width": 0.6,
@@ -101,23 +104,42 @@ def _submission(
     category: CategoryModel,
     teachers: list[dict[str, str]] | None = None,
     status: str = "ACCEPTED",
+    discipline: DisciplineModel | None = None,
 ) -> SubmissionModel:
     """One entry. ``ACCEPTED`` by default — only entries taken into the competition
     are printed, so anything earlier would be invisible to generation."""
+    performance: dict[str, object] = {"title": "Этюд", "nomination_id": str(category.id)}
+    if discipline is not None:
+        performance["discipline_id"] = str(discipline.id)
     return SubmissionModel.objects.create(
         competition_id=competition.id,
         applicant_id=uuid.uuid4(),
         status=status,
         participants=[{"display_name": name, "member_count": 1}],
-        performance={"title": "Этюд", "nomination_id": str(category.id)},
+        performance=performance,
         teachers=teachers or [],
     )
+
+
+def _nomination(competition: CompetitionModel, category: CategoryModel, name: str) -> DisciplineModel:
+    """One nomination inside a genre — «Эстрадный вокал» under «Вокал»."""
+    return DisciplineModel.objects.create(competition=competition, category_id=category.id, name=name)
 
 
 def _assign(competition: CompetitionModel, category: CategoryModel, template: TemplateModel) -> None:
     composition.create_assignment(
         competition_id=str(competition.id),
         category_id=str(category.id),
+        template_id=str(template.id),
+        scope=_SCOPE,
+    )
+
+
+def _assign_nomination(competition: CompetitionModel, discipline: DisciplineModel, template: TemplateModel) -> None:
+    """Give one nomination a template of its own, overriding its genre's."""
+    composition.create_assignments(
+        competition_id=str(competition.id),
+        discipline_ids=[str(discipline.id)],
         template_id=str(template.id),
         scope=_SCOPE,
     )
@@ -311,6 +333,15 @@ def test_zip_contains_a_pdf_per_generated_diploma() -> None:
     assert len(names) == 2
     for name in names:
         assert archive.read(name).startswith(b"%PDF")
+    # Filed under the template they print on — that folder is one print session,
+    # one stack of blanks in the tray — and named for whoever the sheet is handed
+    # to, with the register's number after it: the stack is sorted into envelopes
+    # by name and reconciled by number.
+    assert sorted(name.removeprefix("Вокал A4/").split(" — ")[0] for name in names) == ["Иванов Иван", "Сидоров С"]
+    for name in names:
+        assert name.startswith("Вокал A4/")
+        assert name.endswith(".pdf")
+        assert name.split(" — ")[1] != ".pdf"
 
 
 def _archive_of(job: dict[str, object]) -> zipfile.ZipFile:
@@ -320,12 +351,13 @@ def _archive_of(job: dict[str, object]) -> zipfile.ZipFile:
 
 
 class TestPlaceSheets:
-    """The «МЕСТА» folder: a blank overprint sheet per degree, per template.
+    """Each template folder's «МЕСТА» subfolder: a blank overprint sheet per degree.
 
     The package is printed before the ceremony, so its diplomas carry no degree.
     The degree reaches the printed sheet afterwards by being run over it, which
     needs a page that is blank apart from the degree — placed exactly where that
-    template's Степень field is.
+    template's Степень field is. The sheets sit beside the diplomas they overprint,
+    inside the same template folder, because they are only ever run over those.
     """
 
     def test_archive_carries_a_sheet_per_degree(self) -> None:
@@ -335,23 +367,24 @@ class TestPlaceSheets:
         _submission(competition, "Иванов Иван", vocals)
 
         archive = _archive_of(print_package.start_print_package(competition_id=competition.id, category_ids=[]))
-        sheets = sorted(name for name in archive.namelist() if name.startswith("МЕСТА/"))
+        sheets = sorted(name for name in archive.namelist() if "/МЕСТА/" in name)
 
-        # Every degree the jury can award, under the template the sheet overprints,
-        # numbered by seniority so the folder does not read alphabetically.
+        # Every degree the jury can award, inside the folder of the template the
+        # sheet overprints, numbered by seniority so the folder does not read
+        # alphabetically.
         assert sheets == [
-            "МЕСТА/Вокал A4/1. Гран-при.pdf",
-            "МЕСТА/Вокал A4/2. Номинант на Гран-при.pdf",
-            "МЕСТА/Вокал A4/3. Лауреат I степени.pdf",
-            "МЕСТА/Вокал A4/4. Лауреат II степени.pdf",
-            "МЕСТА/Вокал A4/5. Лауреат III степени.pdf",
-            "МЕСТА/Вокал A4/6. Дипломант I степени.pdf",
-            "МЕСТА/Вокал A4/7. Дипломант II степени.pdf",
-            "МЕСТА/Вокал A4/8. Дипломант III степени.pdf",
-            "МЕСТА/Вокал A4/9. Диплом участника.pdf",
+            "Вокал A4/МЕСТА/1. Гран-при.pdf",
+            "Вокал A4/МЕСТА/2. Номинант на Гран-при.pdf",
+            "Вокал A4/МЕСТА/3. Лауреат I степени.pdf",
+            "Вокал A4/МЕСТА/4. Лауреат II степени.pdf",
+            "Вокал A4/МЕСТА/5. Лауреат III степени.pdf",
+            "Вокал A4/МЕСТА/6. Дипломант I степени.pdf",
+            "Вокал A4/МЕСТА/7. Дипломант II степени.pdf",
+            "Вокал A4/МЕСТА/8. Дипломант III степени.pdf",
+            "Вокал A4/МЕСТА/9. Диплом участника.pdf",
         ]
         # And the diplomas themselves are still there, beside the folder.
-        assert [name for name in archive.namelist() if not name.startswith("МЕСТА/")] != []
+        assert [name for name in archive.namelist() if "/МЕСТА/" not in name] != []
 
     def test_a_sheet_is_the_degree_on_an_otherwise_blank_page(self) -> None:
         """Blank is the point: the sheet is fed over an already-printed diploma, so
@@ -362,7 +395,7 @@ class TestPlaceSheets:
         _submission(competition, "Иванов Иван", vocals)
 
         archive = _archive_of(print_package.start_print_package(competition_id=competition.id, category_ids=[]))
-        page = PdfReader(io.BytesIO(archive.read("МЕСТА/Вокал A4/3. Лауреат I степени.pdf"))).pages[0]
+        page = PdfReader(io.BytesIO(archive.read("Вокал A4/МЕСТА/3. Лауреат I степени.pdf"))).pages[0]
 
         text = page.extract_text()
         assert "Лауреат I степени" in text
@@ -385,7 +418,7 @@ class TestPlaceSheets:
         _submission(competition, "Петров Пётр", dance)
 
         archive = _archive_of(print_package.start_print_package(competition_id=competition.id, category_ids=[]))
-        folders = {name.split("/")[1] for name in archive.namelist() if name.startswith("МЕСТА/")}
+        folders = {name.split("/")[0] for name in archive.namelist() if "/МЕСТА/" in name}
 
         assert folders == {"Общий A4"}
 
@@ -400,7 +433,7 @@ class TestPlaceSheets:
         _submission(competition, "Петров Пётр", dance)
 
         archive = _archive_of(print_package.start_print_package(competition_id=competition.id, category_ids=[]))
-        folders = {name.split("/")[1] for name in archive.namelist() if name.startswith("МЕСТА/")}
+        folders = {name.split("/")[0] for name in archive.namelist() if "/МЕСТА/" in name}
 
         assert folders == {"Вокал A4"}
 
@@ -437,3 +470,91 @@ def test_no_assigned_template_raises() -> None:
 
     with pytest.raises(PrintTemplateNotReadyError):
         print_package.start_print_package(competition_id=competition.id, category_ids=[])
+
+
+class TestNominationsWithTheirOwnTemplate:
+    """A genre's nominations may be judged by different juries, so they may print
+    on different sheets. The genre's template stays the default for the rest."""
+
+    def test_an_entry_prints_on_its_nominations_template(self) -> None:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        pop = _nomination(competition, vocals, "Эстрадный вокал")
+        genre_template = _template_with_pdf("Вокал A4")
+        pop_template = _template_with_pdf("Эстрадный вокал A4")
+        _assign(competition, vocals, genre_template)
+        _assign_nomination(competition, pop, pop_template)
+        folk_entry = _submission(competition, "Иванов Иван", vocals)
+        pop_entry = _submission(competition, "Петров Пётр", vocals, discipline=pop)
+
+        job = print_package.start_print_package(competition_id=competition.id, category_ids=[])
+
+        assert job["status"] == "COMPLETED"
+        # Each entry printed exactly once — the genre target skips the nomination
+        # that has its own, so nothing is produced twice.
+        assert job["created"] == 2
+        by_submission = {str(row.submission_id): str(row.template_id) for row in DiplomaModel.objects.filter(competition_id=competition.id)}
+        assert by_submission[str(folk_entry.id)] == str(genre_template.id)
+        assert by_submission[str(pop_entry.id)] == str(pop_template.id)
+
+    def test_a_genre_may_cover_only_some_of_its_nominations(self) -> None:
+        """No default: the nominations with a template print, the rest wait."""
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        pop = _nomination(competition, vocals, "Эстрадный вокал")
+        _assign_nomination(competition, pop, _template_with_pdf("Эстрадный вокал A4"))
+        _submission(competition, "Иванов Иван", vocals)
+        pop_entry = _submission(competition, "Петров Пётр", vocals, discipline=pop)
+
+        job = print_package.start_print_package(competition_id=competition.id, category_ids=[])
+
+        assert job["created"] == 1
+        assert [str(row.submission_id) for row in DiplomaModel.objects.filter(competition_id=competition.id)] == [str(pop_entry.id)]
+
+    def test_the_summary_names_them_and_counts_what_has_no_template(self) -> None:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        pop = _nomination(competition, vocals, "Эстрадный вокал")
+        _assign_nomination(competition, pop, _template_with_pdf("Эстрадный вокал A4"))
+        _submission(competition, "Иванов Иван", vocals)
+        _submission(competition, "Петров Пётр", vocals, discipline=pop)
+
+        slot = {row["categoryId"]: row for row in print_package.print_package_summary(competition.id)["nominations"]}[str(vocals.id)]["diploma"]
+
+        # The genre itself has no default, so there is no genre-wide template name…
+        assert slot["templateId"] is None
+        # …but it is ready, because one of its nominations can be printed.
+        assert slot["ready"] is True
+        assert slot["willCreate"] == 1
+        # The entry in no nomination has nothing to print on, and is said so.
+        assert slot["withoutTemplate"] == 1
+        assert [(item["discipline"], item["ready"]) for item in slot["disciplines"]] == [("Эстрадный вокал", True)]
+
+    def test_an_unfinished_nomination_template_does_not_block_the_genre(self) -> None:
+        """A nomination's sheet with no PDF yet costs only its own entries.
+
+        The genre is several targets now; failing the whole package over the least
+        finished one would hold the ready nominations hostage to it.
+        """
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        pop = _nomination(competition, vocals, "Эстрадный вокал")
+        _assign(competition, vocals, _template_with_pdf("Вокал A4"))
+        _assign_nomination(competition, pop, TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Эстрада (без PDF)"))
+        genre_entry = _submission(competition, "Иванов Иван", vocals)
+        _submission(competition, "Петров Пётр", vocals, discipline=pop)
+
+        job = print_package.start_print_package(competition_id=competition.id, category_ids=[])
+
+        assert job["status"] == "COMPLETED"
+        assert [str(row.submission_id) for row in DiplomaModel.objects.filter(competition_id=competition.id)] == [str(genre_entry.id)]
+
+    def test_a_run_with_nothing_printable_is_refused(self) -> None:
+        competition = _competition()
+        vocals = CategoryModel.objects.create(competition=competition, name="Вокал")
+        pop = _nomination(competition, vocals, "Эстрадный вокал")
+        _assign_nomination(competition, pop, TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Эстрада (без PDF)"))
+        _submission(competition, "Петров Пётр", vocals, discipline=pop)
+
+        with pytest.raises(PrintTemplateNotReadyError):
+            print_package.start_print_package(competition_id=competition.id, category_ids=[])

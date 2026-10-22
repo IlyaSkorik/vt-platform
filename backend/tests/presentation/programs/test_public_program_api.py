@@ -138,9 +138,19 @@ class TestPublicAccess:
         staff_client.delete(f"{_PROGRAMS}/{program_id}/shares/{share_id}")
         assert APIClient().get(f"{_PUBLIC}/{slug}").status_code == 404
 
-    def test_deleting_the_programme_takes_the_link_down(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+    def test_a_published_programme_refuses_to_be_deleted(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        """Deleting would close the reader's page mid-festival without telling them."""
         slug, program_id, _items = _published_program(staff_client, scope)
-        staff_client.delete(f"{_PROGRAMS}/{program_id}")
+        response = staff_client.delete(f"{_PROGRAMS}/{program_id}")
+        assert response.status_code == 409
+        assert "ссылк" in response.data["detail"]
+        assert APIClient().get(f"{_PUBLIC}/{slug}").status_code == 200
+
+    def test_deleting_the_programme_once_its_links_are_revoked_takes_them_down(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        slug, program_id, _items = _published_program(staff_client, scope)
+        share_id = staff_client.get(f"{_PROGRAMS}/{program_id}/shares").data["data"][0]["id"]
+        staff_client.delete(f"{_PROGRAMS}/{program_id}/shares/{share_id}")
+        assert staff_client.delete(f"{_PROGRAMS}/{program_id}").status_code == 204
         assert APIClient().get(f"{_PUBLIC}/{slug}").status_code == 404
 
 

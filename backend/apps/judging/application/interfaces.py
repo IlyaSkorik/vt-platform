@@ -24,16 +24,18 @@ from __future__ import annotations
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Protocol as TypingProtocol
 
 from apps.judging.domain.entities import JudgingSetup, JuryMember, PerformanceScoring, Scorecard
 
 __all__ = [
+    "AccountDirectory",
     "AppliedAward",
     "Clock",
     "CompetitionDirectory",
+    "DirectoryCompetition",
     "DirectoryNomination",
     "DirectoryPerformance",
     "JudgingSetupRepository",
@@ -41,6 +43,7 @@ __all__ = [
     "JuryNotifier",
     "PerformanceDirectory",
     "PerformanceScoringRepository",
+    "ProtocolApplication",
     "ProtocolWriter",
     "ScorecardRepository",
     "SlugFactory",
@@ -52,6 +55,23 @@ __all__ = [
 # ---------------------------------------------------------------------------
 # Projections crossing the boundary
 # ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class DirectoryCompetition:
+    """One festival, as a judge's "мои фестивали" list needs it.
+
+    Carries the dates and the venue because a judge sits on two or three panels a
+    season and picks between them by *when and where*, not by title: «Весна талантов»
+    is the name of four different weekends.
+    """
+
+    competition_id: uuid.UUID
+    title: str
+    online_judging: bool
+    starts_on: date | None = None
+    ends_on: date | None = None
+    venue: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,12 +195,26 @@ class ScorecardRepository(TypingProtocol):
     def save(self, scorecard: Scorecard) -> None: ...
 
 
+class AccountDirectory(TypingProtocol):
+    """Reads Identity: the address behind a signed-in account.
+
+    Narrow on purpose — one value, asked once, when an invitation is accepted. See the
+    adapter for why the token cannot answer this itself.
+    """
+
+    def email_for(self, user_id: uuid.UUID) -> str | None: ...
+
+
 class CompetitionDirectory(TypingProtocol):
     """Reads the Competitions context: taxonomy, title, and the judging mode."""
 
     def nominations(self, competition_id: uuid.UUID) -> tuple[DirectoryNomination, ...]: ...
 
     def competition_title(self, competition_id: uuid.UUID) -> str: ...
+
+    def competitions(self, competition_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, DirectoryCompetition]:
+        """Resolve several festivals at once, for a judge holding more than one seat."""
+        ...
 
     def online_judging_enabled(self, competition_id: uuid.UUID) -> bool: ...
 
@@ -193,6 +227,22 @@ class PerformanceDirectory(TypingProtocol):
     def performances(self, competition_id: uuid.UUID) -> tuple[DirectoryPerformance, ...]: ...
 
     def performances_by_id(self, submission_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, DirectoryPerformance]: ...
+
+
+@dataclass(frozen=True, slots=True)
+class ProtocolApplication:
+    """What one genre's push into Results actually did.
+
+    Three outcomes, and telling them apart is the whole point of this type: rows were
+    rewritten, rows already matched, or **there was no protocol to write onto**. The
+    last one used to arrive as a plain ``0`` and read on screen as "nothing to change",
+    which is how an organizer walks to a ceremony with empty protocols believing the
+    tally landed.
+    """
+
+    rows_changed: int
+    protocol_existed: bool
+    protocol_created: bool = False
 
 
 class ProtocolWriter(TypingProtocol):
@@ -210,11 +260,15 @@ class ProtocolWriter(TypingProtocol):
         nomination_id: uuid.UUID,
         awards: Sequence[tuple[uuid.UUID, str | None]],
         now: datetime,
-    ) -> int:
+        create_missing: bool = False,
+    ) -> ProtocolApplication:
         """Write ``(submission id, award code)`` onto the nomination's protocol.
 
-        Returns how many rows were changed. A submission with no row in the protocol is
-        skipped rather than added: the protocol's contents are the organizer's call.
+        A submission with no row in the protocol is skipped rather than added: the
+        protocol's contents are the organizer's call. ``create_missing`` opens a
+        protocol for a genre that has none, seeded from the programme — the organizer
+        asks for that explicitly, because an online-judged festival should not have to
+        hand-build the table its own jury just filled in.
         """
         ...
 

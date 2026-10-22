@@ -70,6 +70,7 @@ from apps.programs.domain.entities import Program, ProgramItem, ProgramShare
 from apps.programs.domain.exceptions import (
     ExportUnavailableError,
     InvalidProgramDataError,
+    NoRestorePointError,
     PerformanceNotAvailableError,
     ProgramConcurrencyError,
     ProgramNotFoundError,
@@ -149,10 +150,14 @@ def _safe(text: str) -> str:
 
 
 def _act_label(number: int, performance: CatalogPerformance | None) -> str:
-    """``01 — Иванова Анна — Вальс``: the number first, because that is what is cued."""
+    """``01 — Иванова Анна — Вальс``: the number first, because that is what is cued.
+
+    Every performer the entry listed, not just the first: a folder named after one half
+    of a duet is a folder the sound desk cannot match to the act in front of it.
+    """
     title = performance.title if performance is not None else ""
-    lead = performance.lead_participant if performance is not None else None
-    parts = [f"{number:02d}", *(part for part in (lead, title) if part)]
+    performers = ", ".join(performance.participants) if performance is not None else ""
+    parts = [f"{number:02d}", *(part for part in (performers, title) if part)]
     return _safe(" — ".join(parts))
 
 
@@ -380,7 +385,11 @@ class ProgramService:
         raise AssertionError("unreachable")  # pragma: no cover - the loop always returns or raises
 
     def delete_program(self, program_id: str) -> None:
-        """Soft-delete a program; every public link into it stops resolving."""
+        """Soft-delete a program — refused while it still has public links.
+
+        The guard lives in the aggregate (:meth:`Program.delete`), so the rule holds
+        whoever asks; this edge only has to carry the refusal back out.
+        """
         program = self._load(program_id)
         program.delete(now=self._clock.utcnow())
         self._programs.save(program)
@@ -469,6 +478,26 @@ class ProgramService:
         )
         plan = arrange(candidates=candidates, settings=settings, buffer=program.buffer)
         program.rebuild([_arranged_to_item(entry) for entry in plan], settings=settings, now=now)
+        self._programs.save(program)
+        return self._detail(program)
+
+    def undo_arrange(self, program_id: str) -> ProgramDetailView:
+        """Put back the running order the last rebuild replaced.
+
+        Regeneration is a replacement and says so, but "I understood the warning" and "I
+        meant to press that" are different things, and only the second one is a decision.
+        The replaced slots are soft-deleted rather than erased, so the whole of the
+        previous order is still on disk under the instant it was retired at; this reads it
+        back and hands it to the aggregate.
+
+        Deliberately not a general undo stack. One step, consumed when used, and only for
+        the one action that destroys an afternoon of work in a single click.
+        """
+        now = self._clock.utcnow()
+        program = self._load(program_id)
+        if program.rebuilt_at is None:
+            raise NoRestorePointError("Отменять нечего: программу не пересобирали, либо отмену уже применили.")
+        program.restore_order(self._programs.items_retired_at(program.id, program.rebuilt_at), now=now)
         self._programs.save(program)
         return self._detail(program)
 
@@ -1041,7 +1070,10 @@ class ProgramService:
             case ProgramColumn.TIME:
                 return _clock(starts_at)
             case ProgramColumn.PARTICIPANT:
-                return performance.lead_participant or "" if performance is not None else ""
+                # Everyone the entry listed, not just the first of them: a duet is two
+                # performer rows and both names belong in «Участник». How many people a
+                # collective puts on stage is a different fact, with its own column.
+                return ", ".join(performance.participants) if performance is not None else ""
             case ProgramColumn.TITLE:
                 return self._item_title(item, performance)
             case ProgramColumn.DURATION:
@@ -1117,6 +1149,7 @@ class ProgramService:
             total_seconds=total,
             ends_at=program.starts_at + timedelta(seconds=total) if program.starts_at is not None else None,
             arrangement=_arrangement_view(program.arrangement),
+            can_undo_arrange=program.can_undo_rebuild,
             created_at=program.created_at,
             updated_at=program.updated_at,
             version=program.version,
@@ -1139,7 +1172,6 @@ class ProgramService:
                 ends_at=entry.ends_at,
             ),
             submission_id=str(item.submission_id) if item.submission_id is not None else None,
-            lead_participant=performance.lead_participant if performance is not None else None,
             participants=performance.participants if performance is not None else (),
             participant_count=performance.participant_count if performance is not None else 0,
             teachers=performance.teachers if performance is not None else (),

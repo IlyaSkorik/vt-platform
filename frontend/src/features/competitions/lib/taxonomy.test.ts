@@ -19,6 +19,7 @@ function category(partial: Partial<_Category> & Pick<_Category, "id" | "name">):
     registrationStopped: false,
     waitlistEnabled: false,
     heldAt: null,
+    editingLockedAt: null,
     ...partial,
   };
 }

@@ -81,10 +81,7 @@ export function PublicReviewPage(): React.JSX.Element {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background p-6">
         <div className="w-full max-w-md">
-          <EmptyState
-            title="Спасибо!"
-            description={`Ваш отзыв отправлен организатору${page.organizationName ? ` — ${page.organizationName}` : ""}.`}
-          />
+          <EmptyState title="Спасибо!" description="Ваш отзыв отправлен организатору." />
         </div>
       </div>
     );
@@ -146,9 +143,6 @@ export function PublicReviewPage(): React.JSX.Element {
     <div className="min-h-svh bg-background">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-6">
         <header className="flex flex-col gap-2">
-          {page.organizationName ? (
-            <p className="text-muted-foreground text-sm">{page.organizationName}</p>
-          ) : null}
           <h1 className="font-semibold text-2xl leading-tight">{page.title}</h1>
           {page.intro ? <p className="text-muted-foreground text-sm">{page.intro}</p> : null}
         </header>

@@ -208,10 +208,17 @@ MEDIA_ROOT = BASE_DIR / "media"
 #: container lifetime. It holds nothing that cannot be re-downloaded.
 DIPLOMA_FONT_CACHE_DIR = settings.diploma_font_cache_dir
 
-#: Annotated because the S3 entry below carries nested ``OPTIONS``, which a literal of
+#: Annotated because the S3 entries below carry nested ``OPTIONS``, which a literal of
 #: plain strings would otherwise fix the type of.
+#:
+#: ``replaceable`` is the same storage with one difference: what it tells caches. Most
+#: keys here are written once (a uuid in the name), but a few are deliberately written
+#: *back* - a re-rendered diploma and the generation archive both have to keep the URL
+#: the database already stores. Those two groups cannot share one caching rule, so they
+#: do not share one storage.
 STORAGES: dict[str, dict[str, Any]] = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "replaceable": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
@@ -222,29 +229,43 @@ STORAGES: dict[str, dict[str, Any]] = {
 # ``default_storage`` everywhere, and every reference is whatever that storage says its
 # URL is - a ``/media/…`` path locally, an absolute bucket URL in a deployment.
 if settings.s3_bucket:
+    _s3_options: dict[str, Any] = {
+        "bucket_name": settings.s3_bucket,
+        **({"region_name": settings.s3_region} if settings.s3_region else {}),
+        **({"endpoint_url": settings.s3_endpoint_url} if settings.s3_endpoint_url else {}),
+        **({"access_key": settings.s3_access_key_id} if settings.s3_access_key_id else {}),
+        **({"secret_key": settings.s3_secret_access_key} if settings.s3_secret_access_key else {}),
+        **({"custom_domain": settings.s3_custom_domain} if settings.s3_custom_domain else {}),
+        **({"location": settings.s3_location} if settings.s3_location else {}),
+        # Plain, stable URLs rather than signed ones: the bucket is public-read and a
+        # reference is stored in the database, so it has to keep working tomorrow.
+        "querystring_auth": False,
+        # No ACL on the object. Public access is granted by the bucket policy, which is
+        # the only thing that works on providers that disable object ACLs outright.
+        "default_acl": None,
+        # Two writes to one key are always a deliberate replacement in this codebase
+        # (the callers delete first), so never rename behind their back - a renamed
+        # object would leave the reference in the database pointing at nothing.
+        "file_overwrite": True,
+    }
     STORAGES["default"] = {
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
-            "bucket_name": settings.s3_bucket,
-            **({"region_name": settings.s3_region} if settings.s3_region else {}),
-            **({"endpoint_url": settings.s3_endpoint_url} if settings.s3_endpoint_url else {}),
-            **({"access_key": settings.s3_access_key_id} if settings.s3_access_key_id else {}),
-            **({"secret_key": settings.s3_secret_access_key} if settings.s3_secret_access_key else {}),
-            **({"custom_domain": settings.s3_custom_domain} if settings.s3_custom_domain else {}),
-            **({"location": settings.s3_location} if settings.s3_location else {}),
-            # Plain, stable URLs rather than signed ones: the bucket is public-read and a
-            # reference is stored in the database, so it has to keep working tomorrow.
-            "querystring_auth": False,
-            # No ACL on the object. Public access is granted by the bucket policy, which is
-            # the only thing that works on providers that disable object ACLs outright.
-            "default_acl": None,
-            # Two writes to one key are always a deliberate replacement in this codebase
-            # (the callers delete first), so never rename behind their back - a renamed
-            # object would leave the reference in the database pointing at nothing.
-            "file_overwrite": True,
-            # Keys carry an unguessable component and content at a key never changes
+            **_s3_options,
+            # A key that is written once and carries an unguessable component never changes
             # meaning, so a year is safe and it is what makes a CDN worth putting in front.
             "object_parameters": {"CacheControl": "public, max-age=31536000, immutable"},
+        },
+    }
+    STORAGES["replaceable"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            **_s3_options,
+            # ``immutable`` on a key that *is* replaced is how an organizer re-runs the
+            # generation and downloads last week's ZIP: the browser never asks again, for a
+            # year. ``no-cache`` still stores the body - it only forbids reusing it without
+            # asking, and the answer to that question is a 304 whenever nothing moved.
+            "object_parameters": {"CacheControl": "private, no-cache"},
         },
     }
 
@@ -321,6 +342,11 @@ SPECTACULAR_SETTINGS = {
         # with itself as well as with unrelated `value` fields elsewhere. Same reason as
         # above: an unpinned name gets a hash suffix that moves as the schema grows.
         "ProtocolStatusEnum": "apps.results.presentation.api.v1.serializers.PROTOCOL_STATUS_VALUES",
+        # The kinds this API generates directly. Pinned for the same reason: it is
+        # named by both the generation request and the job that reports the run, so
+        # without this the shared component gets a hash suffix — and the generated
+        # client's type is renamed by any unrelated change to the schema.
+        "GeneratedDocumentTypeEnum": "apps.diplomas.presentation.api.v1.diplomas.serializers.GENERATED_DOCUMENT_TYPES",
     },
 }
 

@@ -97,6 +97,8 @@ from .events import (
     PricingRuleAdded,
     PricingRuleRemoved,
     RegulationPublished,
+    SubmissionEditingLocked,
+    SubmissionEditingUnlocked,
 )
 from .exceptions import (
     AdmissionRuleInUseError,
@@ -371,6 +373,10 @@ class Category:
     #: no answer at the competition level. Optional, because a small festival
     #: that runs everything in an afternoon has nothing to add here.
     _held_at: datetime | None = None
+    #: When the organizer froze everything applicants may still change in this
+    #: nomination. An instant rather than a flag, because the applicant is owed the
+    #: moment editing closed, not the fact that it did.
+    _editing_locked_at: datetime | None = None
 
     @classmethod
     def create(
@@ -408,6 +414,7 @@ class Category:
         registration_stopped: bool = False,
         waitlist_enabled: bool = False,
         held_at: datetime | None = None,
+        editing_locked_at: datetime | None = None,
     ) -> Category:
         return cls(
             _id=category_id,
@@ -418,6 +425,7 @@ class Category:
             _registration_stopped=registration_stopped,
             _waitlist_enabled=waitlist_enabled,
             _held_at=held_at,
+            _editing_locked_at=editing_locked_at,
         )
 
     @property
@@ -452,6 +460,15 @@ class Category:
     def held_at(self) -> datetime | None:
         return self._held_at
 
+    @property
+    def editing_locked_at(self) -> datetime | None:
+        """When this nomination's editing was frozen, or ``None`` while it is open."""
+        return self._editing_locked_at
+
+    @property
+    def is_editing_locked(self) -> bool:
+        return self._editing_locked_at is not None
+
     def schedule_registration(self, window: RegistrationWindow) -> None:
         """Set (or replace) this nomination's registration window."""
         self._registration = window
@@ -472,13 +489,37 @@ class Category:
         """Stop taking waitlist entries. Entries already on the list are untouched."""
         self._waitlist_enabled = False
 
+    def lock_editing(self, now: datetime) -> bool:
+        """Freeze everything applicants may still change in this nomination.
+
+        Answers whether this changed anything, so the aggregate knows whether an event
+        is owed. Idempotent, and deliberately keeps the original instant: what the
+        applicant is owed is when editing closed, not when the organizer last pressed
+        the button.
+        """
+        if self._editing_locked_at is not None:
+            return False
+        self._editing_locked_at = now
+        return True
+
+    def unlock_editing(self) -> bool:
+        """Lift this nomination's freeze; its calendar governs again.
+
+        Nothing about the entries changed while it was on, so there is nothing to
+        restore — the window and the deadlines simply start answering again.
+        """
+        if self._editing_locked_at is None:
+            return False
+        self._editing_locked_at = None
+        return True
+
     def accepts_submissions(self, now: datetime) -> bool:
         """Whether this nomination accepts applications at ``now``.
 
-        Open only when not stopped early **and** the configured window admits
-        ``now``; an unscheduled nomination is closed.
+        Open only when it is not frozen, not stopped early, **and** the configured
+        window admits ``now``; an unscheduled nomination is closed.
         """
-        return not self._registration_stopped and self._registration.is_open(now)
+        return not self.is_editing_locked and not self._registration_stopped and self._registration.is_open(now)
 
     def accepts_waitlist(self, now: datetime) -> bool:
         """Whether this nomination takes waitlist entries at ``now``.
@@ -488,7 +529,13 @@ class Category:
         and offering both at once would let an applicant choose the unpaid door.
         The waitlist exists only behind a closed one — whether it closed on its date
         or was stopped early makes no difference.
+
+        The freeze is checked on its own rather than left to that complement: a frozen
+        nomination is closed to applications, and without this line the complement
+        would read that as "so the queue is open" and hand the freeze a door.
         """
+        if self.is_editing_locked:
+            return False
         return self._waitlist_enabled and not self.accepts_submissions(now)
 
     def rename(self, name: CategoryName) -> None:
@@ -1803,6 +1850,26 @@ class Competition:
         return self._deadlines
 
     @property
+    def locked_nomination_ids(self) -> tuple[CategoryId, ...]:
+        """The nominations whose editing the organizer has frozen.
+
+        The freeze is per nomination — thrown when that genre's list is final and its
+        part of the programme is about to be built — so there is no festival-wide
+        answer to give, only this list and :meth:`is_editing_locked_for`.
+        """
+        return tuple(category.id for category in self._categories.values() if category.is_editing_locked)
+
+    def is_editing_locked_for(self, category_id: CategoryId) -> bool:
+        """Whether this nomination's editing is frozen. Unknown nominations: ``False``."""
+        category = self._categories.get(category_id)
+        return category is not None and category.is_editing_locked
+
+    def editing_locked_at_for(self, category_id: CategoryId) -> datetime | None:
+        """When this nomination's editing was frozen, if it is."""
+        category = self._categories.get(category_id)
+        return category.editing_locked_at if category is not None else None
+
+    @property
     def contacts(self) -> tuple[Contact, ...]:
         return tuple(self._contacts.values())
 
@@ -1962,8 +2029,9 @@ class Competition:
         """Whether the nomination ``category_id`` accepts applications at ``now``.
 
         Requires the competition to be PUBLISHED or RUNNING and the nomination's own
-        registration window to be open (not stopped early, within its dates). Closed
-        otherwise, or when the nomination is unknown.
+        window to be open — not frozen, not stopped early, within its dates. Closed
+        otherwise, or when the nomination is unknown. The freeze is the nomination's
+        own, so it is :class:`Category` that applies it rather than this method.
         """
         if self._status not in _SUBMISSION_STATUSES:
             return False
@@ -1975,7 +2043,8 @@ class Competition:
 
         A closed nomination that keeps a waitlist still belongs to a live festival:
         the competition itself must be PUBLISHED or RUNNING, exactly as for an open
-        one. A finished festival has no queue to join.
+        one. A finished festival has no queue to join, and neither has a frozen genre
+        — which :class:`Category` enforces, the freeze being its own.
         """
         if self._status not in _SUBMISSION_STATUSES:
             return False
@@ -1983,7 +2052,11 @@ class Competition:
         return category is not None and category.accepts_waitlist(now)
 
     def is_any_nomination_open(self, now: datetime) -> bool:
-        """Whether at least one nomination currently accepts applications at ``now``."""
+        """Whether at least one nomination currently accepts applications at ``now``.
+
+        A frozen nomination counts as closed, so freezing every genre closes the
+        festival's door — which is what the organizer means by freezing them all.
+        """
         return self._status in _SUBMISSION_STATUSES and any(c.accepts_submissions(now) for c in self._categories.values())
 
     def is_any_nomination_waitlisting(self, now: datetime) -> bool:
@@ -1991,16 +2064,48 @@ class Competition:
         return self._status in _SUBMISSION_STATUSES and any(c.accepts_waitlist(now) for c in self._categories.values())
 
     def is_payment_allowed(self, now: datetime) -> bool:
+        # Not frozen by the editing lock: money owed is owed whether or not the entry
+        # may still be touched, and an applicant locked out of paying is an applicant
+        # the festival has to chase by hand.
         return not self.is_completed() and self._deadlines.is_open(DeadlineKind.PAYMENT, now)
 
     def is_music_upload_allowed(self, now: datetime) -> bool:
-        return not self.is_completed() and self._deadlines.is_open(DeadlineKind.MUSIC_UPLOAD, now)
+        return self._uploads_allowed(DeadlineKind.MUSIC_UPLOAD, now)
+
+    def is_media_upload_allowed(self, now: datetime) -> bool:
+        """Whether video and photographs may still be attached at ``now``.
+
+        Rides the music-upload deadline rather than one of its own: to an organizer a
+        backing track, a video and the photographs are one thing — материал
+        выступления — and they set one date for it. They used to ride the *application*
+        deadline instead, which meant the material closed together with the door to the
+        festival: the applicant who got in on the last day could no longer replace the
+        video they had sent, and that is the opposite of what the deadline is for.
+        """
+        return self._uploads_allowed(DeadlineKind.MUSIC_UPLOAD, now)
 
     def is_document_upload_allowed(self, now: datetime) -> bool:
-        return not self.is_completed() and self._deadlines.is_open(DeadlineKind.DOCUMENT_UPLOAD, now)
+        return self._uploads_allowed(DeadlineKind.DOCUMENT_UPLOAD, now)
 
     def is_correction_allowed(self, now: datetime) -> bool:
         return not self.is_completed() and self._deadlines.is_open(DeadlineKind.CORRECTION, now)
+
+    def _uploads_allowed(self, kind: DeadlineKind, now: datetime) -> bool:
+        """Whether the calendar still admits files of ``kind`` at ``now``.
+
+        Two gates: a finished festival takes nothing, and otherwise the answer is the
+        deadline the organizer announced. An unset deadline stays open — which, now
+        that the application deadline no longer closes them, is what lets an organizer
+        keep taking tracks right up to the day without configuring anything.
+
+        The freeze is deliberately **not** a third gate here, and must not be added
+        back. Deadlines are the festival's and the freeze is a nomination's, so the
+        two cannot be answered in one call: whoever asks knows which genre the file
+        belongs to and asks :meth:`is_editing_locked_for` beside this. Folding a
+        nomination's freeze into a festival-wide answer would close the window on
+        every other genre.
+        """
+        return not self.is_completed() and self._deadlines.is_open(kind, now)
 
     # ------------------------------------------------------------------
     # General information
@@ -3034,6 +3139,48 @@ class Competition:
         category.resume_registration()
         self._touch(now)
         return [NominationRegistrationResumed(aggregate_id=self._id.value, category_id=category_id)]
+
+    def lock_submission_editing(self, *, category_id: CategoryId, now: datetime) -> list[DomainEvent]:
+        """Freeze everything an applicant may still change in one nomination.
+
+        The last switch of a nomination's registration period, and scheduled per
+        nomination for the same reason registration is: a festival finishes its genres
+        one at a time. Вокал is judged on Saturday and its programme is being built
+        while хореография is still taking entries, and a single switch would make the
+        organizer choose between freezing what is not ready and leaving open what is.
+
+        Separate from closing that nomination's registration because the two answer
+        different questions. Closing stops people *getting in*; whoever is already in
+        keeps correcting their files, which is the whole point of the upload deadlines
+        being later than the application one. This stops that too — the sound desk's
+        archive for that genre is being burned to a disk and may not move under it.
+
+        Idempotent: locking a frozen nomination keeps the original instant, because
+        the answer the applicant is owed is when editing closed, not when the organizer
+        last pressed the button.
+        """
+        self._ensure_not_completed()
+        category = self._require_category(category_id)
+        if not category.lock_editing(now):
+            return []
+        self._touch(now)
+        return [SubmissionEditingLocked(aggregate_id=self._id.value, category_id=category_id, locked_at=now)]
+
+    def unlock_submission_editing(self, *, category_id: CategoryId, now: datetime) -> list[DomainEvent]:
+        """Lift one nomination's freeze; its calendar governs again.
+
+        The way back, because the freeze is a judgement call made a day early as often
+        as not — a teacher writes in with a track the organizer agreed to take, and the
+        alternative to lifting it is the organizer uploading files by hand for the rest
+        of the week. Nothing about the entries themselves changed while it was on, so
+        there is nothing to restore: the deadlines simply start answering again.
+        """
+        self._ensure_not_completed()
+        category = self._require_category(category_id)
+        if not category.unlock_editing():
+            return []
+        self._touch(now)
+        return [SubmissionEditingUnlocked(aggregate_id=self._id.value, category_id=category_id)]
 
     def enable_nomination_waitlist(self, *, category_id: CategoryId, now: datetime) -> list[DomainEvent]:
         """Keep a waitlist for a nomination once its registration closes."""

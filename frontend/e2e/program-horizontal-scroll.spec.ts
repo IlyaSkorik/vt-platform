@@ -48,7 +48,6 @@ const performance = (index: number) => ({
     endsAt: `2026-09-01T10:${String(index * 4 + 3).padStart(2, "0")}:00Z`,
   },
   submissionId: `sub-${index}`,
-  leadParticipant: `Александрова Анастасия ${index}`,
   participants: [`Александрова Анастасия ${index}`],
   participantCount: 1,
   teachers: ["Преподаватель Иванова Мария Сергеевна"],
@@ -115,7 +114,7 @@ test.describe("the programme table never scrolls the page", () => {
               cells: [
                 String(item.number),
                 "10:00",
-                item.leadParticipant,
+                item.participants.join(", "),
                 item.title,
                 "3:20",
                 item.nomination,

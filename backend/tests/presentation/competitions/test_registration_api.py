@@ -280,6 +280,80 @@ def test_upload_requirements_carry_the_media_limits() -> None:
         assert isinstance(requirement["mediaRequired"], bool)
 
 
+def test_the_file_windows_are_open_while_the_festival_is() -> None:
+    # Unset upload deadlines mean no cut-off, and the projection says so plainly —
+    # the cabinet renders its upload cards off these three and nothing else.
+    competition_id = _seed_competition()
+
+    data = APIClient().get(_url(competition_id)).data["data"]
+
+    assert data["musicUploadOpen"] is True
+    assert data["mediaUploadOpen"] is True
+    assert data["documentUploadOpen"] is True
+    assert [nomination["editingLocked"] for nomination in data["nominations"]] == [False]
+
+
+def test_the_material_stays_open_after_registration_closes() -> None:
+    """Приём кончился — файлы живут дальше, это и есть смысл отдельных сроков.
+
+    Видео и фото раньше закрывались вместе с приёмом: номер, попавший в фестиваль в
+    последний день, уже не мог заменить присланный файл.
+    """
+    from datetime import UTC, datetime
+
+    from apps.competitions.infrastructure.models import CategoryModel, CompetitionModel
+
+    competition = CompetitionModel.objects.create(organizer_id=uuid7(), status="PUBLISHED", title="Spring", season="2025/2026")
+    CategoryModel.objects.create(
+        competition=competition,
+        name="Vocal",
+        registration_opens_at=datetime(2000, 1, 1, tzinfo=UTC),
+        registration_closes_at=datetime(2001, 1, 1, tzinfo=UTC),
+    )
+
+    data = APIClient().get(_url(str(competition.id))).data["data"]
+
+    assert data["registrationOpen"] is False
+    assert data["mediaUploadOpen"] is True
+    assert data["musicUploadOpen"] is True
+
+
+def test_the_organizer_s_freeze_shows_on_the_genre_it_was_thrown_on() -> None:
+    """Замок — жанровый, и проекция говорит это жанром, а не фестивалем.
+
+    Сроки загрузки при этом остаются фестивальными и открытыми: они одни на все
+    жанры, и свернуть в них замок вокала значило бы закрыть загрузку хореографии.
+    Складывает два ответа кабинет — он знает, про какой номер спрашивает.
+    """
+    from datetime import UTC, datetime
+
+    from apps.competitions.infrastructure.models import CategoryModel
+
+    competition_id = _seed_competition(waitlisted_nomination=True)
+    CategoryModel.objects.filter(competition__id=competition_id, name="Vocal").update(editing_locked_at=datetime(2026, 5, 1, tzinfo=UTC))
+
+    data = APIClient().get(_url(competition_id)).data["data"]
+
+    frozen = {nomination["name"]: nomination for nomination in data["nominations"]}
+    assert frozen["Vocal"]["editingLocked"] is True
+    assert frozen["Vocal"]["registrationOpen"] is False
+    assert frozen["Choreography"]["editingLocked"] is False
+    assert data["musicUploadOpen"] is True
+
+
+def test_the_festival_s_door_shuts_once_every_genre_is_frozen() -> None:
+    from datetime import UTC, datetime
+
+    from apps.competitions.infrastructure.models import CategoryModel
+
+    competition_id = _seed_competition()
+    CategoryModel.objects.filter(competition__id=competition_id).update(editing_locked_at=datetime(2026, 5, 1, tzinfo=UTC))
+
+    data = APIClient().get(_url(competition_id)).data["data"]
+
+    assert data["registrationOpen"] is False
+
+
 def test_a_nomination_carries_the_date_it_is_performed() -> None:
     """«Дата проведения» is the nomination's own, not the competition's.
 

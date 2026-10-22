@@ -109,13 +109,16 @@ def _template(name: str, document_type: str) -> TemplateModel:
     template = TemplateModel.objects.create(organizer_id=_organizer(), type=document_type, name=name)
     key = default_storage.save(f"diplomas/templates/{template.id}/bg.pdf", ContentFile(_backing_pdf()))
     TemplateDocumentModel.objects.create(template=template, file_reference=f"/media/{key}", page_count=1)
+    # A thank-you letter names its recipient; it is issued once per teacher and so
+    # has no one participant to name.
+    addressed = document_type == "THANK_YOU"
     composition.replace_template_layout(
         template_id=str(template.id),
         fields=[
             {
                 "page": 1,
-                "type": "participant_name",
-                "binding": "participant.display_name",
+                "type": "teacher" if addressed else "participant_name",
+                "binding": "teacher.display_name" if addressed else "participant.display_name",
                 "x": 0.1,
                 "y": 0.1,
                 "width": 0.6,

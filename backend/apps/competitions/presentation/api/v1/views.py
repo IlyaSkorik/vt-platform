@@ -47,6 +47,7 @@ from apps.competitions.application.dto.commands import (
     EnableAdditionalServiceCommand,
     EnableNominationWaitlistCommand,
     HideInformationBlockCommand,
+    LockSubmissionEditingCommand,
     MakeRegulationCurrentCommand,
     MarkConfiguredCommand,
     MarkReadyCommand,
@@ -74,6 +75,7 @@ from apps.competitions.application.dto.commands import (
     SetPrimaryContactCommand,
     StartCompetitionCommand,
     StopNominationRegistrationCommand,
+    UnlockSubmissionEditingCommand,
     UnpublishDocumentCommand,
     UpdateAdditionalServiceCommand,
     UpdateAgeCategoryCommand,
@@ -114,6 +116,7 @@ from apps.competitions.application.handlers import (
     EnableAdditionalServiceHandler,
     EnableNominationWaitlistHandler,
     HideInformationBlockHandler,
+    LockSubmissionEditingHandler,
     MakeRegulationCurrentHandler,
     MarkCompetitionConfiguredHandler,
     MarkCompetitionReadyHandler,
@@ -141,6 +144,7 @@ from apps.competitions.application.handlers import (
     SetPrimaryContactHandler,
     StartCompetitionHandler,
     StopNominationRegistrationHandler,
+    UnlockSubmissionEditingHandler,
     UnpublishDocumentHandler,
     UpdateAdditionalServiceHandler,
     UpdateAgeCategoryHandler,
@@ -632,6 +636,29 @@ class CompetitionViewSet(viewsets.ViewSet):
         return self._run(
             ResumeNominationRegistrationHandler,
             ResumeNominationRegistrationCommand(competition_id=pk, category_id=category_id),
+            request,
+        )
+
+    @extend_schema(methods=["POST"], tags=[_TAG], operation_id="lockSubmissionEditing", request=None, responses=_detail_ok())
+    @extend_schema(methods=["DELETE"], tags=[_TAG], operation_id="unlockSubmissionEditing", request=None, responses=_detail_ok())
+    @action(detail=True, methods=["post", "delete"], url_path=r"categories/(?P<category_id>[^/.]+)/editing-lock")
+    def editing_lock(self, request: Request, pk: str, category_id: str) -> Response:
+        """Freeze (POST) or release (DELETE) what applicants may change in one genre.
+
+        Beside this nomination's registration controls, and scheduled per nomination
+        for the same reason they are: a festival finishes its genres one at a time, and
+        the genre being turned into a programme on Saturday must be able to freeze
+        without closing the one still taking entries.
+        """
+        if request.method == "DELETE":
+            return self._run(
+                UnlockSubmissionEditingHandler,
+                UnlockSubmissionEditingCommand(competition_id=pk, category_id=category_id),
+                request,
+            )
+        return self._run(
+            LockSubmissionEditingHandler,
+            LockSubmissionEditingCommand(competition_id=pk, category_id=category_id),
             request,
         )
 

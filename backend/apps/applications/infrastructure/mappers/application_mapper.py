@@ -22,6 +22,7 @@ from apps.applications.domain.value_objects import (
     EducationalOrganizationId,
     FileReference,
     Money,
+    NominationId,
     OrganizationName,
     PaymentReceipt,
     PaymentReceiptId,
@@ -136,6 +137,7 @@ class ApplicationMapper:
             "performance_title": ref.performance_title,
             "participant_display_name": ref.participant_display_name,
             "nomination": ref.nomination,
+            "nomination_id": ref.nomination_id.json() if ref.nomination_id is not None else None,
             "discipline": ref.discipline,
             "status": ref.status.value,
             "price": (
@@ -164,6 +166,9 @@ class ApplicationMapper:
             discipline=data["discipline"],
             status=SubmissionStatus(data["status"]),
             price=price,
+            # Absent in refs cached before the freeze became a per-genre question; the
+            # data migration fills those in, and a ref written since always carries it.
+            nomination_id=NominationId.from_string(data["nomination_id"]) if data.get("nomination_id") else None,
         )
 
     # ------------------------------------------------------------------

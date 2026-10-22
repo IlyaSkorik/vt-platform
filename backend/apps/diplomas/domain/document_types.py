@@ -59,14 +59,19 @@ INDIVIDUAL_DIPLOMA_FIELD_TYPES: frozenset[str] = DIPLOMA_FIELD_TYPES | {"member_
 
 #: What a thank-you letter may carry, and nothing more.
 #:
-#: A courtesy letter names who is being thanked, who taught them, and which event
-#: it was for. It ranks nothing, so there is no degree; it is not registered, so
-#: there is no number, issue date or QR; and it does not itemise the entry, so no
-#: age, organization, nomination or work. Free text carries whatever wording the
+#: A courtesy letter names who is being thanked and which event it was for. It
+#: ranks nothing, so there is no degree; it is not registered, so there is no
+#: number, issue date or QR; and it does not itemise an entry, so no age,
+#: organization, nomination or work. Free text carries whatever wording the
 #: organizer wants.
+#:
+#: **No participant either.** A letter is issued once per teacher per genre (see
+#: :attr:`DocumentPolicy.per_teacher`), and a teacher who entered five acts has
+#: five participants behind that one sheet — any one of them printed on it would be
+#: an arbitrary choice presented as a fact. A layout that still carries the field
+#: (placed before this rule) simply does not print it.
 THANK_YOU_FIELD_TYPES: frozenset[str] = frozenset(
     {
-        "participant_name",
         "teacher",
         "competition_name",
         "competition_date",
@@ -126,7 +131,8 @@ class DocumentPolicy:
 
     #: Whether one document is issued **per teacher** rather than one per
     #: performance. A thank-you letter is addressed to a person, so two teachers on
-    #: an entry mean two separate letters — each naming only its own recipient. A
+    #: an entry mean two separate letters — each naming only its own recipient — and
+    #: one teacher across five entries of a genre means **one** letter, not five. A
     #: diploma belongs to the performance and lists every teacher on one sheet.
     per_teacher: bool
 
@@ -184,6 +190,8 @@ _POLICIES: dict[DocumentType, DocumentPolicy] = {
     ),
     # The thank-you letter: a courtesy, not an award. Nothing to rank, nothing to
     # verify, nothing to number — so it can reach the participant immediately.
+    # Addressed to a teacher rather than to an entry, which is why it names no
+    # participant: see THANK_YOU_FIELD_TYPES.
     DocumentType.THANK_YOU: DocumentPolicy(
         document_type=DocumentType.THANK_YOU,
         numbered=False,

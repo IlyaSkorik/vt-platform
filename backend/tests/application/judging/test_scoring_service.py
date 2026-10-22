@@ -378,9 +378,10 @@ class TestApplyingToProtocols:
             )
         )
 
-        changed = festival.scoring.apply_to_protocols(str(COMPETITION))
+        applied = festival.scoring.apply_to_protocols(str(COMPETITION))
 
-        assert changed == 1
+        assert applied.rows_changed == 1
+        assert applied.missing_protocols == ()
         _, nomination_id, awards = festival.protocols.calls[0]
         assert nomination_id == VOCALS
         assert awards == [(ACT_ONE, "FIRST")]
@@ -390,9 +391,9 @@ class TestApplyingToProtocols:
         blanked it would overrule them."""
         festival = Festival().with_criteria().with_places()
 
-        changed = festival.scoring.apply_to_protocols(str(COMPETITION))
+        applied = festival.scoring.apply_to_protocols(str(COMPETITION))
 
-        assert changed == 0
+        assert applied.rows_changed == 0
         assert festival.protocols.calls == []
 
 

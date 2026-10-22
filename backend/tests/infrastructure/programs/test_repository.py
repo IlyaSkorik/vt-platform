@@ -18,6 +18,8 @@ from apps.programs.domain.value_objects import (
     ArrangementBlock,
     ArrangementSettings,
     BreakRule,
+    CellValue,
+    ColumnTitle,
     GroupingAxis,
     ItemDuration,
     ItemTitle,
@@ -37,6 +39,7 @@ pytestmark = pytest.mark.django_db
 
 NOW = datetime(2026, 8, 1, 9, 0, tzinfo=UTC)
 TEN_AM = datetime(2026, 8, 1, 10, 0, tzinfo=UTC)
+NOON = datetime(2026, 8, 1, 12, 0, tzinfo=UTC)
 COMPETITION_ID = uuid.uuid4()
 NOMINATION_ID = uuid.uuid4()
 
@@ -291,15 +294,19 @@ class TestPublicLinks:
         assert repository.slug_taken("Temp23456") is True
         assert ProgramShareModel.objects.get(id=share.id).deleted_at is not None
 
-    def test_deleting_the_program_takes_its_links_down(self) -> None:
+    def test_deleting_the_program_takes_its_revoked_links_down(self) -> None:
+        """The order the aggregate enforces: revoke, then delete — see ``Program.delete``."""
         repository = DjangoProgramRepository()
         program = _program()
-        program.add_share(share_id=uuid.uuid4(), name=ShareName("Экран"), slug=PublicSlug("Screen234"), now=NOW)
+        share = program.add_share(share_id=uuid.uuid4(), name=ShareName("Экран"), slug=PublicSlug("Screen234"), now=NOW)
         repository.save(program)
+        program.remove_share(share.id, now=NOW)
         program.delete(now=NOW)
         repository.save(program)
 
         assert repository.get_by_slug("Screen234") is None
+        # The slug stays claimed: a printed link must never start pointing elsewhere.
+        assert repository.slug_taken("Screen234") is True
 
     def test_a_free_slug_is_not_reported_as_taken(self) -> None:
         assert DjangoProgramRepository().slug_taken("Nobody234") is False
@@ -410,3 +417,107 @@ class TestGenerationRules:
         assert reloaded is not None
         assert reloaded.arrangement is None
         assert len(reloaded.items) == 1
+
+
+class TestUndoingARebuild:
+    """Reading back the running order a rebuild replaced (VT-86).
+
+    The whole undo rests on one property of the adapter: a replaced slot is retired,
+    not erased, and every row a single save retires carries that save's instant. These
+    tests pin that property, because without it the undo silently restores nothing.
+    """
+
+    def _rules(self) -> ArrangementSettings:
+        return ArrangementSettings(grouping=(GroupingAxis.NOMINATION,), order_within_group=PerformanceOrder.DURATION_ASC)
+
+    def test_the_replaced_order_is_readable_at_the_instant_it_was_replaced(self) -> None:
+        repository = DjangoProgramRepository()
+        program = _program()
+        first, second = _act(program, 200), _act(program, 180)
+        repository.save(program)
+
+        reloaded = repository.get(program.id)
+        assert reloaded is not None
+        reloaded.rebuild(
+            [ProgramItem.performance(item_id=uuid.uuid4(), submission_id=uuid.uuid4(), duration=ItemDuration(300))],
+            settings=self._rules(),
+            now=TEN_AM,
+        )
+        repository.save(reloaded)
+
+        assert reloaded.rebuilt_at is not None
+        retired = repository.items_retired_at(program.id, reloaded.rebuilt_at)
+
+        assert [item.id for item in retired] == [first, second]
+
+    def test_the_restore_point_survives_a_reload(self) -> None:
+        repository = DjangoProgramRepository()
+        program = _program()
+        _act(program)
+        repository.save(program)
+        program.rebuild([], settings=self._rules(), now=TEN_AM)
+        repository.save(program)
+
+        reloaded = repository.get(program.id)
+
+        assert reloaded is not None
+        assert reloaded.rebuilt_at == TEN_AM
+        assert reloaded.can_undo_rebuild
+
+    def test_a_restored_slot_keeps_the_cells_that_were_filled_in_by_hand(self) -> None:
+        repository = DjangoProgramRepository()
+        program = _program()
+        column = program.add_custom_column(column_id=uuid.uuid4(), title=ColumnTitle("Микрофон"), now=NOW)
+        item_id = _act(program)
+        program.fill_cell(item_id=item_id, column_id=column.id, value=CellValue("радио, 2 шт"), now=NOW)
+        repository.save(program)
+
+        program.rebuild([], settings=self._rules(), now=TEN_AM)
+        repository.save(program)
+
+        assert program.rebuilt_at is not None
+        retired = repository.items_retired_at(program.id, program.rebuilt_at)
+
+        assert len(retired) == 1
+        assert str(retired[0].value_in(column.id)) == "радио, 2 шт"
+
+    def test_undoing_revives_the_original_rows_rather_than_writing_new_ones(self) -> None:
+        repository = DjangoProgramRepository()
+        program = _program()
+        first, second = _act(program, 200), _act(program, 180)
+        repository.save(program)
+        program.rebuild(
+            [ProgramItem.performance(item_id=uuid.uuid4(), submission_id=uuid.uuid4(), duration=ItemDuration(300))],
+            settings=self._rules(),
+            now=TEN_AM,
+        )
+        repository.save(program)
+        assert program.rebuilt_at is not None
+
+        program.restore_order(repository.items_retired_at(program.id, program.rebuilt_at), now=NOON)
+        repository.save(program)
+
+        reloaded = repository.get(program.id)
+        assert reloaded is not None
+        assert [item.id for item in reloaded.items] == [first, second]
+        # The same two rows came back; the generated one went the way they had gone.
+        assert ProgramItemModel.objects.filter(program_id=program.id, deleted_at__isnull=True).count() == 2
+        assert ProgramItemModel.objects.filter(program_id=program.id, id__in=[first, second], deleted_at__isnull=True).count() == 2
+
+    def test_the_generated_order_becomes_its_own_restore_point(self) -> None:
+        """So an undo pressed by mistake is itself recoverable - by the same mechanism."""
+        repository = DjangoProgramRepository()
+        program = _program()
+        _act(program)
+        repository.save(program)
+        program.rebuild(
+            [ProgramItem.performance(item_id=uuid.uuid4(), submission_id=uuid.uuid4(), duration=ItemDuration(300))],
+            settings=self._rules(),
+            now=TEN_AM,
+        )
+        repository.save(program)
+        assert program.rebuilt_at is not None
+        program.restore_order(repository.items_retired_at(program.id, program.rebuilt_at), now=NOON)
+        repository.save(program)
+
+        assert len(repository.items_retired_at(program.id, NOON)) == 1

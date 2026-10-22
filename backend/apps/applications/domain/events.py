@@ -69,6 +69,7 @@ __all__ = [
     "ParticipantAdded",
     "ParticipantMemberCountChanged",
     "ParticipantMembersChanged",
+    "ParticipantOrganizationChanged",
     "ParticipantRemoved",
     "PayerRecorded",
     "PaymentReceiptRemoved",
@@ -203,6 +204,18 @@ class ParticipantMemberCountChanged(DomainEvent):
     Separate from ``ParticipantAdded`` because the number is what the count band and
     the per-participant price are computed from — when either changes, the stream
     should say why.
+    """
+
+    participant_id: ParticipantId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ParticipantOrganizationChanged(DomainEvent):
+    """The institution printed for one performer on this entry was corrected.
+
+    Its own event because it is the one correction that does not come from the
+    applicant's registry but overrides it: the stream should say that this entry
+    stopped following the registry for this performer, and when.
     """
 
     participant_id: ParticipantId

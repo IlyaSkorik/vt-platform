@@ -69,7 +69,6 @@ class ProtocolRowView:
     title: str
     award: str | None
     award_label: str | None
-    lead_participant: str | None = None
     participants: tuple[str, ...] = ()
     teachers: tuple[str, ...] = ()
     nomination: str | None = None

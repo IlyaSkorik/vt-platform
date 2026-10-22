@@ -228,6 +228,10 @@ class CategoryView:
     registration_stopped: bool
     waitlist_enabled: bool
     held_at: datetime | None
+    #: When the organizer froze applicant-side editing in this genre, or ``None``.
+    #: Beside the window rather than inside it: the client renders it as a state
+    #: («правки закрыты»), not as a date in the schedule.
+    editing_locked_at: datetime | None
 
     @classmethod
     def of(cls, category: Category) -> CategoryView:
@@ -241,6 +245,7 @@ class CategoryView:
             registration_stopped=category.is_registration_stopped,
             waitlist_enabled=category.is_waitlist_enabled,
             held_at=category.held_at,
+            editing_locked_at=category.editing_locked_at,
         )
 
 

@@ -232,4 +232,8 @@ def zip_response(
     # ``filename*`` carries the real, Cyrillic name; the ASCII ``filename`` is the
     # fallback for clients that ignore RFC 5987.
     response["Content-Disposition"] = f"attachment; filename=\"archive.zip\"; filename*=UTF-8''{quote(filename)}"
+    # Assembled from whatever is stored *now*, at one unchanging URL. Nothing about the
+    # URL says the contents moved, so the only safe answer to "may I reuse this?" is no —
+    # otherwise a participant whose diploma was re-issued keeps downloading the old one.
+    response["Cache-Control"] = "no-store"
     return response

@@ -15,7 +15,10 @@ import type {
 
 import { PhonogramsCard } from "./phonograms-card";
 
-vi.mock("@/entities/application", () => ({
+// The hooks are stubbed; the rule that decides whether files may be touched is not —
+// it is the thing under test here as much as the markup is.
+vi.mock("@/entities/application", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/entities/application")>()),
   useRegistration: vi.fn(),
   useSubmissionDetail: vi.fn(),
   useUploadSubmissionAttachment: vi.fn(),
@@ -24,6 +27,7 @@ vi.mock("@/entities/application", () => ({
 
 const SUBMISSION = "01900000-0000-7000-8000-000000000001";
 const FORMAT = "01900000-0000-7000-8000-0000000000aa";
+const NOMINATION = "01900000-0000-7000-8000-0000000000dd";
 const INPUT_LABEL = "Фонограммы: Катюша";
 
 const upload = vi.fn();
@@ -33,7 +37,9 @@ function anApplication(status = "ACCEPTED"): ApplicationResource {
     id: "01900000-0000-7000-8000-0000000000ff",
     competitionId: "01900000-0000-7000-8000-0000000000ee",
     status: "PAID",
-    submissions: [{ submissionId: SUBMISSION, status, performanceTitle: "Катюша" }],
+    submissions: [
+      { submissionId: SUBMISSION, status, performanceTitle: "Катюша", nominationId: NOMINATION },
+    ],
   } as unknown as ApplicationResource;
 }
 
@@ -56,6 +62,11 @@ beforeEach(() => {
   upload.mockResolvedValue(undefined);
   vi.mocked(useRegistration).mockReturnValue({
     data: {
+      musicUploadOpen: true,
+      mediaUploadOpen: true,
+      documentUploadOpen: true,
+      // Замок живёт на жанре: карточка спрашивает его про жанр своего номера.
+      nominations: [{ id: NOMINATION, name: "Вокал", editingLocked: false }],
       uploadRequirements: [
         {
           participationFormatId: FORMAT,
@@ -113,6 +124,40 @@ describe("PhonogramsCard", () => {
       "part-1.mp3",
       "part-2.mp3",
     ]);
+  });
+
+  it("says so and offers nothing once the organizer has frozen the genre", () => {
+    // Приём может быть ещё открыт, а срок загрузки — через неделю: единственный
+    // честный ответ здесь тот, что это решение организатора.
+    vi.mocked(useRegistration).mockReturnValue({
+      data: {
+        musicUploadOpen: false,
+        nominations: [{ id: NOMINATION, name: "Вокал", editingLocked: true }],
+        uploadRequirements: [],
+      },
+    } as unknown as ReturnType<typeof useRegistration>);
+    stubSubmission([aTrack("t1", "uploads/2026/final.mp3")]);
+
+    render(<PhonogramsCard application={anApplication("ACCEPTED")} />);
+
+    expect(screen.getByText(/Организатор закрыл редактирование/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Добавить ещё/ })).not.toBeInTheDocument();
+  });
+
+  it("names the deadline, not the organizer, when it is the deadline that passed", () => {
+    vi.mocked(useRegistration).mockReturnValue({
+      data: {
+        musicUploadOpen: false,
+        nominations: [{ id: NOMINATION, name: "Вокал", editingLocked: false }],
+        uploadRequirements: [],
+      },
+    } as unknown as ReturnType<typeof useRegistration>);
+    stubSubmission([]);
+
+    render(<PhonogramsCard application={anApplication("ACCEPTED")} />);
+
+    expect(screen.getByText(/Срок загрузки/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Загрузить фонограмму/ })).not.toBeInTheDocument();
   });
 
   it("hides the controls for a finished entry but keeps showing its tracks", () => {

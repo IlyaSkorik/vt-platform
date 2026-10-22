@@ -91,6 +91,10 @@ class ParticipantView:
     #: The named people in a collective — empty unless the applicant asked for an
     #: individual document each.
     members: tuple[str, ...] = ()
+    #: The institution this entry prints for the performer, when an organizer pinned
+    #: one. ``None`` — the ordinary case — means "resolve it from the applicant's
+    #: registry", which is what every reader did before this field existed.
+    organization_name: str | None = None
 
     @classmethod
     def from_participant(cls, participant: Participant) -> ParticipantView:
@@ -110,6 +114,7 @@ class ParticipantView:
             registry_participant_id=registry_id.json() if registry_id is not None else None,
             member_count=participant.member_count,
             members=participant.members,
+            organization_name=participant.organization_name,
         )
 
 

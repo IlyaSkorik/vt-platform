@@ -7,7 +7,12 @@ the clock, the uuid source and the event publisher.
 
 from __future__ import annotations
 
-from apps.applications.application.commands.attachments import RemoveAttachmentHandler, UploadAttachmentHandler
+from apps.applications.application.commands.attachments import (
+    RemoveAttachmentByOrganizerHandler,
+    RemoveAttachmentHandler,
+    UploadAttachmentByOrganizerHandler,
+    UploadAttachmentHandler,
+)
 from apps.applications.application.commands.cancel import CancelSubmissionByReviewerHandler
 from apps.applications.application.commands.organizer_edit import EditSubmissionContentByOrganizerHandler
 from apps.applications.application.commands.participants import (
@@ -59,6 +64,7 @@ __all__ = [
     "build_mark_paid_handler",
     "build_mark_waiting_payment_handler",
     "build_promote_waitlisted_submission_handler",
+    "build_remove_attachment_by_organizer_handler",
     "build_remove_attachment_handler",
     "build_remove_participant_handler",
     "build_remove_teacher_handler",
@@ -68,6 +74,7 @@ __all__ = [
     "build_set_participant_members_handler",
     "build_set_performance_handler",
     "build_start_review_handler",
+    "build_upload_attachment_by_organizer_handler",
     "build_upload_attachment_handler",
     "build_withdraw_correction_request_handler",
 ]
@@ -172,7 +179,33 @@ def build_upload_attachment_handler() -> UploadAttachmentHandler:
 
 
 def build_remove_attachment_handler() -> RemoveAttachmentHandler:
-    return RemoveAttachmentHandler(submissions=DjangoSubmissionRepository(), clock=SystemClock(), events=NullEventPublisher())
+    return RemoveAttachmentHandler(
+        submissions=DjangoSubmissionRepository(),
+        catalog=DjangoCompetitionCatalog(),
+        clock=SystemClock(),
+        events=NullEventPublisher(),
+    )
+
+
+def build_upload_attachment_by_organizer_handler() -> UploadAttachmentByOrganizerHandler:
+    return UploadAttachmentByOrganizerHandler(
+        submissions=DjangoSubmissionRepository(),
+        organization=DjangoOrganizationReadModel(),
+        storage=DjangoFileStorage(),
+        upload_policy=DjangoCompetitionUploadPolicy(),
+        clock=SystemClock(),
+        uuids=Uuid7Generator(),
+        events=NullEventPublisher(),
+    )
+
+
+def build_remove_attachment_by_organizer_handler() -> RemoveAttachmentByOrganizerHandler:
+    return RemoveAttachmentByOrganizerHandler(
+        submissions=DjangoSubmissionRepository(),
+        organization=DjangoOrganizationReadModel(),
+        clock=SystemClock(),
+        events=NullEventPublisher(),
+    )
 
 
 def build_edit_submission_content_by_organizer_handler() -> EditSubmissionContentByOrganizerHandler:

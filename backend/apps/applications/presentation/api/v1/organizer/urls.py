@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.urls import path
 
+from .attachment_views import OrganizerSubmissionAttachmentDetailView, OrganizerSubmissionAttachmentsView
 from .content_views import OrganizerSubmissionContentView
 from .participants_views import (
     OrganizerParticipantRegistryCollectionView,
@@ -32,6 +33,16 @@ urlpatterns = [
         "staff/applications/<str:submission_id>/content",
         OrganizerSubmissionContentView.as_view(),
         name="content",
+    ),
+    path(
+        "staff/applications/<str:submission_id>/attachments",
+        OrganizerSubmissionAttachmentsView.as_view(),
+        name="attachments",
+    ),
+    path(
+        "staff/applications/<str:submission_id>/attachments/<str:attachment_id>",
+        OrganizerSubmissionAttachmentDetailView.as_view(),
+        name="attachment-detail",
     ),
     path(
         "staff/participants",

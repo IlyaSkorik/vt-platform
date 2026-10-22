@@ -13,6 +13,7 @@ import {
   diplomasDeleteAssignment,
   diplomasGenerateDocuments,
   diplomasGenerationArchive,
+  diplomasGetDocumentJob,
   diplomasGetPrintJob,
   diplomasGetTemplateLayout,
   diplomasPreviewApplications,
@@ -25,8 +26,8 @@ import {
 } from "@/shared/api/generated/diplomas/diplomas";
 import type {
   DiplomaResponse,
-  GenerateDocumentsRequestDocumentTypeEnum,
-  GenerateDocumentsResponse,
+  DocumentJobResponse,
+  GeneratedDocumentTypeEnum,
   GenerationRunResponse,
   LayoutResponse,
   PreviewApplication,
@@ -55,7 +56,7 @@ import type {
 import {
   unwrapAssignmentList,
   unwrapDiplomaList,
-  unwrapGeneratedDocuments,
+  unwrapDocumentJob,
   unwrapGenerationRuns,
   unwrapLayout,
   unwrapPreviewApplications,
@@ -436,20 +437,26 @@ export interface GenerateDocumentsPayload {
 }
 
 /**
- * Generate non-registry documents (thank-you letters) for chosen nominations.
+ * Start generating non-registry documents (thank-you letters) for chosen genres.
  *
- * Synchronous, unlike the diploma print package: there is no number to reserve, so
- * the response already carries the outcome (and the archive, when asked for) and
- * there is no job to poll. Each nomination uses its own assigned template of the kind.
- * `publish` and `bundle` are independent — see {@link GenerateDocumentsPayload}.
+ * Asynchronous, like the diploma print package and for the same reason: the run
+ * renders a PDF per recipient and uploads a ZIP, and a festival-sized one takes
+ * minutes — longer than anything between the organizer and the worker will hold a
+ * connection open. It used to answer with the outcome, and a real festival got a
+ * 504 from nginx while the worker went on to finish: the letters existed and the
+ * organizer was told they did not.
+ *
+ * So the response is the job, and {@link useDocumentJob} polls it for the outcome.
+ * Each genre uses its own assigned template of the kind; `publish` and `bundle`
+ * are independent — see {@link GenerateDocumentsPayload}.
  */
 export function useGenerateDocumentsMutation(): UseMutationResult<
-  GenerateDocumentsResponse,
+  DocumentJobResponse,
   ApiError,
   GenerateDocumentsPayload
 > {
   const queryClient = useQueryClient();
-  return useMutation<GenerateDocumentsResponse, ApiError, GenerateDocumentsPayload>({
+  return useMutation<DocumentJobResponse, ApiError, GenerateDocumentsPayload>({
     mutationFn: async ({
       competitionId,
       categoryIds,
@@ -461,17 +468,43 @@ export function useGenerateDocumentsMutation(): UseMutationResult<
       const response = await diplomasGenerateDocuments({
         competitionId,
         categoryIds,
-        documentType: documentType as GenerateDocumentsRequestDocumentTypeEnum,
+        documentType: documentType as GeneratedDocumentTypeEnum,
         force,
         bundle,
         publish,
       });
-      return unwrapGeneratedDocuments(response.data);
+      return unwrapDocumentJob(response.data);
     },
-    onSuccess: (_summary, { competitionId }) => {
+    onSuccess: (_job, { competitionId }) => {
       void queryClient.invalidateQueries({ queryKey: diplomaKeys.printSummary(competitionId) });
-      // A synchronous run: the archive already holds its line.
+      // The archive gains its line when the job completes, not now — this drops the
+      // stale history so opening it after the run reads it fresh.
       void queryClient.invalidateQueries({ queryKey: diplomaKeys.generationArchives() });
+    },
+  });
+}
+
+async function fetchDocumentJob(jobId: string, signal?: AbortSignal): Promise<DocumentJobResponse> {
+  const response = await diplomasGetDocumentJob(jobId, signal ? { signal } : {});
+  return unwrapDocumentJob(response.data);
+}
+
+/**
+ * Poll a document-generation job while it is pending/running; stop once it settles.
+ *
+ * The finished job carries `result` — the very summary the endpoint used to answer
+ * with — so the page renders the same thing it always did, only once it arrives.
+ */
+export function useDocumentJob(
+  jobId: string | undefined,
+): UseQueryResult<DocumentJobResponse, ApiError> {
+  return useQuery<DocumentJobResponse, ApiError>({
+    queryKey: diplomaKeys.documentJob(jobId ?? ""),
+    queryFn: ({ signal }) => fetchDocumentJob(jobId ?? "", signal),
+    enabled: Boolean(jobId),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "PENDING" || status === "RUNNING" ? 2500 : false;
     },
   });
 }

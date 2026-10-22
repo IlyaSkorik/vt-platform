@@ -17,7 +17,6 @@ function aRow(overrides: Partial<ProtocolRow> = {}): ProtocolRow {
     title: "Катюша",
     award: "LAUREATE_II",
     awardLabel: "Лауреат II степени",
-    leadParticipant: "Иванов Иван",
     participants: ["Иванов Иван"],
     teachers: ["Петрова Мария", "Сидорова Анна"],
     nomination: "Вокал",
@@ -73,6 +72,13 @@ describe("rowCell", () => {
 
   it("joins several teachers into one cell", () => {
     expect(rowCell(aRow(), "TEACHERS")).toBe("Петрова Мария, Сидорова Анна");
+  });
+
+  it("names every performer of an entry, not just the first", () => {
+    // A duet wins its award together, and naming one of the two is wrong about who it
+    // went to — the same join the backend applies to the published protocol.
+    const duet = aRow({ participants: ["Иванова Анна", "Петров Пётр"] });
+    expect(rowCell(duet, "PARTICIPANT")).toBe("Иванова Анна, Петров Пётр");
   });
 
   it("renders a missing optional value as blank rather than as text", () => {

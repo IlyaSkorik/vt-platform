@@ -15,7 +15,8 @@ import { uploadTimeoutMs } from "./config";
  *
  * The one thing decided here rather than on the instance is the timeout: a
  * multipart body has to *travel* within it, so the ceiling follows the file's
- * size (see `uploadTimeoutMs`). Everything else keeps `API_TIMEOUT_MS`.
+ * size (see `uploadTimeoutMs`). Everything else keeps `API_TIMEOUT_MS` — a call
+ * that would outlast it is work, not an answer, and belongs behind a job.
  */
 export const customInstance = async <T>(url: string, options: RequestInit = {}): Promise<T> => {
   try {

@@ -41,12 +41,14 @@ from .information import (
 from .landing import UpdateLandingConfigHandler
 from .lifecycle import (
     CompleteCompetitionHandler,
+    LockSubmissionEditingHandler,
     MarkCompetitionConfiguredHandler,
     MarkCompetitionReadyHandler,
     PublishCompetitionHandler,
     RevertCompetitionToConfiguredHandler,
     RevertCompetitionToDraftHandler,
     StartCompetitionHandler,
+    UnlockSubmissionEditingHandler,
 )
 from .queries import (
     GetCompetitionHandler,
@@ -114,6 +116,7 @@ __all__ = [
     "GetCompetitionHandler",
     "HideInformationBlockHandler",
     "ListCompetitionsHandler",
+    "LockSubmissionEditingHandler",
     "MakeRegulationCurrentHandler",
     "MarkCompetitionConfiguredHandler",
     "MarkCompetitionReadyHandler",
@@ -141,6 +144,7 @@ __all__ = [
     "SetPrimaryContactHandler",
     "StartCompetitionHandler",
     "StopNominationRegistrationHandler",
+    "UnlockSubmissionEditingHandler",
     "UnpublishDocumentHandler",
     "UpdateAdditionalServiceHandler",
     "UpdateAgeCategoryHandler",

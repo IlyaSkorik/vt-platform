@@ -122,30 +122,45 @@ class DiplomaAwardService:
         Each entry that named the people in its collective also has an individual diploma
         issued per person, when the nomination has a template for them — see the module
         docstring.
+
+        The template is resolved per entry, not per protocol: a genre's nominations may
+        each assign their own, which is how a festival whose nominations are judged by
+        different juries issues the sheet each jury actually signs.
         """
-        assigned = self._assignments.for_nomination(
+        diploma_templates = self._assignments.for_category(
             competition_id=competition_id,
             category_id=category_id,
             document_type=DocumentType.DIPLOMA,
         )
-        assets = None
-        if assigned is not None and assigned.template_type is DocumentType.DIPLOMA:
-            assets = self._workspace.load_template(assigned.template_id)
-
-        # The individual-diploma slot of the same nomination, resolved once for the run.
-        # Absent for every nomination whose organizer has not designed that sheet, which
+        # The individual-diploma slot of the same genre, resolved once for the run.
+        # Absent for every genre whose organizer has not designed that sheet, which
         # is the normal case and costs the collective's diploma nothing.
-        individual = self._assignments.for_nomination(
+        individual_templates = self._assignments.for_category(
             competition_id=competition_id,
             category_id=category_id,
             document_type=DocumentType.INDIVIDUAL_DIPLOMA,
         )
-        individual_assets = None
-        if individual is not None and individual.template_type is DocumentType.INDIVIDUAL_DIPLOMA:
-            individual_assets = self._workspace.load_template(individual.template_id)
+        # Which nomination each entry performs in: a genre's nominations may print on
+        # different sheets (different juries sign them), so the template is resolved
+        # per entry rather than per protocol. One lookup for the whole run.
+        discipline_of = self._snapshots.discipline_ids([submission_id for submission_id, _ in awards])
+        # Loaded at most once per template, however many entries print on it.
+        assets_cache: dict[uuid.UUID, TemplateAssets | None] = {}
+
+        def assets_for(assigned: AssignedTemplate | None, expected: DocumentType) -> TemplateAssets | None:
+            if assigned is None or assigned.template_type is not expected:
+                return None
+            if assigned.template_id not in assets_cache:
+                assets_cache[assigned.template_id] = self._workspace.load_template(assigned.template_id)
+            return assets_cache[assigned.template_id]
 
         outcomes: list[AwardOutcome] = []
         for submission_id, degree in awards:
+            discipline_id = discipline_of.get(submission_id)
+            assigned = diploma_templates.for_discipline(discipline_id)
+            assets = assets_for(assigned, DocumentType.DIPLOMA)
+            individual = individual_templates.for_discipline(discipline_id)
+            individual_assets = assets_for(individual, DocumentType.INDIVIDUAL_DIPLOMA)
             diploma = self._repository.get_by_submission(submission_id)
             created = False
             # Built lazily and at most once per entry: an existing diploma needs no

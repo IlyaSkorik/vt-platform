@@ -70,6 +70,9 @@ function aRegistration({
     allowMultiplePerformances: true,
     collectPayerDetails: false,
     participantCommentEnabled: commentEnabled,
+    musicUploadOpen: true,
+    mediaUploadOpen: true,
+    documentUploadOpen: true,
     deadlines: {
       application: null,
       payment: null,
@@ -86,6 +89,7 @@ function aRegistration({
         registrationOpen: !waitlisted,
         registrationStopped: waitlisted,
         waitlistEnabled: waitlisted,
+        editingLocked: false,
         waitlistOpen: waitlisted,
         registrationOpensAt: null,
         registrationClosesAt: null,

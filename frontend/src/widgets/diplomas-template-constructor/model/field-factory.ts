@@ -1,4 +1,5 @@
 import {
+  allowsFieldType,
   DEFAULT_FIELD_STYLE,
   DEFAULT_FREE_TEXT,
   type DocumentType,
@@ -87,24 +88,31 @@ export function requiredFieldTypes(
 }
 
 /**
- * The saved layout with every element kind its document requires, adding what is
- * missing at its default spot.
+ * The saved layout brought in line with what its kind of document may print: every
+ * element the kind requires added at its default spot, every element the kind may
+ * not carry removed.
  *
- * Runs once as the editor mounts, so a new template opens with the QR block already
- * placed and a template saved before this rule gains it on the next visit rather
- * than printing another unverifiable diploma. Returns the very same array when
- * nothing is missing — the caller uses that to tell whether the layout now differs
- * from what is stored.
+ * Runs once as the editor mounts, so a template saved before a rule changed is
+ * corrected on the next visit instead of printing wrongly — a diploma gains the QR
+ * block it needs, and a thank-you letter loses a field the kind has since given up
+ * (the participant's name, once letters became one-per-teacher). Removing it here
+ * matters beyond tidiness: the backend refuses to save a layout carrying a field
+ * its kind disallows, so a stale element left on the canvas would block every
+ * further edit with an error about something the organizer cannot see is wrong.
+ *
+ * Returns the very same array when nothing changed — the caller uses that to tell
+ * whether the layout now differs from what is stored.
  */
 export function withRequiredFields(
   fields: TemplateField[],
   documentType: DocumentType | string,
 ): TemplateField[] {
+  const allowed = fields.filter((field) => allowsFieldType(documentType, field.type));
   const missing = requiredFieldTypes(documentType).filter(
-    (type) => !fields.some((field) => field.type === type),
+    (type) => !allowed.some((field) => field.type === type),
   );
   if (missing.length === 0) {
-    return fields;
+    return allowed.length === fields.length ? fields : allowed;
   }
-  return [...fields, ...missing.map((type) => createField(type, 1))];
+  return [...allowed, ...missing.map((type) => createField(type, 1))];
 }

@@ -34,6 +34,8 @@ from apps.competitions.domain.events import (
     PricingRuleAdded,
     PricingRuleRemoved,
     RegulationPublished,
+    SubmissionEditingLocked,
+    SubmissionEditingUnlocked,
 )
 from apps.competitions.domain.exceptions import (
     AdmissionRuleInUseError,
@@ -1096,6 +1098,189 @@ class TestNominationRegistration:
         c = _completed()
         with pytest.raises(CompetitionAlreadyCompletedError):
             c.schedule_nomination_registration(category_id=CategoryId.generate(), closes_at=datetime(2026, 8, 1, tzinfo=UTC), now=NOW)
+
+
+class TestSubmissionEditingLock:
+    """Кнопка организатора, которая закрывает всё, что может менять заявитель, — в жанре.
+
+    Отдельная от закрытия приёма, потому что отвечает на другой вопрос. Приём — про
+    то, кого ещё пускают внутрь; у тех, кто внутри, файлы живут дольше, и это не
+    побочный эффект, а то, ради чего сроки загрузки стоят позже срока заявок. Замок
+    кончает и это: список жанра финальный, программа собирается, двигаться нечему.
+
+    По жанрам — как и приём: фестиваль заканчивает жанры по одному. Вокал судят в
+    субботу и его программу уже собирают, пока хореография ещё принимает заявки.
+    """
+
+    @staticmethod
+    def _open_festival() -> tuple[Competition, CategoryId]:
+        c, cat_id = _published()
+        c.schedule_nomination_registration(category_id=cat_id, closes_at=datetime(2026, 12, 31, tzinfo=UTC), now=NOW)
+        return c, cat_id
+
+    @staticmethod
+    def _two_genre_festival() -> tuple[Competition, CategoryId, CategoryId]:
+        """Published, with two nominations open — the shape the freeze exists for.
+
+        The second nomination is added before publication because the taxonomy is
+        closed afterwards; the freeze is not configuration and stays available.
+        """
+        fx = _configured()
+        c = fx.competition
+        other = c.add_category(category_id=CategoryId.generate(), name=CategoryName("Хореография"), now=NOW)
+        c.mark_configured(now=NOW)
+        c.mark_ready(now=NOW)
+        c.publish(now=NOW)
+        closes = datetime(2026, 12, 31, tzinfo=UTC)
+        c.schedule_nomination_registration(category_id=fx.category_id, closes_at=closes, now=NOW)
+        c.schedule_nomination_registration(category_id=other.id, closes_at=closes, now=NOW)
+        return c, fx.category_id, other.id
+
+    def test_a_nomination_starts_unlocked(self) -> None:
+        c, cat_id = self._open_festival()
+
+        assert not c.is_editing_locked_for(cat_id)
+        assert c.editing_locked_at_for(cat_id) is None
+        assert c.locked_nomination_ids == ()
+
+    def test_locking_closes_the_nomination_and_names_it_in_the_event(self) -> None:
+        c, cat_id = self._open_festival()
+        at = datetime(2026, 8, 15, tzinfo=UTC)
+        assert c.accepts_submissions_for(cat_id, at)
+
+        events = c.lock_submission_editing(category_id=cat_id, now=NOW)
+
+        assert isinstance(events[0], SubmissionEditingLocked)
+        assert events[0].category_id == cat_id
+        assert c.is_editing_locked_for(cat_id)
+        assert c.locked_nomination_ids == (cat_id,)
+        assert not c.accepts_submissions_for(cat_id, at)
+
+    def test_freezing_one_genre_leaves_the_others_alone(self) -> None:
+        # Ради этого замок и переехал с фестиваля на жанр.
+        c, cat_id, other = self._two_genre_festival()
+        at = datetime(2026, 8, 15, tzinfo=UTC)
+
+        c.lock_submission_editing(category_id=cat_id, now=NOW)
+
+        assert not c.accepts_submissions_for(cat_id, at)
+        assert c.accepts_submissions_for(other, at)
+        assert c.is_any_nomination_open(at)
+
+    def test_the_door_shuts_only_when_every_genre_is_frozen(self) -> None:
+        c, cat_id, other = self._two_genre_festival()
+        at = datetime(2026, 8, 15, tzinfo=UTC)
+
+        c.lock_submission_editing(category_id=cat_id, now=NOW)
+        c.lock_submission_editing(category_id=other, now=NOW)
+
+        assert not c.is_any_nomination_open(at)
+
+    def test_the_waitlist_closes_with_the_genre(self) -> None:
+        # Очередь — дверь для опоздавших; замёрзший жанр никого не ждёт.
+        c, cat_id = self._open_festival()
+        c.enable_nomination_waitlist(category_id=cat_id, now=NOW)
+        after = datetime(2027, 1, 15, tzinfo=UTC)
+        assert c.accepts_waitlist_for(cat_id, after)
+
+        c.lock_submission_editing(category_id=cat_id, now=NOW)
+
+        assert not c.accepts_waitlist_for(cat_id, after)
+        assert not c.is_any_nomination_waitlisting(after)
+
+    def test_the_file_windows_stay_the_festivals_own_question(self) -> None:
+        """Сроки загрузки — фестивальные, замок — жанровый, и сложить их нельзя.
+
+        Один и тот же срок стоит у всех жанров, поэтому замок вокала, свёрнутый в
+        ответ про сроки, закрыл бы загрузку и хореографии. Два вопроса задаются
+        порознь, и складывает их тот, кто знает, про какой жанр спрашивает.
+        """
+        c, cat_id = self._open_festival()
+        at = datetime(2026, 8, 15, tzinfo=UTC)
+
+        c.lock_submission_editing(category_id=cat_id, now=NOW)
+
+        assert c.is_music_upload_allowed(at)
+        assert c.is_media_upload_allowed(at)
+        assert c.is_document_upload_allowed(at)
+        assert c.is_correction_allowed(at)
+        assert c.is_editing_locked_for(cat_id)
+
+    def test_payment_is_not_frozen(self) -> None:
+        # Долг остаётся долгом: заявитель, которому закрыли оплату, — это заявитель,
+        # которого организатор потом ловит вручную.
+        c, cat_id = self._open_festival()
+
+        c.lock_submission_editing(category_id=cat_id, now=NOW)
+
+        assert c.is_payment_allowed(datetime(2026, 8, 15, tzinfo=UTC))
+
+    def test_locking_twice_keeps_the_first_instant(self) -> None:
+        # Заявителю отвечают, когда правки закрылись, а не когда организатор в
+        # последний раз нажал кнопку.
+        c, cat_id = self._open_festival()
+        later = datetime(2026, 9, 1, tzinfo=UTC)
+
+        c.lock_submission_editing(category_id=cat_id, now=NOW)
+        again = c.lock_submission_editing(category_id=cat_id, now=later)
+
+        assert again == []
+        assert c.editing_locked_at_for(cat_id) == NOW
+
+    def test_unlocking_gives_the_calendar_back(self) -> None:
+        c, cat_id = self._open_festival()
+        at = datetime(2026, 8, 15, tzinfo=UTC)
+        c.lock_submission_editing(category_id=cat_id, now=NOW)
+
+        events = c.unlock_submission_editing(category_id=cat_id, now=NOW)
+
+        assert isinstance(events[0], SubmissionEditingUnlocked)
+        assert events[0].category_id == cat_id
+        assert not c.is_editing_locked_for(cat_id)
+        assert c.accepts_submissions_for(cat_id, at)
+
+    def test_unlocking_an_open_nomination_changes_nothing(self) -> None:
+        c, cat_id = self._open_festival()
+
+        assert c.unlock_submission_editing(category_id=cat_id, now=NOW) == []
+
+    def test_a_completed_festival_has_nothing_left_to_lock(self) -> None:
+        c = _completed()
+
+        with pytest.raises(CompetitionAlreadyCompletedError):
+            c.lock_submission_editing(category_id=CategoryId.generate(), now=NOW)
+
+    def test_an_unknown_nomination_cannot_be_frozen(self) -> None:
+        c, _ = self._open_festival()
+
+        with pytest.raises(CategoryNotFoundError):
+            c.lock_submission_editing(category_id=CategoryId.generate(), now=NOW)
+
+
+class TestMaterialUploadWindow:
+    """Фонограмма, видео и фотографии закрываются своим сроком, а не сроком заявок.
+
+    Раньше видео и фото падали на срок приёма: номер, попавший в фестиваль в
+    последний день, уже не мог заменить присланное видео — ровно обратное тому, зачем
+    сроки загрузки вообще стоят отдельно и позже.
+    """
+
+    def test_material_outlives_the_close_of_registration(self) -> None:
+        c, cat_id = _published()
+        c.schedule_nomination_registration(category_id=cat_id, closes_at=datetime(2026, 8, 31, tzinfo=UTC), now=NOW)
+        after_the_close = datetime(2026, 9, 15, tzinfo=UTC)
+        assert not c.accepts_submissions_for(cat_id, after_the_close)
+
+        assert c.is_music_upload_allowed(after_the_close)
+        assert c.is_media_upload_allowed(after_the_close)
+        assert c.is_document_upload_allowed(after_the_close)
+
+    def test_video_and_photographs_follow_the_track_s_own_deadline(self) -> None:
+        c, _ = _published()
+        c.update_deadlines(deadlines=RegistrationDeadlines(music_upload=datetime(2026, 9, 1, tzinfo=UTC)), now=NOW)
+
+        assert c.is_media_upload_allowed(datetime(2026, 8, 20, tzinfo=UTC))
+        assert not c.is_media_upload_allowed(datetime(2026, 9, 2, tzinfo=UTC))
 
 
 class TestNominationWaitlist:

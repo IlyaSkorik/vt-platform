@@ -282,6 +282,18 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: "0"
+          # `graphify-out/` is the knowledge graph this repo regenerates on every change: one
+          # `graph.json` per day, 20–47 MB each, some 2.5 GB in total. The secret scanner read
+          # them end to end — four of the five minutes Trivy is allowed — and the run then died
+          # with "context deadline exceeded" in the misconfig pass, producing no findings at all.
+          # Skipping it loses nothing: it is generated output holding no dependency manifest and
+          # no infrastructure template, and the source it quotes is scanned where it actually
+          # lives. The job is advisory (`continue-on-error`), so the failure was invisible twice
+          # over — red tick, no report.
+          skip-dirs: graphify-out
+          # Headroom over the 5m default, so the next large directory to arrive degrades into a
+          # slow scan rather than a fatal one.
+          timeout: 15m
 
   stack:
     name: Production stack — boot and probe

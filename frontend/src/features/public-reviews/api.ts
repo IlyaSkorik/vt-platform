@@ -30,7 +30,6 @@ export interface PublicReviewPage {
   slug: string;
   title: string;
   intro: string;
-  organizationName: string;
   /**
    * Whether a note sent right now would be kept.
    *

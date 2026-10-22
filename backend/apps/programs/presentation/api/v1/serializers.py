@@ -244,7 +244,6 @@ class ProgramItemResourceSerializer(serializers.Serializer[dict[str, object]]):
     durationSeconds = serializers.IntegerField()
     schedule = _SchedulePositionSerializer()
     submissionId = serializers.UUIDField(allow_null=True)
-    leadParticipant = serializers.CharField(allow_null=True)
     participants = serializers.ListField(child=serializers.CharField())
     #: The headcount on stage, not the number of performer rows.
     participantCount = serializers.IntegerField()
@@ -314,6 +313,8 @@ class ProgramDetailSerializer(serializers.Serializer[dict[str, object]]):
     endsAt = serializers.DateTimeField(allow_null=True)
     #: Null for a programme that was only ever built by hand.
     arrangement = ArrangementResourceSerializer(allow_null=True)
+    #: True only between a rebuild and the undo that consumes it.
+    canUndoArrange = serializers.BooleanField()
     createdAt = serializers.DateTimeField()
     updatedAt = serializers.DateTimeField()
     version = serializers.IntegerField()

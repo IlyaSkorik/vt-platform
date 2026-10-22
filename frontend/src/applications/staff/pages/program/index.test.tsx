@@ -8,6 +8,7 @@ import {
   downloadProgramMedia as downloadProgramMediaImpl,
   downloadProgramMusic as downloadProgramMusicImpl,
   downloadProgramPdf as downloadProgramPdfImpl,
+  downloadProgramXlsx as downloadProgramXlsxImpl,
   type Program,
   type ProgramCandidate,
   type ProgramColumn,
@@ -19,6 +20,7 @@ import {
   useArrangeProgram,
   useCreateProgram,
   useCreateShare,
+  useDeleteProgram,
   useEditItem,
   useFillCells,
   useFillProgram,
@@ -31,6 +33,7 @@ import {
   useRenameColumn,
   useRenumberItems,
   useReorderItems,
+  useUndoArrange,
   useUpdateProgram,
 } from "@/features/program-builder";
 
@@ -48,6 +51,7 @@ vi.mock("@/features/program-builder", async (importOriginal) => ({
   useUpdateProgram: vi.fn(),
   useAddPerformance: vi.fn(),
   useArrangeProgram: vi.fn(),
+  useUndoArrange: vi.fn(),
   useAddBlock: vi.fn(),
   useEditItem: vi.fn(),
   useFillProgram: vi.fn(),
@@ -55,6 +59,7 @@ vi.mock("@/features/program-builder", async (importOriginal) => ({
   useReorderItems: vi.fn(),
   useRenumberItems: vi.fn(),
   useCreateShare: vi.fn(),
+  useDeleteProgram: vi.fn(),
   useAnnounceShare: vi.fn(),
   useRemoveShare: vi.fn(),
   useAddColumn: vi.fn(),
@@ -62,6 +67,7 @@ vi.mock("@/features/program-builder", async (importOriginal) => ({
   useRemoveColumn: vi.fn(),
   useFillCells: vi.fn(),
   downloadProgramPdf: vi.fn(),
+  downloadProgramXlsx: vi.fn(),
   downloadProgramMedia: vi.fn(),
   downloadProgramMusic: vi.fn(),
 }));
@@ -115,8 +121,10 @@ const createShare = vi.fn();
 const addPerformance = vi.fn();
 const fillProgram = vi.fn();
 const arrangeProgram = vi.fn();
+const undoArrange = vi.fn();
 const removeItem = vi.fn();
 const removeShare = vi.fn();
+const deleteProgram = vi.fn();
 const announceShare = vi.fn();
 const editItem = vi.fn();
 const createProgram = vi.fn();
@@ -125,6 +133,7 @@ const renameColumn = vi.fn();
 const removeColumn = vi.fn();
 const fillCells = vi.fn();
 const downloadProgramPdf = vi.mocked(downloadProgramPdfImpl);
+const downloadProgramXlsx = vi.mocked(downloadProgramXlsxImpl);
 const downloadProgramMusic = vi.mocked(downloadProgramMusicImpl);
 const downloadProgramMedia = vi.mocked(downloadProgramMediaImpl);
 
@@ -144,7 +153,6 @@ function anItem(overrides: Partial<ProgramItem> & { id: string; position: number
     progress: "PENDING",
     durationSeconds: 200,
     submissionId: "01900000-0000-7000-8000-0000000000b1",
-    leadParticipant: "Иванов Иван",
     participants: ["Иванов Иван"],
     participantCount: 1,
     teachers: [],
@@ -190,6 +198,8 @@ function aProgram(overrides: Partial<Program> = {}): Program {
     endsAt: "2026-08-01T10:07:40Z",
     // Built by hand, like every programme that predates the generator.
     arrangement: null,
+    // Nothing to undo: no rebuild has happened in these fixtures unless one says so.
+    canUndoArrange: false,
     createdAt: "2026-08-01T09:00:00Z",
     updatedAt: "2026-08-01T09:00:00Z",
     version: 3,
@@ -254,11 +264,13 @@ function stub(
   vi.mocked(useEditItem).mockReturnValue(mutation(editItem));
   vi.mocked(useFillProgram).mockReturnValue(mutation(fillProgram));
   vi.mocked(useArrangeProgram).mockReturnValue(mutation(arrangeProgram));
+  vi.mocked(useUndoArrange).mockReturnValue(mutation(undoArrange));
   vi.mocked(useRemoveItem).mockReturnValue(mutation(removeItem));
   vi.mocked(useReorderItems).mockReturnValue(mutation(reorder));
   vi.mocked(useRenumberItems).mockReturnValue(mutation(renumber));
   vi.mocked(useCreateShare).mockReturnValue(mutation(createShare));
   vi.mocked(useRemoveShare).mockReturnValue(mutation(removeShare));
+  vi.mocked(useDeleteProgram).mockReturnValue(mutation(deleteProgram));
   vi.mocked(useAnnounceShare).mockReturnValue(mutation(announceShare));
   vi.mocked(useAddColumn).mockReturnValue(mutation(addColumn));
   vi.mocked(useRenameColumn).mockReturnValue(mutation(renameColumn));
@@ -290,6 +302,7 @@ beforeEach(() => {
     arrangeProgram,
     removeItem,
     removeShare,
+    deleteProgram,
     editItem,
     createProgram,
     addColumn,
@@ -333,7 +346,7 @@ describe("StaffProgramPage — the programme table", () => {
 
     expect(screen.queryByRole("columnheader", { name: "Организация" })).not.toBeInTheDocument();
     // The PDF panel still offers it, because it was never asked about.
-    const pdf = screen.getByRole("group", { name: "Колонки в PDF" });
+    const pdf = screen.getByRole("group", { name: "Колонки в выгрузке" });
     expect(within(pdf).getByRole("checkbox", { name: "Организация" })).toBeInTheDocument();
   });
 
@@ -819,7 +832,7 @@ describe("StaffProgramPage — printing the programme", () => {
     await renderPage();
 
     // Drop one default column and add one that is not.
-    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
     await userEvent.click(within(panel).getByRole("checkbox", { name: "Организация" }));
     await userEvent.click(within(panel).getByRole("checkbox", { name: "Педагог" }));
     await userEvent.click(screen.getByRole("button", { name: /Скачать PDF/ }));
@@ -835,11 +848,31 @@ describe("StaffProgramPage — printing the programme", () => {
     expect(fallback).toBe("Вокал, 1 отделение");
   });
 
+  it("downloads the same table as Excel, on the same columns", async () => {
+    stub();
+    await renderPage();
+
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
+    await userEvent.click(within(panel).getByRole("checkbox", { name: "Организация" }));
+    await userEvent.click(screen.getByRole("button", { name: /Скачать Excel/ }));
+
+    await waitFor(() => expect(downloadProgramXlsx).toHaveBeenCalled());
+    const [programId, columns, fallback] = downloadProgramXlsx.mock.calls[0] as [
+      string,
+      string[],
+      string,
+    ];
+    expect(programId).toBe(PROGRAM_ID);
+    // The PDF's selection, minus the column just unticked — one choice, two exports.
+    expect(columns).toEqual(["POSITION", "TIME", "PARTICIPANT", "TITLE", "DURATION"]);
+    expect(fallback).toBe("Вокал, 1 отделение");
+  });
+
   it("starts from the columns a printed running order usually wants", async () => {
     stub();
     await renderPage();
 
-    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
     for (const label of ["№", "Время", "Участник", "Номер", "Длительность", "Организация"]) {
       expect(within(panel).getByRole("checkbox", { name: label })).toBeChecked();
     }
@@ -857,7 +890,7 @@ describe("StaffProgramPage — printing the programme", () => {
     );
     await renderPage();
 
-    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
     expect(within(panel).getByRole("checkbox", { name: "Микрофон" })).toBeInTheDocument();
   });
 
@@ -891,7 +924,7 @@ describe("StaffProgramPage — printing the programme", () => {
     stub();
     await renderPage();
 
-    const strip = screen.getByRole("group", { name: /Порядок колонок в PDF/ });
+    const strip = screen.getByRole("group", { name: /Порядок колонок в выгрузке/ });
     expect(within(strip).getByRole("button", { name: "Левее: №" })).toBeDisabled();
     expect(within(strip).getByRole("button", { name: "Правее: Организация" })).toBeDisabled();
 
@@ -913,7 +946,7 @@ describe("StaffProgramPage — printing the programme", () => {
     stub();
     await renderPage();
 
-    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
     await userEvent.click(within(panel).getByRole("checkbox", { name: "Комментарий" }));
     await userEvent.click(screen.getByRole("button", { name: /Скачать PDF/ }));
 
@@ -925,19 +958,21 @@ describe("StaffProgramPage — printing the programme", () => {
     stub();
     await renderPage();
 
-    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
     for (const label of ["№", "Время", "Участник", "Длительность", "Организация"]) {
       await userEvent.click(within(panel).getByRole("checkbox", { name: label }));
     }
 
-    expect(screen.queryByRole("group", { name: /Порядок колонок в PDF/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", { name: /Порядок колонок в выгрузке/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("cannot export nothing at all", async () => {
     stub();
     await renderPage();
 
-    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
     for (const label of ["№", "Время", "Участник", "Номер", "Длительность", "Организация"]) {
       await userEvent.click(within(panel).getByRole("checkbox", { name: label }));
     }
@@ -971,7 +1006,7 @@ describe("StaffProgramPage — collecting the backing tracks", () => {
     stub();
     await renderPage();
 
-    const panel = screen.getByRole("group", { name: "Колонки в PDF" });
+    const panel = screen.getByRole("group", { name: "Колонки в выгрузке" });
     for (const label of ["№", "Время", "Участник", "Номер", "Длительность", "Организация"]) {
       await userEvent.click(within(panel).getByRole("checkbox", { name: label }));
     }
@@ -1101,7 +1136,6 @@ describe("StaffProgramPage — breaks", () => {
             title: "Перерыв",
             durationSeconds: 900,
             submissionId: null,
-            leadParticipant: null,
             participants: [],
             nomination: null,
           }),
@@ -1541,6 +1575,22 @@ describe("StaffProgramPage — автосоставление", () => {
     return aProgram({ numbersFrozen: false, numbersFrozenAt: null, ...overrides });
   }
 
+  /** Any saved rules — what makes «Пересобрать» appear at all. */
+  const SAVED_RULES = {
+    grouping: ["NOMINATION"],
+    orderWithinGroup: "TITLE",
+    breakRule: "NONE",
+    breakAfterSeconds: 0,
+    breakAfterItems: 0,
+    breakTitle: null,
+    breakDurationSeconds: null,
+    repeatGap: 3,
+    openingTitle: null,
+    openingDurationSeconds: null,
+    awardTitle: null,
+    awardDurationSeconds: null,
+  } satisfies Program["arrangement"];
+
   it("отправляет правила, выбранные в форме", async () => {
     stub(draft());
     await renderPage();
@@ -1590,30 +1640,58 @@ describe("StaffProgramPage — автосоставление", () => {
 
   it("«Пересобрать» повторяет сохранённые правила без формы", async () => {
     // Пересобирают чаще, чем собирают впервые: заявки идут до последнего дня.
-    stub(
-      draft({
-        arrangement: {
-          grouping: ["NOMINATION"],
-          orderWithinGroup: "TITLE",
-          breakRule: "NONE",
-          breakAfterSeconds: 0,
-          breakAfterItems: 0,
-          breakTitle: null,
-          breakDurationSeconds: null,
-          repeatGap: 3,
-          openingTitle: null,
-          openingDurationSeconds: null,
-          awardTitle: null,
-          awardDurationSeconds: null,
-        },
-      }),
-    );
+    stub(draft({ arrangement: SAVED_RULES }));
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Пересобрать" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Пересобрать" }));
+
+    expect(arrangeProgram).toHaveBeenCalledTimes(1);
+    expect(arrangeProgram.mock.calls[0]?.[0]).toBeUndefined();
+  });
+
+  it("«Пересобрать» сначала спрашивает и называет, сколько строк на кону", async () => {
+    // Кнопка стоит в общем ряду, а заменяет состав целиком: однажды по ней нажали,
+    // не собираясь, и потеряли день расстановки.
+    stub(draft({ arrangement: SAVED_RULES }));
     await renderPage();
 
     await userEvent.click(screen.getByRole("button", { name: "Пересобрать" }));
 
-    expect(arrangeProgram).toHaveBeenCalledTimes(1);
-    expect(arrangeProgram.mock.calls[0]?.[0]).toBeUndefined();
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/Сейчас в программе строк: 2/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/заполненные ячейки пропадут/)).toBeInTheDocument();
+    expect(arrangeProgram).not.toHaveBeenCalled();
+  });
+
+  it("отказ в диалоге не трогает программу", async () => {
+    stub(draft({ arrangement: SAVED_RULES }));
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Пересобрать" }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Отмена" }));
+
+    expect(arrangeProgram).not.toHaveBeenCalled();
+  });
+
+  it("«Отменить пересборку» показывается, пока сервер держит точку возврата", async () => {
+    stub(draft({ arrangement: SAVED_RULES, canUndoArrange: true }));
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Отменить пересборку/ }));
+
+    expect(undoArrange).toHaveBeenCalledTimes(1);
+  });
+
+  it("без точки возврата отменять нечего, и кнопки нет", async () => {
+    // Кнопка живёт по ответу сервера, а не по тому, что помнит эта вкладка: точку
+    // возврата мог потратить соседний экран.
+    stub(draft({ arrangement: SAVED_RULES, canUndoArrange: false }));
+    await renderPage();
+
+    expect(screen.queryByRole("button", { name: /Отменить пересборку/ })).not.toBeInTheDocument();
   });
 
   it("опубликованную программу пересобрать нельзя", async () => {
@@ -1623,5 +1701,47 @@ describe("StaffProgramPage — автосоставление", () => {
 
     expect(screen.getByRole("button", { name: /Собрать программу/ })).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Пересобрать" })).not.toBeInTheDocument();
+  });
+});
+
+describe("StaffProgramPage — удаление программы", () => {
+  const A_SHARE = {
+    id: "share-1",
+    name: "Программа звукорежиссёра",
+    slug: "Sound2345",
+    path: "/program/Sound2345",
+    columns: [{ key: "TIME" as const, label: "Время", custom: false }],
+    itemCount: 2,
+    coversWholeProgram: true,
+    controlsRunningOrder: false,
+    createdAt: "2026-08-01T09:00:00Z",
+  };
+
+  it("публичная ссылка держит программу, и видно почему", async () => {
+    // Ссылка — это чья-то открытая вкладка за пультом; удаление закрыло бы её молча.
+    stub(aProgram({ shares: [A_SHARE] }));
+    await renderPage();
+
+    expect(screen.getByRole("button", { name: /Удалить программу/ })).toBeDisabled();
+    expect(screen.getByText(/Сначала отзовите публичные ссылки \(1\)/)).toBeInTheDocument();
+  });
+
+  it("без ссылок удаляет — но только после подтверждения", async () => {
+    stub(aProgram({ shares: [] }));
+    await renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: /Удалить программу/ }));
+    // Первый клик только открывает диалог: удаление необратимо и стоит рядом с
+    // обычными настройками, по которым кликают не глядя.
+    expect(deleteProgram).not.toHaveBeenCalled();
+
+    const dialog = within(await screen.findByRole("dialog"));
+    expect(
+      screen.getByRole("heading", { name: /Удалить программу «Вокал, 1 отделение»/ }),
+    ).toBeInTheDocument();
+    await userEvent.click(dialog.getByRole("button", { name: "Удалить программу" }));
+
+    expect(deleteProgram).toHaveBeenCalledTimes(1);
+    expect(deleteProgram.mock.calls[0]?.[0]).toBe(PROGRAM_ID);
   });
 });

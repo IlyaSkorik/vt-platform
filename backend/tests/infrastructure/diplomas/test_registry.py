@@ -92,6 +92,28 @@ def test_create_diploma_snapshots_and_starts_draft_without_degree() -> None:
     assert diploma.snapshot.teachers[0].name == "Петрова Мария"
 
 
+def test_a_diploma_names_every_participant_of_the_entry() -> None:
+    # One diploma is issued per entry, so a duet's sheet has to carry both names: the
+    # second performer has no document of their own to be named on.
+    competition = _competition()
+    category = CategoryModel.objects.create(competition=competition, name="Вокал")
+    submission = SubmissionModel.objects.create(
+        competition_id=competition.id,
+        applicant_id=uuid.uuid4(),
+        status="SUBMITTED",
+        participants=[
+            {"display_name": "Иванова Анна", "member_count": 1, "birth_date": date(2014, 1, 1).isoformat()},
+            {"display_name": "Петров Пётр", "member_count": 1, "birth_date": date(2013, 6, 1).isoformat()},
+        ],
+        performance={"title": "Дуэт", "nomination_id": str(category.id)},
+    )
+    template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Шаблон")
+
+    diploma = _service().create_diploma(submission_id=submission.id, template_id=template.id, now=_NOW)
+
+    assert diploma.snapshot.participant.display_name == "Иванова Анна, Петров Пётр"
+
+
 def test_numbers_are_unique_and_sequential() -> None:
     competition = _competition()
     template = TemplateModel.objects.create(organizer_id=_ORGANIZER, type="DIPLOMA", name="Шаблон")

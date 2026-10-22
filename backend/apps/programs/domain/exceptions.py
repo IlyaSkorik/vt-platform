@@ -11,11 +11,13 @@ __all__ = [
     "ExportUnavailableError",
     "InvalidProgramDataError",
     "ItemNotInProgramError",
+    "NoRestorePointError",
     "PerformanceAlreadyInProgramError",
     "PerformanceNotAvailableError",
     "ProgramColumnNotFoundError",
     "ProgramConcurrencyError",
     "ProgramError",
+    "ProgramHasSharesError",
     "ProgramItemNotFoundError",
     "ProgramNotFoundError",
     "ProgramNumbersFrozenError",
@@ -61,6 +63,22 @@ class ProgramNotFoundError(ProgramError):
     code = "program_not_found"
 
 
+class ProgramHasSharesError(ProgramError):
+    """Raised when a program is asked to delete itself while public links still lead to it.
+
+    Deleting takes every edition down with it, and an edition is the copy somebody is
+    already working from — the sound desk has it open, the host is running the day off
+    it, a participant was mailed it. The link does not fail loudly for them; it simply
+    stops resolving, mid-festival, with nothing on screen to say why.
+
+    So the links are revoked first, one at a time, by the organizer who knows who holds
+    which. That is one extra deliberate step before an irreversible one, and it is the
+    whole point: a program with no links out is a program nobody is reading.
+    """
+
+    code = "program_has_shares"
+
+
 class ProgramItemNotFoundError(ProgramError):
     """Raised when a referenced item is not part of the program."""
 
@@ -86,6 +104,17 @@ class ProgramNumbersFrozenError(ProgramError):
     """
 
     code = "program_numbers_frozen"
+
+
+class NoRestorePointError(ProgramError):
+    """Raised when a programme is asked to undo a rebuild it never had.
+
+    The restore point is the one a rebuild leaves behind, and it is consumed by the
+    undo that uses it. So this is what «Отменить» answers with when the button was
+    stale - already used in another window, or left over from before a reload.
+    """
+
+    code = "program_no_restore_point"
 
 
 class ProgramColumnNotFoundError(ProgramError):

@@ -287,6 +287,15 @@ class ProtocolService:
         self._protocols.save(protocol)
         return self._detail(protocol)
 
+    def has_protocol(self, *, competition_id: uuid.UUID, nomination_id: uuid.UUID) -> bool:
+        """Whether this nomination has a protocol open at all.
+
+        Asked by the Judging context before it pushes a tally: "nothing changed" and
+        "there was nowhere to write" are different answers, and only one of them means
+        the organizer still has work to do.
+        """
+        return self._protocols.get_for_nomination(competition_id=competition_id, nomination_id=nomination_id) is not None
+
     def apply_awards_by_submission(
         self,
         *,
@@ -707,7 +716,10 @@ class ProtocolService:
             case ProtocolColumn.POSITION:
                 return str(number)
             case ProtocolColumn.PARTICIPANT:
-                return (performance.lead_participant or "") if performance is not None else ""
+                # Everyone the entry listed, not just the first of them: a duet wins its
+                # award together, and a protocol naming one of the two is wrong about who
+                # it was awarded to.
+                return ", ".join(performance.participants) if performance is not None else ""
             case ProtocolColumn.TITLE:
                 if performance is not None:
                     return performance.title
@@ -786,7 +798,6 @@ class ProtocolService:
             title=performance.title if performance is not None else "Выступление удалено",
             award=row.award,
             award_label=cls._label_for(row.award, labels),
-            lead_participant=performance.lead_participant if performance is not None else None,
             participants=performance.participants if performance is not None else (),
             teachers=performance.teachers if performance is not None else (),
             nomination=performance.nomination if performance is not None else None,

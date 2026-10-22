@@ -18,10 +18,11 @@ Applications context does it, and a stale write is refused rather than applied.
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from django.db import transaction
 
-from apps.programs.domain.entities import Program
+from apps.programs.domain.entities import Program, ProgramItem
 from apps.programs.domain.exceptions import ProgramConcurrencyError
 from apps.programs.infrastructure.mappers import ProgramMapper
 from apps.programs.infrastructure.models import (
@@ -48,6 +49,16 @@ class DjangoProgramRepository:
         if nomination_id is not None:
             rows = rows.filter(nomination_id=nomination_id)
         return tuple(self._to_entity(model) for model in rows.order_by("created_at"))
+
+    def items_retired_at(self, program_id: uuid.UUID, moment: datetime) -> tuple[ProgramItem, ...]:
+        """The rows one write retired, read back in the order they stood in.
+
+        ``_sync_items`` stamps every row a single save retires with that save's instant,
+        so an exact match on ``deleted_at`` picks out one whole past running order and
+        never half of two.
+        """
+        rows = ProgramItemModel.objects.filter(program_id=program_id, deleted_at=moment).order_by("position")
+        return tuple(ProgramMapper.item_to_entity(row) for row in rows)
 
     def slug_taken(self, slug: str) -> bool:
         """Whether any share - live or revoked - has ever used this slug."""

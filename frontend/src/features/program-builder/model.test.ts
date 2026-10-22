@@ -34,7 +34,6 @@ function anItem(overrides: Partial<ProgramItem> = {}): ProgramItem {
       endsAt: null,
     },
     submissionId: "sub-1",
-    leadParticipant: "Иванов Иван",
     participants: ["Иванов Иван"],
     participantCount: 1,
     teachers: ["Петрова Мария", "Сидорова Анна"],
@@ -75,12 +74,18 @@ describe("itemCell", () => {
     expect(itemCell(anItem(), "TEACHERS", FORMAT)).toBe("Петрова Мария, Сидорова Анна");
   });
 
+  it("names every performer of an entry, not just the first", () => {
+    // A duet is two performer rows on one entry, and a programme that prints one of the
+    // two names tells the hall the wrong thing about who is on stage.
+    const duet = anItem({ participants: ["Иванова Анна", "Петров Пётр"], participantCount: 2 });
+    expect(itemCell(duet, "PARTICIPANT", FORMAT)).toBe("Иванова Анна, Петров Пётр");
+  });
+
   it("leaves a block's absent columns blank rather than filling in a placeholder", () => {
     const pause = anItem({
       kind: "BREAK",
       title: "Перерыв",
       submissionId: null,
-      leadParticipant: null,
       participants: [],
       teachers: [],
       nomination: null,

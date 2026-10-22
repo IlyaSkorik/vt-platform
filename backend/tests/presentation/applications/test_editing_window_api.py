@@ -14,6 +14,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
 from apps.applications.infrastructure.models.base import uuid7
@@ -39,6 +40,21 @@ def _seed(*, other_genre_open: bool) -> tuple[str, str, str]:
         registration_closes_at=_FAR_FUTURE if other_genre_open else datetime(2001, 1, 1, tzinfo=UTC),
     )
     return str(competition.id), str(vocal.id), str(choreography.id)
+
+
+def _lock_editing(category_id: str) -> None:
+    """Кнопка организатора «закрыть редактирование» в жанре, на уровне строки."""
+    from apps.competitions.infrastructure.models import CategoryModel
+
+    CategoryModel.objects.filter(pk=category_id).update(editing_locked_at=datetime(2026, 5, 1, tzinfo=UTC))
+
+
+def _upload_a_track(client: APIClient, submission_id: str) -> Any:
+    return client.post(
+        f"/api/v1/submissions/{submission_id}/attachments",
+        {"file": SimpleUploadedFile("track.mp3", b"ID3 fake audio", content_type="audio/mpeg"), "attachmentType": "MUSIC"},
+        format="multipart",
+    )
 
 
 def _stop_registration(nomination_id: str, *, waitlist: bool) -> None:
@@ -153,3 +169,67 @@ class TestWhileTheGenreIsOpen:
         _stop_registration(vocal, waitlist=True)
 
         assert applicant.get(f"/api/v1/applications/{application_id}").data["data"]["editable"] is True
+
+
+class TestFilesOutliveTheCloseOfRegistration:
+    """Приём кончился — состав заморожен, файлы нет. Ради этого сроки и разведены.
+
+    Фонограмму и видео присылают после того, как список собран: номер, попавший в
+    фестиваль в последний день, всё ещё репетирует и меняет материал.
+    """
+
+    def test_the_track_is_still_accepted(self, applicant: APIClient) -> None:
+        competition_id, vocal, _choreography = _seed(other_genre_open=False)
+        _application_id, submission_id = _place_order(applicant, competition_id, vocal)
+        _stop_registration(vocal, waitlist=False)
+
+        accepted = _upload_a_track(applicant, submission_id)
+
+        assert accepted.status_code == 201, accepted.data
+
+    def test_while_the_numbers_content_is_not(self, applicant: APIClient) -> None:
+        competition_id, vocal, _choreography = _seed(other_genre_open=False)
+        _application_id, submission_id = _place_order(applicant, competition_id, vocal)
+        _stop_registration(vocal, waitlist=False)
+
+        refused = applicant.post(
+            f"/api/v1/submissions/{submission_id}/participants",
+            {"firstName": "Новый", "lastName": "Участник", "birthDate": "2013-01-01", "gender": "MALE"},
+            format="json",
+        )
+
+        assert refused.status_code == 409, refused.data
+
+
+class TestTheOrganizerClosesEverything:
+    """Вторая кнопка: та, после которой не остаётся и файлов. И она — жанровая."""
+
+    def test_the_track_is_refused_too(self, applicant: APIClient) -> None:
+        competition_id, vocal, _choreography = _seed(other_genre_open=True)
+        _application_id, submission_id = _place_order(applicant, competition_id, vocal)
+        _lock_editing(vocal)
+
+        refused = _upload_a_track(applicant, submission_id)
+
+        assert refused.status_code == 409, refused.data
+        # Приём ещё открыт — сказать «приём закрыт» было бы неправдой о датах.
+        assert "Организатор закрыл редактирование" in str(refused.data["detail"])
+
+    def test_the_number_and_the_order_both_say_so(self, applicant: APIClient) -> None:
+        competition_id, vocal, _choreography = _seed(other_genre_open=True)
+        application_id, submission_id = _place_order(applicant, competition_id, vocal)
+        _lock_editing(vocal)
+
+        assert applicant.get(f"/api/v1/submissions/{submission_id}").data["data"]["editable"] is False
+        assert applicant.get(f"/api/v1/applications/{application_id}").data["data"]["editable"] is False
+
+    def test_a_frozen_genre_leaves_an_entry_in_another_one_alone(self, applicant: APIClient) -> None:
+        """Ради этого замок и переехал на жанр: вокал печатают, хореография грузит."""
+        competition_id, vocal, choreography = _seed(other_genre_open=True)
+        _application_id, submission_id = _place_order(applicant, competition_id, choreography)
+        _lock_editing(vocal)
+
+        accepted = _upload_a_track(applicant, submission_id)
+
+        assert accepted.status_code in {200, 201}, accepted.data
+        assert applicant.get(f"/api/v1/submissions/{submission_id}").data["data"]["editable"] is True

@@ -115,6 +115,12 @@ def _roster(members: Sequence[str]) -> tuple[str, ...]:
     return tuple(cleaned for raw in members if (cleaned := " ".join(str(raw).split())))
 
 
+def _organization_or_none(raw: str | None) -> str | None:
+    """The institution as it will be stored: trimmed, blank collapsed to "unpinned"."""
+    cleaned = " ".join(str(raw or "").split())
+    return cleaned or None
+
+
 def _stored_birth_date(participant: Participant) -> str | None:
     birth_date = participant.birth_date
     return birth_date.value.isoformat() if birth_date is not None else None
@@ -322,7 +328,12 @@ class EditSubmissionContentByOrganizerHandler:
         now: datetime,
         changes: list[SubmissionContentChange],
     ) -> list[DomainEvent]:
-        """Apply the headcount and roster of an entry that still names the same performer."""
+        """Apply what moved on an entry that still names the same performer.
+
+        The headcount, the roster, and the institution this festival prints for them.
+        All three are corrections *to* a performer rather than a different performer,
+        so they go through setters and the entry keeps its id.
+        """
         events: list[DomainEvent] = []
         self._record_composition_changes(existing, entry, changes=changes)
         if entry.member_count != existing.member_count:
@@ -340,6 +351,14 @@ class EditSubmissionContentByOrganizerHandler:
                     members=roster,
                     now=now,
                 )
+        organization = _organization_or_none(entry.organization_name)
+        if organization != existing.organization_name:
+            with translate_domain_errors():
+                events += submission.set_participant_organization(
+                    participant_id=existing.id,
+                    organization_name=organization,
+                    now=now,
+                )
         return events
 
     @staticmethod
@@ -349,7 +368,7 @@ class EditSubmissionContentByOrganizerHandler:
         *,
         changes: list[SubmissionContentChange],
     ) -> None:
-        """Record a collective's headcount and roster moving, whichever path applies them."""
+        """Record headcount, roster and institution moving, whichever path applies them."""
         label = existing.display_name
         if entry.member_count != existing.member_count:
             changes.append(
@@ -367,6 +386,16 @@ class EditSubmissionContentByOrganizerHandler:
                     field="participant_members",
                     before=", ".join(existing.members) or None,
                     after=", ".join(roster) or None,
+                    subject=label,
+                )
+            )
+        organization = _organization_or_none(entry.organization_name)
+        if organization != existing.organization_name:
+            changes.append(
+                SubmissionContentChange(
+                    field="participant_organization",
+                    before=existing.organization_name,
+                    after=organization,
                     subject=label,
                 )
             )
@@ -399,6 +428,7 @@ class EditSubmissionContentByOrganizerHandler:
                 registry_participant_id=registry_participant_id,  # type: ignore[arg-type]
                 member_count=entry.member_count,
                 members=_roster(entry.members),
+                organization_name=_organization_or_none(entry.organization_name),
                 now=now,
             )
         return events

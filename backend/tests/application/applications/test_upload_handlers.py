@@ -7,13 +7,26 @@ import pytest
 from apps.applications.application.commands.attachments import UploadAttachmentHandler
 from apps.applications.application.dto.commands import UploadAttachmentCommand
 from apps.applications.application.exceptions import (
+    CompetitionClosedError,
     DeadlinePassedError,
     FileTooLargeError,
     SubmissionNotFoundError,
     UnsupportedFileTypeError,
 )
 from apps.applications.domain.entities import Submission
-from apps.applications.domain.value_objects import CompetitionId, SubmissionId, UserId
+from apps.applications.domain.value_objects import (
+    AgeCategoryId,
+    CompetitionId,
+    DisciplineId,
+    Duration,
+    NominationId,
+    ParticipantGroupId,
+    ParticipationFormatId,
+    Performance,
+    PerformanceTitle,
+    SubmissionId,
+    UserId,
+)
 
 from .fakes import (
     NOW,
@@ -28,22 +41,42 @@ from .fakes import (
 )
 
 
-def _draft_submission(applicant: UserId) -> Submission:
+def _draft_submission(applicant: UserId, *, nomination: NominationId | None = None) -> Submission:
     submission, _ = Submission.draft(
         submission_id=SubmissionId.generate(),
         competition_id=CompetitionId.from_uuid(SubmissionId.generate().value),
         applicant_id=applicant,
         now=NOW,
     )
+    if nomination is not None:
+        # The freeze is a genre's, so an entry only runs into one once it names a genre.
+        submission.set_performance(
+            performance=Performance(
+                title=PerformanceTitle("Swan Lake"),
+                duration=Duration.of(minutes=3),
+                nomination_id=nomination,
+                discipline_id=DisciplineId.from_uuid(SubmissionId.generate().value),
+                age_category_id=AgeCategoryId.from_uuid(SubmissionId.generate().value),
+                participant_group_id=ParticipantGroupId.from_uuid(SubmissionId.generate().value),
+                participation_format_id=ParticipationFormatId.from_uuid(SubmissionId.generate().value),
+            ),
+            now=NOW,
+        )
     return submission
 
 
 class _Env:
-    def __init__(self, *, policy: FakeCompetitionUploadPolicy | None = None, accepts_upload: bool = True) -> None:
+    def __init__(
+        self,
+        *,
+        policy: FakeCompetitionUploadPolicy | None = None,
+        accepts_upload: bool = True,
+        locked_nominations: frozenset[str] = frozenset(),
+    ) -> None:
         self.submissions = FakeSubmissionRepository()
         self.storage = FakeFileStorage()
         self.policy = policy or FakeCompetitionUploadPolicy()
-        self.catalog = FakeCompetitionCatalog(accepts_upload=accepts_upload)
+        self.catalog = FakeCompetitionCatalog(accepts_upload=accepts_upload, locked_nominations=locked_nominations)
         self.handler = UploadAttachmentHandler(
             submissions=self.submissions,
             storage=self.storage,
@@ -108,6 +141,40 @@ def test_upload_rejected_after_upload_deadline() -> None:
     with pytest.raises(DeadlinePassedError):
         env.handler.handle(_command(submission.id.json(), applicant.json()))
     assert env.storage.saved == {}
+
+
+def test_upload_refused_once_the_organizer_froze_the_genre() -> None:
+    """Замок закрывает и загрузку — иначе он закрывал бы всё, кроме главного.
+
+    Сроки загрузки переживают закрытие приёма специально, так что без отдельной
+    проверки кнопка «закрыть редактирование» оставляла бы файлы жанра открытыми
+    ровно до их собственного дедлайна.
+    """
+    applicant = UserId.from_uuid(SubmissionId.generate().value)
+    nomination = NominationId.from_uuid(SubmissionId.generate().value)
+    env = _Env(locked_nominations=frozenset({nomination.json()}))
+    submission = _draft_submission(applicant, nomination=nomination)
+    env.submissions.save(submission)
+
+    with pytest.raises(CompetitionClosedError) as refusal:
+        env.handler.handle(_command(submission.id.json(), applicant.json()))
+
+    # Не «срок истёк»: срок может быть ещё через неделю, это решение организатора.
+    assert "организатор" in str(refusal.value).lower()
+    assert env.storage.saved == {}
+
+
+def test_a_frozen_genre_does_not_close_the_uploads_of_another() -> None:
+    """Ради этого замок и переехал на жанр: вокал печатают, хореография ещё грузит."""
+    applicant = UserId.from_uuid(SubmissionId.generate().value)
+    frozen = NominationId.from_uuid(SubmissionId.generate().value)
+    env = _Env(locked_nominations=frozenset({frozen.json()}))
+    submission = _draft_submission(applicant, nomination=NominationId.from_uuid(SubmissionId.generate().value))
+    env.submissions.save(submission)
+
+    env.handler.handle(_command(submission.id.json(), applicant.json()))
+
+    assert env.storage.saved != {}
 
 
 def test_upload_unknown_submission_is_not_found() -> None:

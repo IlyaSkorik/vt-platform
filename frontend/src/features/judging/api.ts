@@ -33,11 +33,14 @@ import type {
   InviteJuryInput,
   JudgingSetup,
   JuryMember,
+  JurySeat,
   JuryTask,
+  RunningOrderEntry,
   ScoringRulesInput,
   ScoringState,
   ScoringStateInput,
   SubmitScorecardInput,
+  TallyApplication,
   TallyScopeInput,
   TallySheet,
   UpdateJuryInput,
@@ -76,6 +79,9 @@ export const judgingKeys = {
   tally: (competitionId: string) => [...judgingKeys.all, "tally", competitionId] as const,
   states: (competitionId: string) => [...judgingKeys.all, "states", competitionId] as const,
   tasks: (competitionId: string) => [...judgingKeys.all, "tasks", competitionId] as const,
+  seats: () => [...judgingKeys.all, "seats"] as const,
+  runningOrder: (competitionId: string) =>
+    [...judgingKeys.all, "running-order", competitionId] as const,
   board: (slug: string) => [...judgingKeys.all, "board", slug] as const,
 };
 
@@ -282,6 +288,33 @@ export function useScoringStates(
   });
 }
 
+export async function fetchRunningOrder(competitionId: string): Promise<RunningOrderEntry[]> {
+  const params = new URLSearchParams({ competitionId });
+  const body = await request<Envelope<RunningOrderEntry[]>>(
+    `staff/judging/running-order?${params.toString()}`,
+  );
+  return body.data;
+}
+
+/**
+ * The programme in programme order — what the host announces from.
+ *
+ * Deliberately not the tally. A tally sorts by score so results read top-down; a host
+ * reads down the running order, and a list that reshuffles every time an act is marked
+ * is one they stop trusting by the third number.
+ */
+export function useRunningOrder(
+  competitionId: string | undefined,
+  { live = false }: { live?: boolean } = {},
+): UseQueryResult<RunningOrderEntry[], ApiError> {
+  return useQuery<RunningOrderEntry[], ApiError>({
+    enabled: Boolean(competitionId),
+    queryKey: judgingKeys.runningOrder(competitionId ?? ""),
+    queryFn: () => fetchRunningOrder(competitionId ?? ""),
+    refetchInterval: () => (live && !isHidden() ? LIVE_REFETCH_MS : false),
+  });
+}
+
 function useScoringMutation(
   competitionId: string,
   path: string,
@@ -292,6 +325,7 @@ function useScoringMutation(
       (await request<Envelope<ScoringState>>(path, { method: "post", json: input })).data,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: judgingKeys.states(competitionId) });
+      void queryClient.invalidateQueries({ queryKey: judgingKeys.runningOrder(competitionId) });
       void queryClient.invalidateQueries({ queryKey: judgingKeys.tally(competitionId) });
       void queryClient.invalidateQueries({ queryKey: judgingKeys.tasks(competitionId) });
     },
@@ -332,17 +366,30 @@ export function useTally(
   });
 }
 
-/** Write the computed awards into the protocols. Answers with how many rows changed. */
+/**
+ * Write the computed awards into the protocols.
+ *
+ * Answers with what actually happened, not just a count. "Nothing changed" and "there
+ * was no protocol to write onto" are different outcomes, and conflating them is how an
+ * organizer walks to a ceremony with empty protocols believing the tally landed.
+ *
+ * `createMissing` opens a protocol for each genre that has none, seeded from the
+ * programme — the organizer asks for that with a second press, never silently.
+ */
+export interface ApplyTallyInput {
+  createMissing?: boolean;
+}
+
 export function useApplyTallyToProtocols(
   competitionId: string,
-): UseMutationResult<{ rowsChanged: number }, ApiError, void> {
+): UseMutationResult<TallyApplication, ApiError, ApplyTallyInput> {
   const queryClient = useQueryClient();
-  return useMutation<{ rowsChanged: number }, ApiError, void>({
-    mutationFn: async () => {
+  return useMutation<TallyApplication, ApiError, ApplyTallyInput>({
+    mutationFn: async (input) => {
       const params = new URLSearchParams({ competitionId });
-      const body = await request<Envelope<{ rowsChanged: number }>>(
+      const body = await request<Envelope<TallyApplication>>(
         `staff/judging/tally/apply?${params.toString()}`,
-        { method: "post" },
+        { method: "post", json: { createMissing: input.createMissing ?? false } },
       );
       return body.data;
     },
@@ -357,6 +404,28 @@ export function useApplyTallyToProtocols(
 // ---------------------------------------------------------------------------
 // The judge's tablet
 // ---------------------------------------------------------------------------
+
+export async function fetchJurySeats(): Promise<JurySeat[]> {
+  const body = await request<Envelope<JurySeat[]>>("jury/competitions");
+  return body.data;
+}
+
+/**
+ * The festivals this account judges — a judge's way back into the platform.
+ *
+ * Answers with an empty list for somebody who sits on no panel, which is what every
+ * screen that offers the section keys off: not being a judge is not an error.
+ */
+export function useJurySeats(): UseQueryResult<JurySeat[], ApiError> {
+  return useQuery<JurySeat[], ApiError>({
+    queryKey: judgingKeys.seats(),
+    queryFn: () => fetchJurySeats(),
+    // A seat is granted by an organizer, not by anything this tab did; re-asking on
+    // every mount puts a request behind every navigation for an answer that changes
+    // once a season.
+    staleTime: 5 * 60_000,
+  });
+}
 
 export async function fetchJuryTasks(competitionId: string): Promise<JuryTask[]> {
   const params = new URLSearchParams({ competitionId });

@@ -10,12 +10,14 @@ from __future__ import annotations
 from django.urls import path
 
 from .views import (
+    ProgramArrangeUndoView,
     ProgramArrangeView,
     ProgramCandidatesView,
     ProgramCollectionView,
     ProgramColumnCollectionView,
     ProgramColumnDetailView,
     ProgramDetailView,
+    ProgramExportSpreadsheetView,
     ProgramExportView,
     ProgramItemCellsView,
     ProgramItemCollectionView,
@@ -40,6 +42,7 @@ urlpatterns = [
     path("staff/programs/<str:program_id>/items", ProgramItemCollectionView.as_view(), name="items"),
     path("staff/programs/<str:program_id>/items/fill", ProgramItemsFillView.as_view(), name="items-fill"),
     path("staff/programs/<str:program_id>/items/arrange", ProgramArrangeView.as_view(), name="items-arrange"),
+    path("staff/programs/<str:program_id>/items/arrange/undo", ProgramArrangeUndoView.as_view(), name="items-arrange-undo"),
     path("staff/programs/<str:program_id>/items/order", ProgramItemOrderView.as_view(), name="items-order"),
     path("staff/programs/<str:program_id>/items/numbers", ProgramItemNumbersView.as_view(), name="items-numbers"),
     path("staff/programs/<str:program_id>/items/<str:item_id>", ProgramItemDetailView.as_view(), name="item-detail"),
@@ -48,6 +51,7 @@ urlpatterns = [
     path("staff/programs/<str:program_id>/columns/<str:column_id>", ProgramColumnDetailView.as_view(), name="column-detail"),
     path("staff/programs/<str:program_id>/progress", ProgramProgressView.as_view(), name="progress"),
     path("staff/programs/<str:program_id>/export.pdf", ProgramExportView.as_view(), name="export-pdf"),
+    path("staff/programs/<str:program_id>/export.xlsx", ProgramExportSpreadsheetView.as_view(), name="export-xlsx"),
     path("staff/programs/<str:program_id>/music.zip", ProgramMusicArchiveView.as_view(), name="music-archive"),
     path("staff/programs/<str:program_id>/media.zip", ProgramMediaArchiveView.as_view(), name="media-archive"),
     path("staff/programs/<str:program_id>/shares", ProgramShareCollectionView.as_view(), name="shares"),

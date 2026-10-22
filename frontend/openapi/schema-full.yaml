@@ -1676,6 +1676,125 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Business rule violation.
+  /api/v1/competitions/{id}/categories/{category_id}/editing-lock:
+    post:
+      operationId: lockSubmissionEditing
+      description: |-
+        Freeze (POST) or release (DELETE) what applicants may change in one genre.
+
+        Beside this nomination's registration controls, and scheduled per nomination
+        for the same reason they are: a festival finishes its genres one at a time, and
+        the genre being turned into a programme on Saturday must be able to freeze
+        without closing the one still taking entries.
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
+    delete:
+      operationId: unlockSubmissionEditing
+      description: |-
+        Freeze (POST) or release (DELETE) what applicants may change in one genre.
+
+        Beside this nomination's registration controls, and scheduled per nomination
+        for the same reason they are: a festival finishes its genres one at a time, and
+        the genre being turned into a programme on Saturday must be able to freeze
+        without closing the one still taking entries.
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competitions
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Validation failed.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Not organization staff.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Competition or element not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Lifecycle or configuration conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitionProblemDetail'
+          description: Business rule violation.
   /api/v1/competitions/{id}/categories/{category_id}/registration:
     put:
       operationId: scheduleNominationRegistration
@@ -4935,6 +5054,49 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Competition or element not found.
+  /api/v1/jury/competitions:
+    get:
+      operationId: juryCompetitions
+      description: |-
+        ``GET /api/v1/jury/competitions`` — the festivals this account judges.
+
+        The judge's entry point, and the reason it exists at all: the organizer's festival
+        list is staff-only, so without this a panel member who closed the tab has no way of
+        finding the thing they were invited to. Answers with an empty list rather than a
+        403 for somebody who is on no panel — not being a judge is not an error.
+      tags:
+      - Jury
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JurySeatListEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
   /api/v1/jury/invitations/{token}/accept:
     post:
       operationId: juryInvitationAccept
@@ -6973,6 +7135,42 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/staff/applications/{submission_id}/attachments:
+    post:
+      operationId: staff_applications_attachments_create
+      description: '``POST staff/applications/{submission_id}/attachments`` — attach
+        a file.'
+      parameters:
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - staff
+      responses:
+        '200':
+          description: No response body
+  /api/v1/staff/applications/{submission_id}/attachments/{attachment_id}:
+    delete:
+      operationId: staff_applications_attachments_destroy
+      description: '``DELETE staff/applications/{submission_id}/attachments/{attachment_id}``.'
+      parameters:
+      - in: path
+        name: attachment_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: submission_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - staff
+      responses:
+        '204':
+          description: No response body
   /api/v1/staff/applications/{submission_id}/content:
     put:
       operationId: staff_applications_content_update
@@ -7954,17 +8152,21 @@ paths:
     post:
       operationId: diplomas_generate_documents
       description: |-
-        Generate non-registry documents (thank-you letters) for chosen nominations.
+        Start generating non-registry documents (thank-you letters) for chosen genres.
 
-        Each nomination is generated from its own assigned template of that kind, so
+        Each genre is generated from its own assigned template of that kind, so
         «Вокал» may print a blue thank-you while «Хореография» prints a gold one.
         Diplomas are not generated here — they keep the numbered print-package path,
         which this endpoint does not touch.
 
-        Synchronous: there is no numbering to serialize, so the run completes in the
-        request. ``publish`` and ``bundle`` are independent: a run can publish the
-        documents to the participants' cabinets, hand back a ZIP to print from, or —
-        for a print-only run — generate them without publishing anything yet.
+        Asynchronous, like the print package and for the same reason: the run renders
+        a PDF per recipient and uploads a ZIP, which outlasts any connection between
+        the organizer and the worker. The response is the job; poll it at
+        ``/staff/diplomas/documents/jobs/<id>`` until it completes.
+
+        ``publish`` and ``bundle`` are independent: a run can publish the documents to
+        the participants' cabinets, hand back a ZIP to print from, or — for a
+        print-only run — generate them without publishing anything yet.
       tags:
       - Diplomas
       requestBody:
@@ -7980,11 +8182,30 @@ paths:
               $ref: '#/components/schemas/GenerateDocumentsRequest'
         required: true
       responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentJobResponse'
+          description: ''
+  /api/v1/staff/diplomas/documents/jobs/{job_id}:
+    get:
+      operationId: diplomas_get_document_job
+      description: Poll a document-generation job's status and result.
+      parameters:
+      - in: path
+        name: job_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Diplomas
+      responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GenerateDocumentsResponse'
+                $ref: '#/components/schemas/DocumentJobResponse'
           description: ''
   /api/v1/staff/diplomas/fonts:
     get:
@@ -9037,6 +9258,55 @@ paths:
               schema:
                 $ref: '#/components/schemas/JudgingProblemDetail'
           description: Unprocessable.
+  /api/v1/staff/judging/running-order:
+    get:
+      operationId: judgingRunningOrder
+      description: |-
+        ``GET /api/v1/staff/judging/running-order`` — the host's screen, in programme order.
+
+        Separate from the tally for the reason the service spells out: a tally is sorted
+        by score and a programme is not. The host announcing number 14 needs it where 14
+        sits, not wherever its marks have put it.
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+        description: The competition being judged.
+        required: true
+      tags:
+      - Judging
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunningOrderEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
   /api/v1/staff/judging/scoring:
     get:
       operationId: scoringStates
@@ -9390,9 +9660,24 @@ paths:
         required: true
       tags:
       - Judging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TallyApplyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TallyApplyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TallyApplyRequest'
       responses:
         '200':
-          description: How many protocol rows were changed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TallyApplicationEnvelope'
+          description: ''
         '400':
           content:
             application/json:
@@ -10105,6 +10390,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProgramProblemDetail'
           description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/export.xlsx:
+    get:
+      operationId: programsExportXlsx
+      description: |-
+        ``GET`` the programme as one continuous .xlsx sheet of the chosen columns.
+
+        The PDF's sibling, and deliberately not a prettier version of it: a printed table
+        is laid out for a hall, while a spreadsheet is what the programme is *worked* in —
+        sorted, filtered, pasted into somebody else's template, sent to the sound desk with
+        a column added. So it is written flat: every row of the running order in order,
+        breaks and blocks included as the rows they are, with nothing merged, repeated or
+        split into sections. A grouped sheet looks tidier and sorts into nonsense.
+
+        Columns arrive the same way as the PDF's, so the two exports are one decision taken
+        twice rather than two settings to keep in step.
+      parameters:
+      - in: query
+        name: columns
+        schema:
+          type: string
+        description: Comma-separated column keys (built-in names or custom:<uuid>),
+          written left to right in the order given. Omit for all.
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
+      responses:
+        '200':
+          description: An .xlsx of the running order, one row per slot.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
   /api/v1/staff/programs/{program_id}/items:
     post:
       operationId: programsAddItem
@@ -10351,6 +10692,49 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/ArrangeProgramRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramProblemDetail'
+          description: Unprocessable.
+  /api/v1/staff/programs/{program_id}/items/arrange/undo:
+    post:
+      operationId: programsUndoArrange
+      description: '``POST`` to put back the running order the last rebuild replaced.'
+      parameters:
+      - in: path
+        name: program_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Program
       responses:
         '200':
           content:
@@ -13645,7 +14029,8 @@ components:
       - categoryIds
     AssignmentResponse:
       type: object
-      description: A template assignment (competition + nomination + kind -> template).
+      description: A template assignment (competition + genre [+ nomination] + kind
+        -> template).
       properties:
         id:
           type: string
@@ -13661,6 +14046,15 @@ components:
           type: string
           format: uuid
         nomination:
+          type:
+          - string
+          - 'null'
+        disciplineId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        discipline:
           type:
           - string
           - 'null'
@@ -13682,6 +14076,8 @@ components:
       - competition
       - competitionId
       - createdAt
+      - discipline
+      - disciplineId
       - documentType
       - id
       - nomination
@@ -14332,12 +14728,17 @@ components:
     CreateAssignmentRequest:
       type: object
       description: |-
-        Body for assigning one template to one or more nominations.
+        Body for assigning one template to genres and/or single nominations.
 
-        Which slot of each nomination the assignment fills is derived from the
-        template's own ``type``, so a mismatch is not expressible. ``categoryIds`` is a
-        list because a competition's nominations usually share a design; a single
-        nomination is a list of one.
+        Which slot the assignment fills is derived from the template's own ``type``, so
+        a mismatch is not expressible. Both id lists are lists because a competition's
+        genres usually share a design; a single one is a list of one.
+
+        ``categoryIds`` files the template as a genre's default. ``disciplineIds`` files
+        it against single nominations, which print on it instead of their genre's
+        default — that is how a festival whose nominations are judged by different
+        juries gives each the sheet its jury signs. At least one of the two must be
+        non-empty; a request naming neither assigns nothing.
       properties:
         competitionId:
           type: string
@@ -14347,11 +14748,15 @@ components:
           items:
             type: string
             format: uuid
+        disciplineIds:
+          type: array
+          items:
+            type: string
+            format: uuid
         templateId:
           type: string
           format: uuid
       required:
-      - categoryIds
       - competitionId
       - templateId
     CreateBallotRequest:
@@ -14947,9 +15352,67 @@ components:
           type: string
       required:
       - requestId
+    DocumentJobResponse:
+      type: object
+      description: |-
+        A document-generation job's status and result (poll until COMPLETED/FAILED).
+
+        ``result`` is the run's own summary, carried whole: a client that already knew
+        how to read a finished run reads the same object, only later. It is null while
+        the job is pending or running, and stays null on a failure — where ``error``
+        says what went wrong instead.
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        competitionId:
+          type: string
+          format: uuid
+        categoryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        documentType:
+          $ref: '#/components/schemas/GeneratedDocumentTypeEnum'
+        force:
+          type: boolean
+        bundle:
+          type: boolean
+        publish:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/Status54aEnum'
+        result:
+          oneOf:
+          - $ref: '#/components/schemas/GenerateDocumentsResponse'
+          - type: 'null'
+        error:
+          type:
+          - string
+          - 'null'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - bundle
+      - categoryIds
+      - competitionId
+      - createdAt
+      - documentType
+      - error
+      - force
+      - jobId
+      - publish
+      - result
+      - status
+      - updatedAt
     DocumentSlot:
       type: object
-      description: One nomination's readiness and forecast for a single document type.
+      description: One genre's readiness and forecast for a single document type.
       properties:
         templateId:
           type:
@@ -14968,13 +15431,21 @@ components:
           type: integer
         withoutRecipient:
           type: integer
+        withoutTemplate:
+          type: integer
+        disciplines:
+          type: array
+          items:
+            $ref: '#/components/schemas/SlotDiscipline'
       required:
+      - disciplines
       - existing
       - ready
       - templateId
       - templateName
       - willCreate
       - withoutRecipient
+      - withoutTemplate
     DocumentTypeEnum:
       enum:
       - DIPLOMA
@@ -15190,7 +15661,7 @@ components:
             type: string
             format: uuid
         documentType:
-          $ref: '#/components/schemas/GenerateDocumentsRequestDocumentTypeEnum'
+          $ref: '#/components/schemas/GeneratedDocumentTypeEnum'
         force:
           type: boolean
           default: false
@@ -15204,11 +15675,6 @@ components:
       - categoryIds
       - competitionId
       - documentType
-    GenerateDocumentsRequestDocumentTypeEnum:
-      enum:
-      - THANK_YOU
-      type: string
-      description: '* `THANK_YOU` - THANK_YOU'
     GenerateDocumentsResponse:
       type: object
       description: |-
@@ -15224,6 +15690,8 @@ components:
         regenerated:
           type: integer
         withoutRecipient:
+          type: integer
+        withoutTemplate:
           type: integer
         nominations:
           type: integer
@@ -15243,7 +15711,13 @@ components:
       - published
       - regenerated
       - withoutRecipient
+      - withoutTemplate
       - zipUrl
+    GeneratedDocumentTypeEnum:
+      enum:
+      - THANK_YOU
+      type: string
+      description: '* `THANK_YOU` - THANK_YOU'
     GenerationRunResponse:
       type: object
       description: |-
@@ -15525,6 +15999,19 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/_JuryMember'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
+    JurySeatListEnvelope:
+      type: object
+      description: The festivals this account judges — the judge's own way back in.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/_JurySeat'
         meta:
           $ref: '#/components/schemas/_Meta'
       required:
@@ -17332,7 +17819,7 @@ components:
         force:
           type: boolean
         status:
-          $ref: '#/components/schemas/PrintJobResponseStatusEnum'
+          $ref: '#/components/schemas/Status54aEnum'
         created:
           type: integer
         skipped:
@@ -17363,25 +17850,13 @@ components:
       - status
       - updatedAt
       - zipUrl
-    PrintJobResponseStatusEnum:
-      enum:
-      - PENDING
-      - RUNNING
-      - COMPLETED
-      - FAILED
-      type: string
-      description: |-
-        * `PENDING` - PENDING
-        * `RUNNING` - RUNNING
-        * `COMPLETED` - COMPLETED
-        * `FAILED` - FAILED
     PrintPackageNomination:
       type: object
       description: |-
-        One nomination's stats, with a slot per document type.
+        One genre's stats, with a slot per document type.
 
-        Readiness is per type because assignment is: a nomination can be ready to
-        print diplomas and have no thank-you template at all.
+        Readiness is per type because assignment is: a genre can be ready to print
+        diplomas and have no thank-you template at all.
       properties:
         categoryId:
           type: string
@@ -17597,6 +18072,8 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ArrangementResource'
           - type: 'null'
+        canUndoArrange:
+          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -17609,6 +18086,7 @@ components:
       - arrangement
       - availableColumns
       - bufferSeconds
+      - canUndoArrange
       - competitionId
       - createdAt
       - endsAt
@@ -17646,10 +18124,6 @@ components:
           - string
           - 'null'
           format: uuid
-        leadParticipant:
-          type:
-          - string
-          - 'null'
         participants:
           type: array
           items:
@@ -17709,7 +18183,6 @@ components:
       - durationSeconds
       - id
       - kind
-      - leadParticipant
       - missingPerformance
       - nomination
       - number
@@ -18132,10 +18605,6 @@ components:
           type:
           - string
           - 'null'
-        leadParticipant:
-          type:
-          - string
-          - 'null'
         participants:
           type: array
           items:
@@ -18176,7 +18645,6 @@ components:
       - awardLabel
       - discipline
       - id
-      - leadParticipant
       - missingPerformance
       - nomination
       - number
@@ -19068,8 +19536,6 @@ components:
           type: string
         intro:
           type: string
-        organizationName:
-          type: string
         accepting:
           type: boolean
         festivals:
@@ -19080,7 +19546,6 @@ components:
       - accepting
       - festivals
       - intro
-      - organizationName
       - slug
       - title
     PublicProgram:
@@ -19328,6 +19793,12 @@ components:
           type: boolean
         participantCommentEnabled:
           type: boolean
+        musicUploadOpen:
+          type: boolean
+        mediaUploadOpen:
+          type: boolean
+        documentUploadOpen:
+          type: boolean
         deadlines:
           $ref: '#/components/schemas/RegistrationDeadlines'
         nominations:
@@ -19375,6 +19846,9 @@ components:
       - competition
       - deadlines
       - disciplines
+      - documentUploadOpen
+      - mediaUploadOpen
+      - musicUploadOpen
       - nominations
       - participantCommentEnabled
       - participantGroups
@@ -19596,8 +20070,11 @@ components:
           - string
           - 'null'
           format: date-time
+        editingLocked:
+          type: boolean
       required:
       - description
+      - editingLocked
       - heldAt
       - id
       - name
@@ -19935,6 +20412,19 @@ components:
         * `CONTENT_MANAGER` - CONTENT_MANAGER
         * `MODERATOR` - MODERATOR
         * `SUPPORT` - SUPPORT
+    RunningOrderEnvelope:
+      type: object
+      description: The programme in programme order — the host's screen.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/_RunningOrderEntry'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
     SaveLayoutRequest:
       type: object
       description: 'Whole-layout save: the full list of fields, persisted atomically.'
@@ -20232,6 +20722,30 @@ components:
           $ref: '#/components/schemas/ProgressEnum'
       required:
       - progress
+    SlotDiscipline:
+      type: object
+      description: One nomination that prints this kind on a template of its own.
+      properties:
+        disciplineId:
+          type: string
+          format: uuid
+        discipline:
+          type:
+          - string
+          - 'null'
+        templateId:
+          type: string
+          format: uuid
+        templateName:
+          type: string
+        ready:
+          type: boolean
+      required:
+      - discipline
+      - disciplineId
+      - ready
+      - templateId
+      - templateName
     SourceEnum:
       enum:
       - BUNDLED
@@ -20373,6 +20887,18 @@ components:
         force:
           type: boolean
           default: false
+    Status54aEnum:
+      enum:
+      - PENDING
+      - RUNNING
+      - COMPLETED
+      - FAILED
+      type: string
+      description: |-
+        * `PENDING` - PENDING
+        * `RUNNING` - RUNNING
+        * `COMPLETED` - COMPLETED
+        * `FAILED` - FAILED
     StatusEe1Enum:
       enum:
       - DRAFT
@@ -20658,6 +21184,24 @@ components:
           type:
           - string
           - 'null'
+    TallyApplicationEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/_TallyApplication'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
+    TallyApplyRequest:
+      type: object
+      description: '``createMissing`` opens a protocol for a genre that has none,
+        from the programme.'
+      properties:
+        createMissing:
+          type: boolean
+          default: false
     TallyEnvelope:
       type: object
       properties:
@@ -21580,8 +22124,14 @@ components:
           - string
           - 'null'
           format: date-time
+        editingLockedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
       required:
       - description
+      - editingLockedAt
       - heldAt
       - id
       - name
@@ -22386,6 +22936,50 @@ components:
       - sortOrder
       - status
       - title
+    _JurySeat:
+      type: object
+      properties:
+        competitionId:
+          type: string
+        title:
+          type: string
+        onlineJudging:
+          type: boolean
+        isChair:
+          type: boolean
+        categoryNames:
+          type: array
+          items:
+            type: string
+        startsOn:
+          type:
+          - string
+          - 'null'
+          format: date
+        endsOn:
+          type:
+          - string
+          - 'null'
+          format: date
+        venue:
+          type:
+          - string
+          - 'null'
+        pendingCount:
+          type: integer
+        hasOpenAct:
+          type: boolean
+      required:
+      - categoryNames
+      - competitionId
+      - endsOn
+      - hasOpenAct
+      - isChair
+      - onlineJudging
+      - pendingCount
+      - startsOn
+      - title
+      - venue
     _JuryTask:
       type: object
       properties:
@@ -23464,6 +24058,58 @@ components:
       - publicationDate
       - title
       - version
+    _RunningOrderEntry:
+      type: object
+      properties:
+        submissionId:
+          type: string
+        number:
+          type: integer
+        title:
+          type: string
+        categoryName:
+          type:
+          - string
+          - 'null'
+        disciplineName:
+          type:
+          - string
+          - 'null'
+        ageCategoryName:
+          type:
+          - string
+          - 'null'
+        organization:
+          type:
+          - string
+          - 'null'
+        status:
+          type: string
+        submittedCount:
+          type: integer
+        expectedJudges:
+          type: integer
+        score:
+          type:
+          - string
+          - 'null'
+        awardLabel:
+          type:
+          - string
+          - 'null'
+      required:
+      - ageCategoryName
+      - awardLabel
+      - categoryName
+      - disciplineName
+      - expectedJudges
+      - number
+      - organization
+      - score
+      - status
+      - submissionId
+      - submittedCount
+      - title
     _SchedulePosition:
       type: object
       properties:
@@ -23705,6 +24351,11 @@ components:
           type: string
         nomination:
           type: string
+        nominationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
         discipline:
           type: string
         status:
@@ -23721,6 +24372,7 @@ components:
       - currency
       - discipline
       - nomination
+      - nominationId
       - participantDisplayName
       - performanceTitle
       - priceAmount
@@ -23835,6 +24487,21 @@ components:
           type:
           - string
           - 'null'
+    _TallyApplication:
+      type: object
+      properties:
+        rowsChanged:
+          type: integer
+        protocolsCreated:
+          type: integer
+        missingProtocols:
+          type: array
+          items:
+            type: string
+      required:
+      - missingProtocols
+      - protocolsCreated
+      - rowsChanged
     _TallyGroup:
       type: object
       properties:

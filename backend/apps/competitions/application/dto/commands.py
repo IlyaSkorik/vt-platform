@@ -33,6 +33,7 @@ __all__ = [
     "EnableAdditionalServiceCommand",
     "EnableNominationWaitlistCommand",
     "HideInformationBlockCommand",
+    "LockSubmissionEditingCommand",
     "MakeRegulationCurrentCommand",
     "MarkConfiguredCommand",
     "MarkReadyCommand",
@@ -60,6 +61,7 @@ __all__ = [
     "SetPrimaryContactCommand",
     "StartCompetitionCommand",
     "StopNominationRegistrationCommand",
+    "UnlockSubmissionEditingCommand",
     "UnpublishDocumentCommand",
     "UpdateAdditionalServiceCommand",
     "UpdateAgeCategoryCommand",
@@ -236,6 +238,22 @@ class StopNominationRegistrationCommand:
 
 @dataclass(frozen=True, slots=True)
 class ResumeNominationRegistrationCommand:
+    competition_id: str
+    category_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class LockSubmissionEditingCommand:
+    """Freeze everything applicants may still change in one nomination."""
+
+    competition_id: str
+    category_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class UnlockSubmissionEditingCommand:
+    """Lift one nomination's freeze; its calendar governs again."""
+
     competition_id: str
     category_id: str
 

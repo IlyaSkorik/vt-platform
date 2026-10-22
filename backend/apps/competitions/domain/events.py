@@ -89,6 +89,8 @@ __all__ = [
     "PricingRuleAdded",
     "PricingRuleRemoved",
     "RegulationPublished",
+    "SubmissionEditingLocked",
+    "SubmissionEditingUnlocked",
 ]
 
 
@@ -201,6 +203,26 @@ class NominationRegistrationStopped(DomainEvent):
 @dataclass(frozen=True, slots=True, kw_only=True)
 class NominationRegistrationResumed(DomainEvent):
     """A previously stopped nomination's registration was resumed."""
+
+    category_id: CategoryId
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SubmissionEditingLocked(DomainEvent):
+    """The organizer froze what applicants may still change in one nomination.
+
+    Distinct from that nomination's registration closing, which is about *entering*:
+    this is the end of every change an applicant can make to an entry already in —
+    files included — and it is the only thing that closes the file windows early.
+    """
+
+    category_id: CategoryId
+    locked_at: datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SubmissionEditingUnlocked(DomainEvent):
+    """The organizer lifted one nomination's freeze; its calendar governs again."""
 
     category_id: CategoryId
 

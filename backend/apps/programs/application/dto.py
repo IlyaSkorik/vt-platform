@@ -78,7 +78,6 @@ class ProgramItemView:
     duration_seconds: int
     schedule: SchedulePosition
     submission_id: str | None = None
-    lead_participant: str | None = None
     participants: tuple[str, ...] = ()
     #: How many people stand on stage - a collective's own headcount, not the length of
     #: :attr:`participants`. ``0`` for a block, which puts nobody on stage.
@@ -200,6 +199,10 @@ class ProgramDetailView:
     #: The generation rules this programme carries, or ``None`` if it was only ever
     #: built by hand. What the generator dialog prefills from.
     arrangement: ArrangementView | None
+    #: Whether the last rebuild can still be undone. True only between a rebuild and
+    #: the undo that consumes it, and never for a published programme, whose numbers
+    #: may not move. The one input the «Отменить» button needs.
+    can_undo_arrange: bool
     created_at: datetime
     updated_at: datetime
     version: int

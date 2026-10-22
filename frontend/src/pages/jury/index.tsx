@@ -2,11 +2,11 @@ import { Check, CircleDot, Lock } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
 
-import { useCompetitionsList } from "@/features/competitions";
 import {
   formatScore,
   type JuryTask,
   scoreToNumber,
+  useJurySeats,
   useJuryTasks,
   useSubmitScorecard,
 } from "@/features/judging";
@@ -42,6 +42,11 @@ import {
  * No participant names anywhere: the number, the act, its genre and the studio. That is
  * ADR-0013, and it is kept at the server's boundary rather than here — there is no name
  * in the payload to leak.
+ *
+ * The festival list comes from the judge's own seats, never from the organizer's
+ * festival endpoint — that one is staff-only and answers a jury member with a 403,
+ * which is precisely how this screen used to end up with an empty picker and nothing
+ * to score.
  */
 
 function SheetEditor({
@@ -182,6 +187,14 @@ function SheetEditor({
   );
 }
 
+/** «12 мая» — the one thing that tells two festivals of the same name apart. */
+function formatSeatDate(value: string): string {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime())
+    ? value
+    : parsed.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+}
+
 function TaskCard({
   task,
   competitionId,
@@ -243,17 +256,29 @@ function TaskCard({
 
 export function JuryScoringPage(): React.JSX.Element {
   const { competitionId: routeCompetitionId } = useParams();
-  const [selected, setSelected] = useState(routeCompetitionId ?? "");
+  const [chosen, setChosen] = useState(routeCompetitionId ?? "");
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const competitionsQuery = useCompetitionsList();
+  const seatsQuery = useJurySeats();
+  const seats = useMemo(() => seatsQuery.data ?? [], [seatsQuery.data]);
+
+  // A judge on one panel — which is most of them — never sees a picker. Making them
+  // choose from a list of one is a step between the invitation and the marks that
+  // earns nothing.
+  const selected =
+    chosen !== "" ? chosen : ((seats.length === 1 ? seats[0]?.competitionId : "") ?? "");
   const tasksQuery = useJuryTasks(selected || undefined);
 
   useSeo({ title: "Оценка выступлений", robots: "noindex" });
 
   const options: SelectOption[] = useMemo(
-    () => (competitionsQuery.data ?? []).map((item) => ({ value: item.id, label: item.title })),
-    [competitionsQuery.data],
+    () =>
+      seats.map((item) => ({
+        value: item.competitionId,
+        label:
+          item.startsOn != null ? `${item.title} · ${formatSeatDate(item.startsOn)}` : item.title,
+      })),
+    [seats],
   );
 
   const tasks = tasksQuery.data ?? [];
@@ -284,17 +309,24 @@ export function JuryScoringPage(): React.JSX.Element {
         </p>
       </header>
 
-      {routeCompetitionId == null ? (
+      {routeCompetitionId == null && seats.length > 1 ? (
         <Select
           label="Фестиваль"
           placeholder="Выберите фестиваль"
           options={options}
           value={selected}
-          onValueChange={setSelected}
+          onValueChange={setChosen}
         />
       ) : null}
 
-      {selected === "" ? null : tasksQuery.isLoading ? (
+      {seatsQuery.isLoading ? (
+        <LoadingState label="Загружаем ваши фестивали…" />
+      ) : selected === "" ? (
+        <EmptyState
+          title="Вас пока не пригласили в жюри"
+          description="Приглашение приходит на почту от организатора фестиваля. Примите его по ссылке из письма — после этого фестиваль появится здесь."
+        />
+      ) : tasksQuery.isLoading ? (
         <LoadingState label="Загружаем выступления…" />
       ) : tasksQuery.isError ? (
         <EmptyState

@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  useRegistration,
   useRemoveSubmissionAttachment,
   useSubmissionDetail,
   useUploadSubmissionAttachment,
@@ -13,7 +14,9 @@ import type {
 
 import { BenefitDocumentsCard } from "./benefit-documents-card";
 
-vi.mock("@/entities/application", () => ({
+vi.mock("@/entities/application", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/entities/application")>()),
+  useRegistration: vi.fn(),
   useSubmissionDetail: vi.fn(),
   useUploadSubmissionAttachment: vi.fn(),
   useRemoveSubmissionAttachment: vi.fn(),
@@ -43,6 +46,14 @@ function anAttachment(type: string, caption: string | null) {
 }
 
 beforeEach(() => {
+  vi.mocked(useRegistration).mockReturnValue({
+    data: {
+      editingLocked: false,
+      musicUploadOpen: true,
+      mediaUploadOpen: true,
+      documentUploadOpen: true,
+    },
+  } as unknown as ReturnType<typeof useRegistration>);
   vi.mocked(useUploadSubmissionAttachment).mockReturnValue({
     mutate: vi.fn(),
     isPending: false,

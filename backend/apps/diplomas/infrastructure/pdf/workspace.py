@@ -24,7 +24,7 @@ from urllib.parse import unquote
 
 from django.conf import settings
 from django.core.files.base import ContentFile, File
-from django.core.files.storage import default_storage
+from django.core.files.storage import Storage, default_storage, storages
 from django.utils.text import slugify
 
 from apps.diplomas.application.interfaces import TemplateAssets
@@ -46,6 +46,15 @@ _ARCHIVE_SPOOL_BYTES = 4 * 1024 * 1024
 
 #: Read size when copying one document into the archive.
 _COPY_CHUNK_BYTES = 256 * 1024
+
+#: Moves both archive keys when it is bumped, and nothing else.
+#:
+#: The headers are fixed from now on, but a browser that already cached the old archive
+#: URL under the year-long ``immutable`` was told it never has to ask again, and it will
+#: not — the fix cannot reach it. A different key is a different URL, which is the only
+#: thing that does. One orphaned archive per competition stays behind at the old key;
+#: bump this only when there is a reason as good as that one.
+_ARCHIVE_KEY_SALT = "2"
 
 
 def storage_key_of(reference: str) -> str:
@@ -80,6 +89,23 @@ def _reference_base() -> str:
 def _reference(key: str) -> str:
     """The URL a stored file is reachable at - whatever the configured storage says."""
     return default_storage.url(key)
+
+
+def _replaceable() -> Storage:
+    """The storage to write a key that will be written again through.
+
+    Same bucket, same keys, same URLs - it differs only in the ``Cache-Control`` it
+    puts on the object. Everything written here is written *back* sooner or later: a
+    corrected protocol re-renders a diploma onto its own key, and every print run
+    replaces the competition's archive. The default storage promises a year of
+    ``immutable`` for those URLs, which is exactly how a browser answers the next
+    download out of its own disk cache - reproducibly in Opera, and sooner or later
+    everywhere - and hands the organizer the archive from the previous run.
+
+    Reading, deleting and minting a URL still go through ``default_storage``: the two
+    instances address the same objects, and only the write carries the header.
+    """
+    return storages["replaceable"]
 
 
 def _unguessable(*parts: str) -> str:
@@ -145,7 +171,7 @@ class DjangoPrintPackageWorkspace:
         key = f"diplomas/print/{competition_id}/{token}/{number}.pdf"
         if default_storage.exists(key):
             default_storage.delete(key)
-        default_storage.save(key, ContentFile(data))
+        _replaceable().save(key, ContentFile(data))
         return _reference(key)
 
     def store_official_pdf(self, *, competition_id: uuid.UUID, number: str, data: bytes) -> str:
@@ -160,7 +186,7 @@ class DjangoPrintPackageWorkspace:
             # Re-rendered by a corrected protocol: the participant's URL must not change,
             # so the object behind it is replaced in place.
             default_storage.delete(key)
-        default_storage.save(key, ContentFile(data))
+        _replaceable().save(key, ContentFile(data))
         return _reference(key)
 
     def store_document_pdf(
@@ -186,13 +212,17 @@ class DjangoPrintPackageWorkspace:
         key = f"diplomas/documents/{competition_id}/{document_type.lower()}/{token}/{submission_id}{suffix}.pdf"
         if default_storage.exists(key):
             default_storage.delete(key)
-        default_storage.save(key, ContentFile(data))
+        _replaceable().save(key, ContentFile(data))
         return _reference(key)
 
     def store_zip(self, *, competition_id: uuid.UUID, items: list[tuple[str, str]], extras: Sequence[tuple[str, bytes]] = ()) -> str:
         # The archive is the whole set in one file, so it is the most valuable object in
         # the bucket and gets the same unguessable token as the diplomas inside it.
-        token = _unguessable("print-zip", str(competition_id))
+        #
+        # ``_ARCHIVE_KEY_SALT`` is what moves the archive off the URL browsers were told
+        # to keep for a year — see its comment. Only the token changes; the path around
+        # it reads the same.
+        token = _unguessable("print-zip", _ARCHIVE_KEY_SALT, str(competition_id))
         return self._store_archive(key=f"diplomas/print/{competition_id}/{token}/Diplomas.zip", items=items, extras=extras)
 
     def store_documents_zip(self, *, competition_id: uuid.UUID, document_type: str, items: list[tuple[str, str]]) -> str:
@@ -202,7 +232,7 @@ class DjangoPrintPackageWorkspace:
         # nor with another kind's bundle.
         kind = document_type.lower()
         filename = "".join(part.capitalize() for part in document_type.split("_"))
-        token = _unguessable("documents-zip", str(competition_id), kind)
+        token = _unguessable("documents-zip", _ARCHIVE_KEY_SALT, str(competition_id), kind)
         return self._store_archive(key=f"diplomas/documents/{competition_id}/{kind}/{token}/{filename}.zip", items=items)
 
     @staticmethod
@@ -236,5 +266,5 @@ class DjangoPrintPackageWorkspace:
                 default_storage.delete(key)
             # A file object rather than bytes: the storage reads it in chunks, so the
             # archive is never resident in full - locally or on the way to a bucket.
-            default_storage.save(key, File(spool, name=PurePosixPath(key).name))
+            _replaceable().save(key, File(spool, name=PurePosixPath(key).name))
         return _reference(key)

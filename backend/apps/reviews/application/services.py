@@ -185,7 +185,6 @@ class ReviewService:
             slug=page.slug.value,
             title=page.title.value,
             intro=page.intro.value,
-            organization_name=self._organizations.name_of(page.organization_id) or "",
             accepting=page.accepting,
             festivals=tuple(
                 FestivalOption(id=str(festival.id), title=festival.title) for festival in self._festivals.festivals_of(page.organization_id)

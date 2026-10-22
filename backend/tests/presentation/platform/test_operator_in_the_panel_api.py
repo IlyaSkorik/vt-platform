@@ -17,7 +17,10 @@ import uuid
 import pytest
 from rest_framework.test import APIClient
 
+from apps.applications.infrastructure.models.base import uuid7
+from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.competitions.infrastructure.models import CompetitionModel
+from apps.competitions.infrastructure.models.taxonomy import CategoryModel
 from apps.identity.presentation.api.v1.auth import composition as identity_composition
 from apps.organization.application.dto.commands import ProvisionOwnerCommand
 from apps.organization.application.handlers import SetOrganizationModulesCommand
@@ -212,3 +215,73 @@ class TestInsideThePanelTheModulesAreTheOrganizationsOwn:
         )
 
         assert operator.acting_inside(organization_id).get(_COMPETITIONS).status_code == 200
+
+
+class TestTheWorkingCardOpensForTheOperatorToo:
+    """«Обработка заявок» показывала оператору очередь — и пустую рабочую карточку.
+
+    Очередь ограничивается на краю, и туда оператора внутри панели пускали. А
+    каждое чтение выбранной заявки шло через проверку «может ли этот человек
+    рассматривать заявки», и она спрашивала про активное членство в штате, которого
+    у оператора нет и быть не должно. Отказ выглядел на экране как «выберите заявку
+    из очереди» — над заявкой, уже выбранной.
+    """
+
+    _WORKSPACE = "/api/v1/staff/applications/workspace"
+
+    def _an_entry_in(self, organization_id: str) -> str:
+        competition = CompetitionModel.objects.create(
+            organizer_id=uuid.UUID(organization_id),
+            status="PUBLISHED",
+            title="Созвездие — сезон",
+            season="2025/2026",
+        )
+        nomination = CategoryModel.objects.create(competition=competition, name="Вокал")
+        submission = SubmissionModel.objects.create(
+            competition_id=competition.id,
+            applicant_id=uuid7(),
+            status="SUBMITTED",
+            performance={
+                "title": "Лебединое озеро",
+                "duration_seconds": 210,
+                "nomination_id": str(nomination.id),
+                "discipline_id": str(uuid7()),
+                "age_category_id": str(uuid7()),
+                "participant_group_id": str(uuid7()),
+                "participation_format_id": str(uuid7()),
+                "comment": "",
+                "age_composition": "",
+            },
+            participants=[{"id": str(uuid7()), "display_name": "Иванова Анна", "member_count": 1}],
+            teachers=[],
+        )
+        return str(submission.id)
+
+    def test_the_card_is_filled_in_for_the_selected_entry(self, operator: _Client, second_organization: tuple[_Client, str]) -> None:
+        _, organization_id = second_organization
+        submission_id = self._an_entry_in(organization_id)
+
+        response = operator.acting_inside(organization_id).get(f"{self._WORKSPACE}?selected={submission_id}")
+
+        assert response.status_code == 200
+        detail = response.data["data"]["detail"]
+        assert detail is not None, "рабочая карточка пуста: заявка выбрана, а читать её не дали"
+        assert detail["id"] == submission_id
+        assert detail["performance"] == "Лебединое озеро"
+
+    def test_the_organizer_of_that_panel_still_sees_the_same_card(self, second_organization: tuple[_Client, str]) -> None:
+        """Контрольный: ручка не сломана для того, для кого она и писалась."""
+        client, organization_id = second_organization
+        submission_id = self._an_entry_in(organization_id)
+
+        detail = client.get(f"{self._WORKSPACE}?selected={submission_id}").data["data"]["detail"]
+
+        assert detail is not None
+        assert detail["id"] == submission_id
+
+    def test_an_operator_who_named_no_organization_is_still_refused(self, operator: _Client, second_organization: tuple[_Client, str]) -> None:
+        """Шире доступ не стал: внутрь пускает заголовок, а не платформенный доступ."""
+        _, organization_id = second_organization
+        submission_id = self._an_entry_in(organization_id)
+
+        assert operator.stepping_out().get(f"{self._WORKSPACE}?selected={submission_id}").status_code == 403

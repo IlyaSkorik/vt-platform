@@ -170,7 +170,22 @@ class DjangoCompetitionCatalog:
             # A benefit certificate is paperwork like any other document, so it
             # rides the competition's document-upload deadline.
             return competition.is_document_upload_allowed(now)
-        return competition.is_application_allowed(now)
+        # Video and photographs. They used to fall through to the *application*
+        # deadline, which closed the material of the act together with the door to the
+        # festival — an entry accepted on the last day could no longer have its video
+        # replaced. They ride the upload window now, like the track they go with.
+        return competition.is_media_upload_allowed(now)
+
+    def is_editing_locked(self, *, competition_id: CompetitionId, nomination_id: NominationId | None) -> bool:
+        # An unreadable competition is not a frozen one: the use case asking this has
+        # already refused an unknown competition on its own terms, and answering
+        # "locked" here would turn a missing row into a message about the organizer
+        # having closed something. An entry with no genre yet is not in a frozen one
+        # either — the freeze is a genre's, and this entry is in none.
+        if nomination_id is None:
+            return False
+        competition = self._load(competition_id)
+        return competition is not None and competition.is_editing_locked_for(CompCategoryId.from_uuid(nomination_id.value))
 
     def participation_policy(
         self,

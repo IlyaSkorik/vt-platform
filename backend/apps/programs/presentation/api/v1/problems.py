@@ -45,6 +45,10 @@ _PROBLEM_MAP: Final[dict[str, tuple[int, str, str]]] = {
     "performance_not_available": (422, "unprocessable-entity", "This act cannot be scheduled"),
     "program_conflict": (409, "conflict", "The program changed while you were editing it"),
     "program_numbers_frozen": (409, "conflict", "A published program cannot be regenerated"),
+    # The restore point was consumed - most likely by another window, or by a reload
+    # after the undo. A conflict rather than a 404: the program is there, its undo is not.
+    "program_no_restore_point": (409, "conflict", "There is no rebuild left to undo"),
+    "program_has_shares": (409, "conflict", "A published program cannot be deleted"),
     "reorder_mismatch": (422, "unprocessable-entity", "A reorder must list every item exactly once"),
     "slug_unavailable": (503, "service-unavailable", "Could not mint a public link"),
 }
@@ -69,6 +73,8 @@ _RU_DETAIL: Final[dict[str, str]] = {
     "performance_not_available": "Это выступление нельзя поставить в программу.",
     "program_conflict": "Программа изменилась в другом окне — обновите страницу, чтобы не потерять чужие правки.",
     "program_numbers_frozen": "Программа уже опубликована — номера закреплены, пересобрать её нельзя.",
+    "program_no_restore_point": "Отменять нечего: программу не пересобирали, либо отмену уже применили. Обновите страницу.",
+    "program_has_shares": "У программы есть публичные ссылки — сначала отзовите их, потом удаляйте.",
     "reorder_mismatch": "Порядок задан неверно: список должен содержать все строки ровно по одному разу.",
     "slug_unavailable": "Не удалось создать публичную ссылку. Попробуйте ещё раз.",
 }

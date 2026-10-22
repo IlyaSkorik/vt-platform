@@ -21,12 +21,11 @@ describe("allowsFieldType", () => {
     expect(allowsFieldType("THANK_YOU", "member_name")).toBe(false);
   });
 
-  it("limits a thank-you letter to who, who taught them, and where", () => {
+  it("limits a thank-you letter to who is thanked and which event it was", () => {
     const allowed = FIELD_TYPES.filter((field) => allowsFieldType("THANK_YOU", field.id)).map(
       (field) => field.id,
     );
     expect(allowed).toEqual([
-      "participant_name",
       "teacher",
       "competition_name",
       "competition_date",
@@ -43,6 +42,9 @@ describe("allowsFieldType", () => {
     "work",
     "organization",
     "participant_age",
+    // One letter covers every act this teacher entered in the genre, so naming any
+    // one of their participants on it would be an arbitrary pick.
+    "participant_name",
   ] as const)("keeps %s off a thank-you letter", (fieldType) => {
     // Each of these is legitimate on a diploma but meaningless on a courtesy letter,
     // and the backend rejects a layout carrying them.

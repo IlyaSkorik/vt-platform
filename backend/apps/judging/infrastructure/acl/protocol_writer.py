@@ -16,7 +16,10 @@ import uuid
 from collections.abc import Sequence
 from datetime import datetime
 
+from apps.judging.application.interfaces import ProtocolApplication
+from apps.results.application.commands import CreateProtocolCommand
 from apps.results.composition import build_protocol_service
+from apps.results.domain.exceptions import ProtocolError
 
 __all__ = ["ResultsProtocolWriter"]
 
@@ -31,7 +34,8 @@ class ResultsProtocolWriter:
         nomination_id: uuid.UUID,
         awards: Sequence[tuple[uuid.UUID, str | None]],
         now: datetime,
-    ) -> int:
+        create_missing: bool = False,
+    ) -> ProtocolApplication:
         """Write one genre's computed results onto its protocol.
 
         ``now`` is accepted and not forwarded: the Results context stamps its own
@@ -40,8 +44,23 @@ class ResultsProtocolWriter:
         because the port is written for callers, and a caller that has a clock should be
         able to say so.
         """
-        return build_protocol_service().apply_awards_by_submission(
+        service = build_protocol_service()
+        created = False
+        if not service.has_protocol(competition_id=competition_id, nomination_id=nomination_id):
+            if not create_missing:
+                return ProtocolApplication(rows_changed=0, protocol_existed=False)
+            try:
+                service.create_protocol(CreateProtocolCommand(competition_id=str(competition_id), nomination_id=str(nomination_id)))
+            except ProtocolError:
+                # Another organizer opened the same protocol a second earlier, or the
+                # genre has nothing to seed from. Either way the push below answers
+                # truthfully rather than this raising at them.
+                return ProtocolApplication(rows_changed=0, protocol_existed=False)
+            created = True
+
+        changed = service.apply_awards_by_submission(
             competition_id=competition_id,
             nomination_id=nomination_id,
             awards=list(awards),
         )
+        return ProtocolApplication(rows_changed=changed, protocol_existed=True, protocol_created=created)

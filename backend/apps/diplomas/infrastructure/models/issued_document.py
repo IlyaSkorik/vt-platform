@@ -40,6 +40,12 @@ class IssuedDocumentModel(BasePersistenceModel):
     # two teachers on one entry are two letters rather than one overwriting the other.
     recipient = models.CharField(max_length=320, blank=True, default="")
 
+    # The genre the document was issued for. Nullable only for rows written before
+    # the column existed and for whatever could not be backfilled; every new row
+    # carries it. With `recipient` it forms the identity of a per-teacher document —
+    # see the uniqueness constraints below.
+    category_id = models.UUIDField(null=True, blank=True, default=None)
+
     # The frozen dataset the document was rendered from.
     snapshot = models.JSONField(default=dict, blank=True)
 
@@ -60,6 +66,7 @@ class IssuedDocumentModel(BasePersistenceModel):
             models.Index(fields=["competition_id"]),
             models.Index(fields=["submission_id"]),
             models.Index(fields=["document_type"]),
+            models.Index(fields=["competition_id", "category_id"]),
         ]
         constraints = [
             *BasePersistenceModel.Meta.constraints,
@@ -71,6 +78,17 @@ class IssuedDocumentModel(BasePersistenceModel):
                 fields=["submission_id", "document_type", "recipient"],
                 condition=models.Q(deleted_at__isnull=True),
                 name="diplomas_issued_unique_per_recipient",
+            ),
+            # A document addressed to a person is **that person's**, once per genre —
+            # a teacher who entered five acts in one genre is thanked once, not five
+            # times. The constraint above cannot say that: five acts are five
+            # submissions, so it would happily hold five letters. Scoped to a
+            # non-empty recipient so a kind issued once per performance (whose
+            # recipient is empty) is untouched by it.
+            models.UniqueConstraint(
+                fields=["competition_id", "category_id", "document_type", "recipient"],
+                condition=models.Q(deleted_at__isnull=True) & ~models.Q(recipient=""),
+                name="diplomas_issued_unique_recipient_per_category",
             ),
             models.CheckConstraint(
                 condition=models.Q(document_type__in=DocumentTypeChoices.values),

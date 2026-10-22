@@ -7,6 +7,7 @@ from the Applications context rather than from a fixture of this one.
 
 from __future__ import annotations
 
+import io
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -14,6 +15,7 @@ from unittest.mock import patch
 
 import pytest
 from django.core import mail
+from openpyxl import load_workbook
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -225,7 +227,7 @@ class TestBuildingFromANomination:
         item = response.data["data"]["items"][0]
         assert item["kind"] == "PERFORMANCE"
         assert item["title"] == "Катюша"
-        assert item["leadParticipant"] == "Иванов Иван"
+        assert item["participants"] == ["Иванов Иван"]
         assert item["comment"] == "Выход с точки 3"
         assert item["teachers"] == ["Иванова Мария"]
 
@@ -503,7 +505,7 @@ class TestTheProgrammeTable:
 
         item = filled.data["data"]["items"][0]
         assert item["title"] == "Катюша"
-        assert item["leadParticipant"] == "Иванов Иван"
+        assert item["participants"] == ["Иванов Иван"]
         assert item["teachers"] == ["Иванова Мария"]
         assert item["comment"] == "Выход с точки 3"
         # Every taxonomy column the table offers is resolved, not just the ids.
@@ -744,6 +746,58 @@ class TestPdfExport:
 
     def test_the_export_is_staff_only(self, outsider_client: APIClient, scope: tuple[str, str]) -> None:
         assert outsider_client.get(f"{_PROGRAMS}/{uuid.uuid4()}/export.pdf").status_code == 403
+
+
+def _downloaded_rows(response: Any) -> list[list[str]]:
+    """The streamed .xlsx as rows of text — what the recipient sees when they open it."""
+    sheet = load_workbook(io.BytesIO(b"".join(response.streaming_content))).worksheets[0]
+    return [["" if cell.value is None else str(cell.value) for cell in row] for row in sheet.iter_rows()]
+
+
+class TestSpreadsheetExport:
+    """The organizer takes the same table away in the format they keep working in."""
+
+    def _program_with_two_acts(self, staff_client: APIClient, scope: tuple[str, str]) -> str:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Калинка", seconds=200)
+        program_id = str(_create_program(staff_client, scope)["id"])
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+        return program_id
+
+    def test_the_export_is_one_flat_sheet_of_the_running_order(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        program_id = self._program_with_two_acts(staff_client, scope)
+
+        response = staff_client.get(f"{_PROGRAMS}/{program_id}/export.xlsx?columns=POSITION,TITLE")
+        assert response.status_code == 200, response.content[:200]
+        assert "spreadsheetml" in response["Content-Type"]
+        assert "attachment" in response["Content-Disposition"]
+
+        rows = _downloaded_rows(response)
+        # Headings, then one row per slot — in running order, nothing merged or grouped.
+        assert rows[0] == ["№", "Номер"]
+        assert sorted(row[1] for row in rows[1:]) == ["Калинка", "Катюша"]
+
+    def test_every_column_is_exported_when_none_is_chosen(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        program_id = self._program_with_two_acts(staff_client, scope)
+        response = staff_client.get(f"{_PROGRAMS}/{program_id}/export.xlsx")
+        assert response.status_code == 200
+        assert len(_downloaded_rows(response)[0]) > 2
+
+    def test_an_empty_programme_still_exports(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        program_id = _create_program(staff_client, scope)["id"]
+        response = staff_client.get(f"{_PROGRAMS}/{program_id}/export.xlsx?columns=TIME,TITLE")
+        assert response.status_code == 200
+
+    def test_an_unknown_column_is_a_problem_document(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        program_id = self._program_with_two_acts(staff_client, scope)
+        assert staff_client.get(f"{_PROGRAMS}/{program_id}/export.xlsx?columns=NOT_A_COLUMN").status_code == 400
+
+    def test_an_unknown_programme_cannot_be_exported(self, staff_client: APIClient) -> None:
+        assert staff_client.get(f"{_PROGRAMS}/{uuid.uuid4()}/export.xlsx").status_code == 404
+
+    def test_the_export_is_staff_only(self, outsider_client: APIClient, scope: tuple[str, str]) -> None:
+        assert outsider_client.get(f"{_PROGRAMS}/{uuid.uuid4()}/export.xlsx").status_code == 403
 
 
 class TestPublicEditions:
@@ -1067,3 +1121,66 @@ class TestArrangeEndpoint:
         program = _create_program(staff_client, scope)
         response = outsider_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange", {}, format="json")
         assert response.status_code == 403
+
+
+class TestUndoArrangeEndpoint:
+    """«Отменить» — the one step back a regeneration leaves behind (VT-86)."""
+
+    def test_the_previous_order_comes_back_whole(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=180)
+        program = _create_program(staff_client, scope)
+        staff_client.post(f"{_PROGRAMS}/{program['id']}/items/fill", {}, format="json")
+        by_hand = staff_client.post(
+            f"{_PROGRAMS}/{program['id']}/items",
+            {"kind": "BREAK", "title": "Обед", "durationSeconds": 900},
+            format="json",
+        )
+        assert by_hand.status_code in (200, 201), by_hand.data
+        before = staff_client.get(f"{_PROGRAMS}/{program['id']}").data["data"]["items"]
+
+        staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange", {}, format="json")
+        response = staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange/undo", {}, format="json")
+
+        assert response.status_code == 200, response.data
+        assert [item["id"] for item in response.data["data"]["items"]] == [item["id"] for item in before]
+
+    def test_the_programme_says_whether_the_undo_is_on_offer(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=180)
+        program = _create_program(staff_client, scope)
+
+        assert program["canUndoArrange"] is False
+
+        arranged = staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange", {}, format="json")
+        assert arranged.data["data"]["canUndoArrange"] is True
+
+        undone = staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange/undo", {}, format="json")
+        assert undone.data["data"]["canUndoArrange"] is False
+
+    def test_a_stale_undo_button_is_a_conflict_not_a_silent_no_op(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        # Two windows open, both showing «Отменить»; the second press must say so
+        # rather than appear to work and change nothing.
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=180)
+        program = _create_program(staff_client, scope)
+        staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange", {}, format="json")
+        staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange/undo", {}, format="json")
+
+        response = staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange/undo", {}, format="json")
+
+        assert response.status_code == 409, response.data
+        assert response.data["type"].endswith("conflict")
+
+    def test_a_published_programme_is_refused_the_undo(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=180)
+        program = _create_program(staff_client, scope)
+        staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange", {}, format="json")
+        staff_client.post(f"{_PROGRAMS}/{program['id']}/shares", {"name": "Экран"}, format="json")
+
+        response = staff_client.post(f"{_PROGRAMS}/{program['id']}/items/arrange/undo", {}, format="json")
+
+        assert response.status_code == 409, response.data
+        reloaded = staff_client.get(f"{_PROGRAMS}/{program['id']}")
+        assert reloaded.data["data"]["canUndoArrange"] is False

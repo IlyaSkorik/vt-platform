@@ -114,6 +114,8 @@ class FakeCompetitionCatalog:
         auto_cancels_unpaid_orders: bool = True,
         waitlisting_nominations: frozenset[str] = frozenset(),
         closed_nominations: frozenset[str] = frozenset(),
+        editing_locked: bool = False,
+        locked_nominations: frozenset[str] = frozenset(),
     ) -> None:
         self.discount_percent = additional_performance_discount_percent
         self.multiple_performances = allows_multiple_performances
@@ -126,6 +128,14 @@ class FakeCompetitionCatalog:
         #: submission; only the first has a second door.
         self.waitlisting_nominations = waitlisting_nominations
         self.closed_nominations = closed_nominations
+        #: The organizer's freeze, which is a genre's. ``editing_locked`` is the
+        #: shorthand for "every genre of this festival" — most tests only care that
+        #: the entry in front of them is frozen — and ``locked_nominations`` names
+        #: them one at a time, which is what the per-genre rules are tested with.
+        #: Both off by default: the freeze is a decision somebody takes, so a test
+        #: that does not mention it has not taken it.
+        self.editing_locked = editing_locked
+        self.locked_nominations = locked_nominations
         self.accepts_payment_flag = accepts_payment
         self.accepts_upload_flag = accepts_upload
         self.policy: SubmissionParticipationPolicy | None = (
@@ -154,6 +164,12 @@ class FakeCompetitionCatalog:
 
     def accepts_payment(self, *, competition_id: CompetitionId, now: datetime) -> bool:
         return self.accepts_payment_flag
+
+    def is_editing_locked(self, *, competition_id: CompetitionId, nomination_id: object = None) -> bool:
+        # No genre, no freeze to be in — the production ACL answers the same way.
+        if nomination_id is None:
+            return False
+        return self.editing_locked or str(nomination_id) in self.locked_nominations
 
     def accepts_upload(self, *, competition_id: CompetitionId, attachment_kind: str, now: datetime) -> bool:
         return self.accepts_upload_flag

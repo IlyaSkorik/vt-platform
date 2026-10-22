@@ -38,7 +38,7 @@ from rest_framework.views import APIView
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.diplomas.domain.exceptions import DiplomaError
 from apps.diplomas.infrastructure.acl import actor_label
-from apps.diplomas.infrastructure.models import DiplomaModel, PrintJobModel, TemplateModel
+from apps.diplomas.infrastructure.models import DiplomaModel, DocumentJobModel, PrintJobModel, TemplateModel
 from apps.diplomas.presentation.api.v1 import problems
 from apps.diplomas.presentation.api.v1.diplomas import (
     archive,
@@ -55,8 +55,8 @@ from apps.diplomas.presentation.api.v1.diplomas.serializers import (
     CreateDiplomaRequestSerializer,
     CreateTemplateRequestSerializer,
     DiplomaResponseSerializer,
+    DocumentJobResponseSerializer,
     GenerateDocumentsRequestSerializer,
-    GenerateDocumentsResponseSerializer,
     GenerationRunResponseSerializer,
     LayoutResponseSerializer,
     PreviewApplicationSerializer,
@@ -376,7 +376,8 @@ class DiplomaAssignmentsView(_StaffView):
         try:
             assignments = composition.create_assignments(
                 competition_id=str(data["competitionId"]),
-                category_ids=[str(category_id) for category_id in data["categoryIds"]],
+                category_ids=[str(category_id) for category_id in data.get("categoryIds") or []],
+                discipline_ids=[str(discipline_id) for discipline_id in data.get("disciplineIds") or []],
                 template_id=str(data["templateId"]),
                 scope=callers_scope(request),
             )
@@ -546,24 +547,28 @@ class DiplomaPrintPackageView(_StaffView):
 
 
 class DocumentGenerationView(_StaffView):
-    """Generate non-registry documents (thank-you letters) for chosen nominations.
+    """Start generating non-registry documents (thank-you letters) for chosen genres.
 
-    Each nomination is generated from its own assigned template of that kind, so
+    Each genre is generated from its own assigned template of that kind, so
     «Вокал» may print a blue thank-you while «Хореография» prints a gold one.
     Diplomas are not generated here — they keep the numbered print-package path,
     which this endpoint does not touch.
 
-    Synchronous: there is no numbering to serialize, so the run completes in the
-    request. ``publish`` and ``bundle`` are independent: a run can publish the
-    documents to the participants' cabinets, hand back a ZIP to print from, or —
-    for a print-only run — generate them without publishing anything yet.
+    Asynchronous, like the print package and for the same reason: the run renders
+    a PDF per recipient and uploads a ZIP, which outlasts any connection between
+    the organizer and the worker. The response is the job; poll it at
+    ``/staff/diplomas/documents/jobs/<id>`` until it completes.
+
+    ``publish`` and ``bundle`` are independent: a run can publish the documents to
+    the participants' cabinets, hand back a ZIP to print from, or — for a
+    print-only run — generate them without publishing anything yet.
     """
 
     @extend_schema(
         tags=[_TAG],
         operation_id="diplomas_generate_documents",
         request=GenerateDocumentsRequestSerializer,
-        responses={200: GenerateDocumentsResponseSerializer},
+        responses={202: DocumentJobResponseSerializer},
     )
     def post(self, request: Request) -> Response:
         serializer = GenerateDocumentsRequestSerializer(data=request.data)
@@ -572,11 +577,12 @@ class DocumentGenerationView(_StaffView):
         data = serializer.validated_data
         # `publish=True` by default puts the generated documents into participants'
         # cabinets. On another organization's competition that is not a leak, it is a
-        # delivery — hence the guard before anything is rendered.
+        # delivery — hence the guard before the job is queued rather than inside the
+        # worker, where a failure has no request left to answer.
         _refuse_foreign_competition(request, str(data["competitionId"]))
         actor_id, label = _actor(request)
         try:
-            summary = documents.generate_documents(
+            job = documents.start_document_generation(
                 competition_id=data["competitionId"],
                 category_ids=list(data["categoryIds"]),
                 document_type=str(data["documentType"]),
@@ -588,7 +594,34 @@ class DocumentGenerationView(_StaffView):
             )
         except DiplomaError as exc:
             return problems.diploma_problem(exc, instance=request.path, request=request)
-        return problems.envelope(request, summary)
+        return problems.envelope(request, job, status=202)
+
+
+class DocumentJobDetailView(_StaffView):
+    """Poll a document-generation job's status and result."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="diplomas_get_document_job",
+        responses={200: DocumentJobResponseSerializer},
+    )
+    def get(self, request: Request, job_id: str) -> Response:
+        parsed = _parse_uuid(job_id)
+        if parsed is None:
+            return problems.problem_response(
+                status=404,
+                type_suffix="not-found",
+                title="Resource not found",
+                detail="Задание на формирование документов не найдено.",
+                instance=request.path,
+                correlation_id=problems.request_id(request),
+            )
+        _refuse_foreign_row(request, DocumentJobModel.objects.all(), parsed)
+        try:
+            job = documents.get_document_job(parsed)
+        except DiplomaError as exc:
+            return problems.diploma_problem(exc, instance=request.path, request=request)
+        return problems.envelope(request, job)
 
 
 class DiplomaGenerationArchiveView(_StaffView):

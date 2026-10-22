@@ -143,7 +143,7 @@ class Env:
         return AddTeacherHandler(submissions=self.submissions, catalog=self.catalog, clock=self.clock, uuids=self.uuids, events=self.events)
 
     def attach_file(self) -> AttachFileHandler:
-        return AttachFileHandler(submissions=self.submissions, clock=self.clock, uuids=self.uuids, events=self.events)
+        return AttachFileHandler(submissions=self.submissions, catalog=self.catalog, clock=self.clock, uuids=self.uuids, events=self.events)
 
     def calculate_price(self) -> CalculatePriceHandler:
         return CalculatePriceHandler(submissions=self.submissions, catalog=self.catalog, clock=self.clock, events=self.events)
@@ -662,6 +662,53 @@ class TestWaitlist:
         result = env.cancel_by_reviewer().handle(CancelSubmissionByReviewerCommand(submission_id=submission_id, reviewer_id=reviewer))
 
         assert result.submission.status == SubmissionStatus.CANCELLED.value
+
+
+class TestTheOrganizerSFreeze:
+    """Кнопка «закрыть редактирование полностью» — и то, что она сильнее остальных правил.
+
+    Приём, доработка и сроки загрузки отвечают на вопрос календаря: можно ли править
+    *сегодня*. Замок отвечает на другой: организатор свёл список и больше ничего не
+    ждёт — ни файлов, ни даже тех исправлений, о которых сам просил на прошлой неделе.
+    """
+
+    @staticmethod
+    def _returned_for_correction(env: Env, *, owner: str, reviewer: str, competition_id: str) -> str:
+        submission_id = _reach_draft_ready(env, competition_id=competition_id, owner=owner)
+        env.submit().handle(SubmitSubmissionCommand(submission_id=submission_id, requested_by=owner))
+        env.start_review().handle(StartReviewCommand(submission_id=submission_id, reviewer_id=reviewer))
+        env.return_for_correction().handle(
+            ReturnSubmissionForCorrectionCommand(submission_id=submission_id, reviewer_id=reviewer, comment="Поправьте название.")
+        )
+        return submission_id
+
+    def test_a_frozen_festival_stops_even_the_correction_it_asked_for(self) -> None:
+        # Единственный случай, который переживает закрытие приёма, — и он тоже
+        # кончается здесь, потому что замок включают, когда правок больше не ждут.
+        env = Env()
+        owner, reviewer, competition_id = uuid7_str(), uuid7_str(), uuid7_str()
+        submission_id = self._returned_for_correction(env, owner=owner, reviewer=reviewer, competition_id=competition_id)
+        _add_participant(env, submission_id=submission_id, owner=owner, first="Ещё", birth="2010-02-02")
+
+        env.catalog.editing_locked = True
+
+        with pytest.raises(CompetitionClosedError) as refusal:
+            _add_participant(env, submission_id=submission_id, owner=owner, first="Поздний", birth="2010-02-02")
+        assert "организатор" in str(refusal.value).lower()
+
+    def test_the_refusal_says_who_closed_it_rather_than_blaming_the_dates(self) -> None:
+        # «Приём заявок закрыт» на открытом приёме — это сообщение, с которым
+        # заявитель идёт спорить о датах к человеку, который их не менял.
+        env = Env()
+        owner, competition_id = uuid7_str(), uuid7_str()
+        submission_id = _reach_draft_ready(env, competition_id=competition_id, owner=owner)
+        env.submit().handle(SubmitSubmissionCommand(submission_id=submission_id, requested_by=owner))
+
+        env.catalog.editing_locked = True
+
+        with pytest.raises(CompetitionClosedError) as refusal:
+            _add_participant(env, submission_id=submission_id, owner=owner, first="Поздний", birth="2010-02-02")
+        assert "Организатор закрыл редактирование" in str(refusal.value)
 
 
 class TestEditingAfterTheClose:

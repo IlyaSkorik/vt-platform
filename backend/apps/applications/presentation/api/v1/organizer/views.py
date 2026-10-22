@@ -38,6 +38,7 @@ from apps.applications.presentation.api.v1 import problems
 from apps.applications.presentation.api.v1.files import file_url
 from apps.applications.presentation.api.v1.mail import queue_review_email
 from apps.applications.presentation.api.v1.submissions import composition
+from apps.competitions.domain.value_objects import CompetitionId as CompCompetitionId
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import (
     AgeCategoryModel,
@@ -46,6 +47,7 @@ from apps.competitions.infrastructure.models.taxonomy import (
     ParticipantGroupModel,
     ParticipationFormatModel,
 )
+from apps.competitions.infrastructure.repositories.django_competition_repository import DjangoCompetitionRepository
 from apps.emailing import render_transactional_email_html
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.infrastructure.models.user import UserModel
@@ -136,13 +138,54 @@ def _teacher_card(teacher: TeacherView, phones: Mapping[str, str]) -> dict[str, 
     }
 
 
-def _participant_card(participant: ParticipantView) -> dict[str, Any]:
+def _registry_organizations(participants: Sequence[ParticipantView]) -> dict[str, str]:
+    """Реестровое учреждение каждого выступающего — одним запросом на карточку.
+
+    Нужно не для печати (для неё есть :func:`_educational_organizations`), а для
+    формы исправления: поле «Учреждение» открывается заполненным тем, что сейчас
+    печатается, иначе организатор видит пустую строку там, где учреждение есть, и
+    «исправляет» её в пустоту. Основное — первым, как и везде.
+    """
+    registry_ids: set[uuid.UUID] = set()
+    for participant in participants:
+        if not participant.registry_participant_id:
+            continue
+        with contextlib.suppress(ValueError, TypeError):
+            registry_ids.add(uuid.UUID(participant.registry_participant_id))
+    if not registry_ids:
+        return {}
+    resolved: dict[str, str] = {}
+    for row in (
+        ParticipantOrganizationMembershipModel.objects.filter(
+            participant_id__in=registry_ids,
+            deleted_at__isnull=True,
+            organization__deleted_at__isnull=True,
+        )
+        .order_by("-is_primary", "organization__name")
+        .values_list("participant_id", "organization__name")
+    ):
+        if cleaned := str(row[1] or "").strip():
+            resolved.setdefault(str(row[0]), cleaned)
+    return resolved
+
+
+def _participant_card(participant: ParticipantView, registry_organizations: Mapping[str, str]) -> dict[str, Any]:
     """Выступающий так, как его читает организатор — и так, как его правит.
 
     Те же данные, что в заявке: солист хранит части имени, коллектив — только
     название и численность. Форма исправления берёт их отсюда, поэтому дата
     рождения и пол едут строками ровно в том виде, в каком уйдут обратно.
+
+    Учреждение едет двумя полями, и это не дублирование. ``organizationName`` —
+    исправленное за участника прямо в заявке, обычно ``null``.
+    ``resolvedOrganizationName`` — то, что печатается сейчас: исправленное, если оно
+    есть, иначе реестровое. Форма открывается на втором и отправляет первое, поэтому
+    организатор, который ничего не трогал, ничего и не закрепляет: заявка продолжает
+    следовать за реестром, как все уже поданные.
     """
+    pinned = (participant.organization_name or "").strip() or None
+    registry_id = participant.registry_participant_id
+    resolved = pinned or (registry_organizations.get(registry_id) if registry_id else None)
     return {
         "id": participant.id,
         "name": participant.display_name,
@@ -154,6 +197,35 @@ def _participant_card(participant: ParticipantView) -> dict[str, Any]:
         "gender": participant.gender,
         "memberCount": participant.member_count,
         "members": list(participant.members),
+        "organizationName": pinned,
+        "resolvedOrganizationName": resolved,
+    }
+
+
+def _upload_requirements(competition_id: str) -> dict[str, dict[str, Any]]:
+    """Что фестиваль разрешает прикладывать к номеру — по форме участия.
+
+    Ровно та же проекция, по которой мастер подачи решает, показывать ли участнику
+    загрузку фонограмм и медиа, — и показывается она организатору по тому же правилу:
+    он догружает за участника то, что участник мог загрузить сам, не больше.
+
+    Берутся только *настроенные* формы участия. Форма, для которой организатор ничего
+    не настраивал, в мастере загрузок не просит — значит, и здесь их быть не должно.
+    """
+    competition = DjangoCompetitionRepository().get(CompCompetitionId.from_string(competition_id))
+    if competition is None:
+        return {}
+    return {
+        requirement.participation_format_id.json(): {
+            "musicRequired": requirement.music.require_upload,
+            "musicAllowedFormats": list(requirement.music.allowed_formats),
+            "musicMaxUploadSizeMb": requirement.music.max_upload_size_mb,
+            "mediaMode": requirement.media.mode.value,
+            "mediaRequired": requirement.media.require_upload,
+            "mediaAllowedFormats": list(requirement.media.allowed_formats),
+            "mediaMaxTotalSizeMb": requirement.media.max_total_size_mb,
+        }
+        for requirement in competition.settings.format_requirements
     }
 
 
@@ -252,6 +324,13 @@ def _educational_organizations(participants: Sequence[ParticipantView]) -> list[
     всегда пусто, на карточке выглядит как «учреждения нет», а не как «его никто не
     спросил».
 
+    Исключение — учреждение, которое организатор исправил за участника прямо в
+    заявке (``ParticipantView.organization_name``). Оно стоит впереди реестрового и
+    отменяет для этого выступающего поход в реестр: правка делалась ради бумаг
+    фестиваля, и карточка — первая из них. У подавляющего большинства заявок это
+    поле пусто, и пусто значит «никто не правил, спроси реестр», а не «учреждения
+    нет», — поэтому ни одна уже поданная заявка от появления поля не изменилась.
+
     Основное учреждение идёт первым: участник может состоять в двух, и на карточке
     первым должно стоять то, которое он сам назвал основным. Групповая заявка
     собирает учреждения всех выступающих — их бывает несколько, и это не ошибка.
@@ -259,14 +338,21 @@ def _educational_organizations(participants: Sequence[ParticipantView]) -> list[
     Участник, вписанный руками (без ссылки на реестр кабинета), сюда не попадает:
     учреждение у него негде взять, и пустое место честнее выдуманного.
     """
+    # dict, not set: два участника из одной школы не должны печатать её дважды, а
+    # порядок "основное первым" обязан пережить дедупликацию.
+    seen: dict[str, None] = {}
     registry_ids: set[uuid.UUID] = set()
     for participant in participants:
+        if pinned := (participant.organization_name or "").strip():
+            # Исправлено за участника: реестр для него больше не спрашиваем.
+            seen.setdefault(pinned, None)
+            continue
         if not participant.registry_participant_id:
             continue
         with contextlib.suppress(ValueError, TypeError):
             registry_ids.add(uuid.UUID(participant.registry_participant_id))
     if not registry_ids:
-        return []
+        return list(seen)
     rows = (
         ParticipantOrganizationMembershipModel.objects.filter(
             participant_id__in=registry_ids,
@@ -276,9 +362,6 @@ def _educational_organizations(participants: Sequence[ParticipantView]) -> list[
         .order_by("-is_primary", "organization__name")
         .values_list("organization__name", flat=True)
     )
-    # dict, not set: два участника из одной школы не должны печатать её дважды, а
-    # порядок "основное первым" обязан пережить дедупликацию.
-    seen: dict[str, None] = {}
     for name in rows:
         if cleaned := str(name or "").strip():
             seen.setdefault(cleaned, None)
@@ -647,7 +730,10 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                 detail = None
             else:
                 representative = related_dtos[0]
-                participants = [_participant_card(p) for dto in related_dtos for p in dto.participants]
+                all_participants = [p for dto in related_dtos for p in dto.participants]
+                registry_organizations = _registry_organizations(all_participants)
+                participants = [_participant_card(p, registry_organizations) for p in all_participants]
+                upload_requirements = _upload_requirements(representative.competition_id)
                 teacher_views = [t for dto in related_dtos for t in dto.teachers]
                 teacher_phones = _directory_phones(teacher_views)
                 teachers = [_teacher_card(t, teacher_phones) for t in teacher_views]
@@ -765,11 +851,23 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                             "ageComposition": (dto.performance.age_composition or None) if dto.performance else None,
                             "participantsCount": len(dto.participants),
                             "teachersCount": len(dto.teachers),
-                            "participants": [_participant_card(p) for p in dto.participants],
+                            "participants": [_participant_card(p, registry_organizations) for p in dto.participants],
                             "teachers": [_teacher_card(t, teacher_phones) for t in dto.teachers],
                             "priceAmount": dto.price.amount if dto.price else None,
                             "priceCurrency": dto.price.currency if dto.price else None,
-                            "attachments": [{"id": a.id, "type": a.type, "fileReference": file_url(a.file_reference)} for a in dto.attachments],
+                            "attachments": [
+                                {
+                                    "id": a.id,
+                                    "type": a.type,
+                                    "fileReference": file_url(a.file_reference),
+                                    "caption": a.caption,
+                                    "sizeBytes": a.size_bytes,
+                                }
+                                for a in dto.attachments
+                            ],
+                            # Что по этому номеру вообще принимают файлами — чтобы
+                            # организатор догружал ровно то же, что мог участник.
+                            "uploadRequirement": (upload_requirements.get(dto.performance.participation_format_id) if dto.performance else None),
                         }
                         for dto in related_dtos
                     ],
@@ -780,7 +878,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
                     "totalPriceAmount": total_amount_value,
                     "totalPriceCurrency": total_currency_value,
                     "receiptFileReferences": _receipt_urls(application_meta_by_id.get(selected_application_id or "", {}).get("receipt_refs") or []),
-                    "educationalOrganizations": _educational_organizations([p for dto in related_dtos for p in dto.participants]),
+                    "educationalOrganizations": _educational_organizations(all_participants),
                     "payerName": application_meta_by_id.get(selected_application_id or "", {}).get("payer_name"),
                     "taxonomy": _taxonomy_options(representative.competition_id),
                     "timeline": timeline,

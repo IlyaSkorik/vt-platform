@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from apps.judging.application.services import JudgingConfigurationService, ScoringService
 from apps.judging.infrastructure.acl import (
+    DjangoAccountDirectory,
     DjangoCompetitionDirectory,
     DjangoPerformanceDirectory,
     ResultsProtocolWriter,
@@ -45,6 +46,7 @@ def build_judging_configuration_service() -> JudgingConfigurationService:
         slugs=RandomSlugFactory(),
         tokens=InviteTokenFactory(),
         notifier=DjangoJuryNotifier(),
+        accounts=DjangoAccountDirectory(),
     )
 
 

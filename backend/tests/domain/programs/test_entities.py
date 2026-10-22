@@ -16,15 +16,19 @@ from apps.programs.domain.entities import Program, ProgramItem, ProgramShare
 from apps.programs.domain.exceptions import (
     InvalidProgramDataError,
     ItemNotInProgramError,
+    NoRestorePointError,
     PerformanceAlreadyInProgramError,
     ProgramColumnNotFoundError,
+    ProgramHasSharesError,
     ProgramItemNotFoundError,
+    ProgramNumbersFrozenError,
     ProgramShareNotFoundError,
     ReorderMismatchError,
 )
 from apps.programs.domain.value_objects import (
     COLUMN_LABELS,
     DEFAULT_PUBLIC_COLUMNS,
+    ArrangementSettings,
     CellValue,
     ColumnRef,
     ColumnTitle,
@@ -61,6 +65,15 @@ def _add_act(program: Program, seconds: int = 200) -> ProgramItem:
         duration=ItemDuration(seconds),
         now=NOW,
     )
+
+
+#: Any valid set of rules - these tests care that a rebuild happened, not how it read.
+_RULES = ArrangementSettings()
+
+
+def _act_item(seconds: int) -> ProgramItem:
+    """A generated slot, as the arranger would hand it to ``rebuild``."""
+    return ProgramItem.performance(item_id=uuid.uuid4(), submission_id=uuid.uuid4(), duration=ItemDuration(seconds))
 
 
 def _add_break(program: Program, seconds: int = 900, *, position: int | None = None) -> ProgramItem:
@@ -415,6 +428,18 @@ class TestPublicEditions:
         with pytest.raises(ProgramShareNotFoundError):
             program.share(share.id)
 
+    def test_a_live_edition_keeps_the_programme_from_being_deleted(self) -> None:
+        """The link is somebody's open tab, and deleting would close it without a word."""
+        program = _program()
+        share = program.add_share(share_id=uuid.uuid4(), name=ShareName("Экран"), slug=PublicSlug("Screen234"), now=NOW)
+        with pytest.raises(ProgramHasSharesError):
+            program.delete(now=NOW)
+        assert program.deleted_at is None
+
+        program.remove_share(share.id, now=NOW)
+        program.delete(now=NOW)
+        assert program.deleted_at == NOW
+
     def test_many_editions_of_one_program_coexist(self) -> None:
         program = _program()
         item = _add_act(program)
@@ -710,3 +735,86 @@ class TestSlug:
     def test_a_too_short_slug_is_refused(self) -> None:
         with pytest.raises(InvalidProgramDataError):
             PublicSlug("abc")
+
+
+class TestUndoingARebuild:
+    """The one step back a programme offers, and the only one it needs (VT-86).
+
+    A rebuild replaces every slot at once, so it is the single action that can cost an
+    afternoon of arranging to one click. The aggregate does not keep a copy of itself:
+    it keeps the *instant* the replaced slots were retired at, which is enough for the
+    repository to find them again.
+    """
+
+    def test_a_rebuild_leaves_a_restore_point(self) -> None:
+        program = _program()
+        _add_act(program)
+
+        program.rebuild([], settings=_RULES, now=TEN_AM)
+
+        assert program.rebuilt_at == TEN_AM
+        assert program.can_undo_rebuild
+
+    def test_a_programme_that_was_never_rebuilt_has_nothing_to_undo(self) -> None:
+        program = _program()
+        _add_act(program)
+
+        assert program.rebuilt_at is None
+        assert not program.can_undo_rebuild
+
+    def test_undoing_puts_the_previous_order_back(self) -> None:
+        program = _program()
+        first, second = _add_act(program, 200), _add_act(program, 180)
+        before = program.items
+        program.rebuild([_act_item(300)], settings=_RULES, now=TEN_AM)
+
+        program.restore_order(before, now=TEN_AM)
+
+        assert [item.id for item in program.items] == [first.id, second.id]
+
+    def test_the_restore_point_is_spent_by_the_undo_that_uses_it(self) -> None:
+        program = _program()
+        program.rebuild([_act_item(200)], settings=_RULES, now=TEN_AM)
+
+        program.restore_order([], now=TEN_AM)
+
+        assert program.rebuilt_at is None
+        assert not program.can_undo_rebuild
+        with pytest.raises(NoRestorePointError):
+            program.restore_order([], now=TEN_AM)
+
+    def test_undoing_is_refused_outright_without_a_rebuild_to_undo(self) -> None:
+        program = _program()
+        _add_act(program)
+
+        with pytest.raises(NoRestorePointError):
+            program.restore_order([], now=TEN_AM)
+
+    def test_a_published_programme_is_offered_no_undo_even_holding_a_restore_point(self) -> None:
+        program = _program()
+        restored = program.add_performance(
+            item_id=uuid.uuid4(),
+            submission_id=uuid.uuid4(),
+            duration=ItemDuration(200),
+            now=NOW,
+        )
+        program.rebuild([_act_item(300)], settings=_RULES, now=TEN_AM)
+        # Published only after the rebuild: the numbers are now out in the world, and
+        # putting the old order back would move them.
+        _publish(program)
+
+        assert program.rebuilt_at == TEN_AM
+        assert not program.can_undo_rebuild
+        with pytest.raises(ProgramNumbersFrozenError):
+            program.restore_order([restored], now=TEN_AM)
+
+    def test_the_restored_order_is_numbered_as_it_reads(self) -> None:
+        program = _program()
+        _add_act(program), _add_break(program), _add_act(program)
+        before = program.items
+        program.rebuild([_act_item(300)], settings=_RULES, now=TEN_AM)
+
+        program.restore_order(before, now=TEN_AM)
+
+        # The break keeps its 0 and spends no number, exactly as it did before.
+        assert [item.number for item in program.items] == [1, 0, 2]

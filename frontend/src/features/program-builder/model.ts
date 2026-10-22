@@ -94,7 +94,6 @@ export interface ProgramItem {
   durationSeconds: number;
   schedule: SchedulePosition;
   submissionId: string | null;
-  leadParticipant: string | null;
   participants: string[];
   /**
    * How many people stand on stage — the headcount, not `participants.length`.
@@ -329,6 +328,15 @@ export interface Program {
   endsAt: string | null;
   /** The rules this programme was generated from — `null` if it was only built by hand. */
   arrangement: ArrangementSettings | null;
+  /**
+   * Whether the last «Пересобрать» can still be put back.
+   *
+   * True only between a rebuild and the undo that consumes it, and never for a
+   * published programme — its numbers have been told to participants and may not move.
+   * The server owns this: the replaced rows are still on disk, and only it knows
+   * whether they are still addressable.
+   */
+  canUndoArrange: boolean;
   createdAt: string;
   updatedAt: string;
   version: number;
@@ -475,7 +483,9 @@ export function itemCell(
     case "TIME":
       return format.clock(item.schedule.startsAt);
     case "PARTICIPANT":
-      return item.leadParticipant ?? "";
+      // Everyone the entry listed, not just the first of them — a duet is two performer
+      // rows and both names belong here. The headcount has its own column.
+      return item.participants.join(", ");
     case "TITLE":
       return item.title;
     case "DURATION":

@@ -42,8 +42,18 @@ class IssuedDocument:
     updated_at: datetime
     #: Who this document is addressed to — a teacher's name for a per-teacher kind,
     #: empty for a kind issued once per performance. Part of the document's identity:
-    #: two teachers on one entry are two distinct letters, not one shared sheet.
+    #: for a per-teacher kind it is what makes the document the *teacher's* rather
+    #: than any one entry's (see :attr:`category_id`).
     recipient: str = ""
+    #: The genre this document was issued for. ``None`` only on rows written before
+    #: the column existed.
+    #:
+    #: A per-teacher document is identified by ``(competition, genre, recipient)``:
+    #: a teacher who entered five acts in one genre is thanked once, and
+    #: ``submission_id`` then records merely which of those five the sheet was built
+    #: from. A kind issued once per performance ignores this entirely and stays
+    #: identified by its submission.
+    category_id: uuid.UUID | None = None
     pdf_path: str | None = None
     published_at: datetime | None = None
     version: int = 1
@@ -60,6 +70,7 @@ class IssuedDocument:
         snapshot: DiplomaSnapshot,
         now: datetime,
         recipient: str = "",
+        category_id: uuid.UUID | None = None,
     ) -> IssuedDocument:
         """Create a document with no PDF yet and no publication.
 
@@ -76,6 +87,7 @@ class IssuedDocument:
             created_at=now,
             updated_at=now,
             recipient=recipient,
+            category_id=category_id,
             pdf_path=None,
             published_at=None,
             version=1,
@@ -97,6 +109,7 @@ class IssuedDocument:
         published_at: datetime | None,
         version: int,
         recipient: str = "",
+        category_id: uuid.UUID | None = None,
     ) -> IssuedDocument:
         """Reconstruct from persistence (no validation, no state change)."""
         return cls(
@@ -109,10 +122,23 @@ class IssuedDocument:
             created_at=created_at,
             updated_at=updated_at,
             recipient=recipient,
+            category_id=category_id,
             pdf_path=pdf_path,
             published_at=published_at,
             version=version,
         )
+
+    def placed_in(self, category_id: uuid.UUID, *, now: datetime) -> IssuedDocument:
+        """Record which genre this document belongs to; unchanged if it already says so.
+
+        An addressed document written before the genre was part of its identity
+        carries none, and the run that finds it again is the one that knows which
+        genre it was issued for. Stamping it there converges the table instead of
+        leaving a row that every future run has to rediscover by its entry.
+        """
+        if self.category_id == category_id:
+            return self
+        return replace(self, category_id=category_id, updated_at=now, version=self.version + 1)
 
     @property
     def is_published(self) -> bool:

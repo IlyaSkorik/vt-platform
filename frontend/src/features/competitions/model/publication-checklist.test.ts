@@ -177,6 +177,7 @@ function configuredCompetition(overrides: Partial<CompetitionDetail> = {}): Comp
         registrationStopped: false,
         waitlistEnabled: false,
         heldAt: null,
+        editingLockedAt: null,
       },
     ],
     disciplines: [{ id: "d1", categoryId: "c1", name: "Ballet", sortOrder: 0 }],

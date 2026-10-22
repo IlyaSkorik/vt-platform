@@ -116,6 +116,14 @@ class TestZipStreaming:
             assert len(archive.read("00.mp3")) == _MEMBER_BYTES
             assert "Без фонограммы: 09" in archive.read("ПРОЧТИ.txt").decode()
 
+    def test_the_download_is_never_served_from_the_browser_cache(self, stored: list[ArchiveMember]) -> None:
+        # Assembled per request from whatever is stored now, at a URL that never changes.
+        # Reusing a stored copy means handing back the archive from before the diplomas
+        # were re-issued, and nothing in the URL would ever say otherwise.
+        response = zip_response(stored, filename="фонограммы.zip")
+
+        assert response["Cache-Control"] == "no-store"
+
     def test_a_missing_file_costs_its_own_entry_and_nothing_else(self, stored: list[ArchiveMember]) -> None:
         members = [*stored, ArchiveMember(arcname="99.mp3", reference="nothing/here.mp3")]
 

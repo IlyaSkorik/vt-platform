@@ -69,6 +69,14 @@ export type ArrangeProgramDialogProps = {
   saved: ArrangementSettings | null;
   /** Идёт ли сборка: кнопка ждёт ответа, потому что он и есть новая программа. */
   pending: boolean;
+  /**
+   * Сколько строк сборка заменит.
+   *
+   * Ноль — программу собирают впервые, и терять нечего. Больше нуля — форма открыта
+   * над уже расставленным днём, и «текущий порядок будет заменён» для него слишком
+   * мягко: вместе со строками уходят подвинутые руками перерывы и заполненные ячейки.
+   */
+  replaces: number;
   onSubmit: (input: ReturnType<typeof arrangeInput>) => void;
 };
 
@@ -77,6 +85,7 @@ export function ArrangeProgramDialog({
   onOpenChange,
   saved,
   pending,
+  replaces,
   onSubmit,
 }: ArrangeProgramDialogProps): React.JSX.Element {
   const [grouping, setGrouping] = useState<GroupingAxis[]>(DEFAULT_ARRANGEMENT.grouping);
@@ -158,6 +167,14 @@ export function ArrangeProgramDialog({
           <DialogDescription>
             Программа соберётся из всех допущенных выступлений этой программы. Текущий порядок будет
             заменён — после сборки его можно править как обычно.
+            {replaces > 0 ? (
+              <>
+                {" "}
+                Сейчас в программе строк: {replaces}. Все они будут заменены: перерывы, которые вы
+                подвинули руками, изменённая длительность номеров и заполненные ячейки пропадут.
+                Колонки останутся, а сборку можно будет отменить.
+              </>
+            ) : null}
           </DialogDescription>
         </DialogHeader>
 

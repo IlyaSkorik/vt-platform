@@ -42,6 +42,7 @@ export {
   useScheduleNominationRegistrationMutation,
   useSetAdditionalServiceEnabledMutation,
   useSetDocumentPublishedMutation,
+  useSetSubmissionEditingLockMutation,
   useStartCompetitionMutation,
   useStopNominationRegistrationMutation,
   useSyncContactMutation,

@@ -390,6 +390,22 @@ async function resumeNominationRegistration(
   }
 }
 
+async function setSubmissionEditingLock(
+  competitionId: string,
+  categoryId: string,
+  locked: boolean,
+): Promise<CompetitionDetail> {
+  try {
+    const path = `competitions/${competitionId}/categories/${categoryId}/editing-lock`;
+    // POST закрывает, DELETE открывает — одна настройка, прочитанная в обе стороны,
+    // как у листа ожидания рядом.
+    const response = await (locked ? apiClient.post(path) : apiClient.delete(path)).json<unknown>();
+    return unwrapCompetitionDetail(response);
+  } catch (error) {
+    throw await toApiError(error);
+  }
+}
+
 async function enableNominationWaitlist(
   competitionId: string,
   categoryId: string,
@@ -1190,6 +1206,31 @@ export function useResumeNominationRegistrationMutation(): UseMutationResult<
   return useMutation<CompetitionDetail, ApiError, { competitionId: string; categoryId: string }>({
     mutationFn: ({ competitionId, categoryId }) =>
       resumeNominationRegistration(competitionId, categoryId),
+    onSuccess: (detail) => {
+      setCompetitionCache(queryClient, detail);
+    },
+  });
+}
+
+/**
+ * Заморозить (или разморозить) всё, что может менять заявитель, в одном жанре.
+ *
+ * По жанрам, как и приём: фестиваль заканчивает жанры по одному — вокал судят в
+ * субботу и его программу уже собирают, пока хореография ещё принимает заявки.
+ */
+export function useSetSubmissionEditingLockMutation(): UseMutationResult<
+  CompetitionDetail,
+  ApiError,
+  { competitionId: string; categoryId: string; locked: boolean }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    CompetitionDetail,
+    ApiError,
+    { competitionId: string; categoryId: string; locked: boolean }
+  >({
+    mutationFn: ({ competitionId, categoryId, locked }) =>
+      setSubmissionEditingLock(competitionId, categoryId, locked),
     onSuccess: (detail) => {
       setCompetitionCache(queryClient, detail);
     },

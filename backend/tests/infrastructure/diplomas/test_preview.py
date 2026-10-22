@@ -53,6 +53,26 @@ def test_resolves_participant_display_name() -> None:
     assert bindings[preview.PARTICIPANT_DISPLAY_NAME] == "Ансамбль «Созвездие»"
 
 
+def test_resolves_every_participant_of_an_entry_into_the_name_field() -> None:
+    # The editor must preview what will actually print: one diploma per entry, and a
+    # duet's sheet carries both names.
+    submission = SubmissionModel.objects.create(
+        competition_id=uuid.uuid4(),
+        applicant_id=uuid.uuid4(),
+        status="SUBMITTED",
+        participants=[
+            {"display_name": "Иванова Анна", "member_count": 1},
+            {"display_name": "Петров Пётр", "member_count": 1},
+        ],
+        performance={"title": "Дуэт"},
+    )
+
+    bindings = preview.resolve_preview_bindings(str(submission.id))
+
+    assert bindings is not None
+    assert bindings[preview.PARTICIPANT_DISPLAY_NAME] == "Иванова Анна, Петров Пётр"
+
+
 def test_resolves_all_catalogue_keys_with_missing_default() -> None:
     submission = _submission(uuid.uuid4(), "Иванов Иван Иванович")
 

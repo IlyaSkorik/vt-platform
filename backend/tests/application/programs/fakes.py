@@ -13,7 +13,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 
 from apps.programs.application.interfaces import CatalogApplicant, CatalogPerformance
-from apps.programs.domain.entities import Program
+from apps.programs.domain.entities import Program, ProgramItem
 
 __all__ = ["FixedClock", "InMemoryProgramRepository", "ScriptedSlugFactory", "StubPerformanceCatalog"]
 
@@ -46,6 +46,10 @@ class InMemoryProgramRepository:
     def __init__(self) -> None:
         self.programs: dict[uuid.UUID, Program] = {}
         self.claimed_slugs: set[str] = set()
+        # What the real adapter's soft-delete leaves behind: the items a save dropped,
+        # keyed by the instant it dropped them at. Undoing a rebuild reads this back.
+        self.retired: dict[uuid.UUID, dict[datetime, tuple[ProgramItem, ...]]] = {}
+        self._last_saved_items: dict[uuid.UUID, tuple[ProgramItem, ...]] = {}
 
     def get(self, program_id: uuid.UUID) -> Program | None:
         program = self.programs.get(program_id)
@@ -63,9 +67,17 @@ class InMemoryProgramRepository:
         )
 
     def save(self, program: Program) -> None:
+        kept = {item.id for item in program.items}
+        dropped = tuple(item for item in self._last_saved_items.get(program.id, ()) if item.id not in kept)
+        if dropped:
+            self.retired.setdefault(program.id, {})[program.updated_at] = dropped
+        self._last_saved_items[program.id] = program.items
         self.programs[program.id] = program
         for share in program.shares:
             self.claimed_slugs.add(str(share.slug))
+
+    def items_retired_at(self, program_id: uuid.UUID, moment: datetime) -> tuple[ProgramItem, ...]:
+        return self.retired.get(program_id, {}).get(moment, ())
 
     def slug_taken(self, slug: str) -> bool:
         return slug in self.claimed_slugs

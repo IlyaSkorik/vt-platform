@@ -234,8 +234,26 @@ class CompetitionCatalog(Protocol):
     def accepts_upload(self, *, competition_id: CompetitionId, attachment_kind: str, now: datetime) -> bool:
         """Whether uploads of ``attachment_kind`` are still allowed at ``now``.
 
-        Honours the music-upload and document-upload deadlines; kinds without a
-        dedicated deadline follow the application deadline.
+        Honours the music-upload deadline (tracks, video and photographs: one window
+        over the material of the act) and the document-upload one (paperwork and
+        benefit certificates). Deliberately independent of the application deadline:
+        the windows are later than it on purpose, because an entry that got in on the
+        last day still has a track to send.
+        """
+        ...
+
+    def is_editing_locked(self, *, competition_id: CompetitionId, nomination_id: NominationId | None) -> bool:
+        """Whether the organizer has frozen what applicants may change in this genre.
+
+        The switch thrown when a genre's list is final — it closes that genre's file
+        windows early and ends editing regardless of status, including for an entry
+        the organizer had returned for correction. Per genre because a festival
+        finishes its genres one at a time.
+
+        ``nomination_id`` of ``None`` means the question has no genre yet — an entry
+        with no performance on it — and answers ``False``: there is nothing in a
+        genre to have been frozen. Unknown competitions answer ``False`` too: a
+        missing row must not be reported to an applicant as a decision somebody made.
         """
         ...
 

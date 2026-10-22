@@ -79,6 +79,11 @@ class RegistrationNominationView:
     #: on the nomination's card — it is the one date an applicant looks for that
     #: the festival's own start and end cannot answer.
     held_at: datetime | None = None
+    #: Whether the organizer has frozen everything an applicant may change in this
+    #: genre. Here rather than on the competition because the freeze is thrown per
+    #: genre: вокал is being turned into a programme while хореография still takes
+    #: entries, and one flag over both would close the wrong one.
+    editing_locked: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -190,6 +195,19 @@ class RegistrationView:
     #: field is absent rather than shown and rejected. When true the note stays
     #: optional — it is an opportunity to say something, never a question to answer.
     participant_comment_enabled: bool
+    #: Whether each kind of file is admitted by the *calendar* right now: the upload
+    #: deadline and a finished festival, resolved into one answer. Projected rather
+    #: than derived on the client from ``deadlines`` below, because the client would
+    #: be rebuilding a rule the backend already owns — and getting a different answer
+    #: the day it mattered.
+    #:
+    #: The organizer's freeze is deliberately not folded in: it belongs to a genre
+    #: (``nominations[].editing_locked``) and these windows belong to the festival, so
+    #: the cabinet combines the two for the entry in front of it. See
+    #: ``entities/application/lib/file-windows.ts``.
+    music_upload_open: bool
+    media_upload_open: bool
+    document_upload_open: bool
     deadlines: RegistrationDeadlinesView
     nominations: list[RegistrationNominationView] = field(default_factory=list)
     disciplines: list[RegistrationDisciplineView] = field(default_factory=list)
@@ -251,6 +269,7 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
             waitlist_enabled=category.is_waitlist_enabled,
             waitlist_open=competition.accepts_waitlist_for(category.id, now),
             held_at=category.held_at,
+            editing_locked=category.is_editing_locked,
         )
         for category in competition.categories
     ]
@@ -352,6 +371,9 @@ def project_registration(competition: Competition, *, now: datetime) -> Registra
         allow_multiple_performances=settings.allow_multiple_performances,
         collect_payer_details=settings.collect_payer_details,
         participant_comment_enabled=settings.participant_comment_enabled,
+        music_upload_open=competition.is_music_upload_allowed(now),
+        media_upload_open=competition.is_media_upload_allowed(now),
+        document_upload_open=competition.is_document_upload_allowed(now),
         deadlines=RegistrationDeadlinesView(
             application=competition.deadlines.application,
             payment=competition.deadlines.payment,

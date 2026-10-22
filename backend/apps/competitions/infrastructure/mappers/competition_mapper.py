@@ -246,6 +246,7 @@ class CompetitionMapper:
                     registration_stopped=row.registration_stopped,
                     waitlist_enabled=row.waitlist_enabled,
                     held_at=row.held_at,
+                    editing_locked_at=row.editing_locked_at,
                 )
                 for row in categories
             ],
@@ -430,6 +431,7 @@ class CompetitionMapper:
                     registration_stopped=c.is_registration_stopped,
                     waitlist_enabled=c.is_waitlist_enabled,
                     held_at=c.held_at,
+                    editing_locked_at=c.editing_locked_at,
                 )
                 for c in entity.categories
             ],

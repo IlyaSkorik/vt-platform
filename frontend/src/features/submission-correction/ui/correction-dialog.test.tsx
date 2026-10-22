@@ -2,12 +2,18 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CorrectablePerformance, SubmissionTaxonomy } from "../api/hooks";
-import { useCorrectSubmission } from "../api/hooks";
+import {
+  useCorrectSubmission,
+  useOrganizerRemoveAttachment,
+  useOrganizerUploadAttachment,
+} from "../api/hooks";
 import { SubmissionCorrectionDialog } from "./correction-dialog";
 
 vi.mock("../api/hooks", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../api/hooks")>()),
   useCorrectSubmission: vi.fn(),
+  useOrganizerUploadAttachment: vi.fn(),
+  useOrganizerRemoveAttachment: vi.fn(),
 }));
 
 const SUBMISSION = "01900000-0000-7000-8000-0000000000aa";
@@ -15,6 +21,8 @@ const PERFORMER = "01900000-0000-7000-8000-0000000000bb";
 const TEACHER = "01900000-0000-7000-8000-0000000000cc";
 
 const save = vi.fn();
+const uploadFile = vi.fn();
+const removeFile = vi.fn();
 
 const TAXONOMY: SubmissionTaxonomy = {
   nominations: [
@@ -67,6 +75,19 @@ function aPerformance(overrides: Partial<CorrectablePerformance> = {}): Correcta
   };
 }
 
+/** Солистка из `aPerformance`, с переопределённым учреждением. */
+function withOrganization(pinned: string | null, resolved: string | null): CorrectablePerformance {
+  const performance = aPerformance();
+  return {
+    ...performance,
+    participants: (performance.participants ?? []).map((performer) => ({
+      ...performer,
+      organizationName: pinned,
+      resolvedOrganizationName: resolved,
+    })),
+  };
+}
+
 function renderFor(performance: CorrectablePerformance = aPerformance()) {
   const onOpenChange = vi.fn();
   render(
@@ -90,11 +111,33 @@ function section(name: "Выступление" | "Участники" | "Пед
 
 beforeEach(() => {
   save.mockReset();
+  uploadFile.mockReset();
+  uploadFile.mockResolvedValue({ id: SUBMISSION, status: "SCHEDULED", attachments: [] });
+  removeFile.mockReset();
   vi.mocked(useCorrectSubmission).mockReturnValue({
     mutate: save,
     isPending: false,
   } as unknown as ReturnType<typeof useCorrectSubmission>);
+  vi.mocked(useOrganizerUploadAttachment).mockReturnValue({
+    mutateAsync: uploadFile,
+    isPending: false,
+  } as unknown as ReturnType<typeof useOrganizerUploadAttachment>);
+  vi.mocked(useOrganizerRemoveAttachment).mockReturnValue({
+    mutate: removeFile,
+    isPending: false,
+  } as unknown as ReturnType<typeof useOrganizerRemoveAttachment>);
 });
+
+/** Форма участия, по которой фестиваль просит фонограмму и ничего больше. */
+const MUSIC_ONLY = {
+  musicRequired: true,
+  musicAllowedFormats: ["mp3", "wav"],
+  musicMaxUploadSizeMb: 25,
+  mediaMode: "NOT_REQUIRED",
+  mediaRequired: false,
+  mediaAllowedFormats: ["mp4"],
+  mediaMaxTotalSizeMb: 200,
+};
 
 describe("SubmissionCorrectionDialog", () => {
   it("opens on what the entry actually says, not on an empty form", async () => {
@@ -177,6 +220,57 @@ describe("SubmissionCorrectionDialog", () => {
     });
   });
 
+  describe("учреждение", () => {
+    it("opens on the institution that is printed today, not on an empty field", async () => {
+      // Пустое поле там, где учреждение есть, читается как «его нет» — и первое же
+      // сохранение сделало бы это правдой.
+      renderFor(withOrganization(null, "ДШИ №1"));
+
+      expect(await section("Участники").findByLabelText("Учреждение")).toHaveValue("ДШИ №1");
+    });
+
+    it("pins nothing when the organizer did not touch the institution", async () => {
+      // Иначе любая правка фамилии молча отвязывала бы заявку от реестра, и заявка,
+      // поданная год назад, перестала бы следовать за переименованием школы.
+      const user = userEvent.setup();
+      renderFor(withOrganization(null, "ДШИ №1"));
+
+      const surname = section("Участники").getByLabelText("Фамилия");
+      await user.clear(surname);
+      await user.type(surname, "Иванова");
+      await user.click(screen.getByRole("button", { name: "Сохранить исправление" }));
+
+      await waitFor(() => expect(save).toHaveBeenCalled());
+      expect(save.mock.calls[0]?.[0].payload.participants[0].organizationName).toBeNull();
+    });
+
+    it("pins the institution the organizer typed over the registry's", async () => {
+      const user = userEvent.setup();
+      renderFor(withOrganization(null, "ДШИ №1"));
+
+      const organization = await section("Участники").findByLabelText("Учреждение");
+      await user.clear(organization);
+      await user.type(organization, "ДШИ №2");
+      await user.click(screen.getByRole("button", { name: "Сохранить исправление" }));
+
+      await waitFor(() => expect(save).toHaveBeenCalled());
+      expect(save.mock.calls[0]?.[0].payload.participants[0].organizationName).toBe("ДШИ №2");
+    });
+
+    it("clearing the field hands the performer back to the registry", async () => {
+      // Пустое поле — «брать из реестра», а не «учреждения нет»: организатор
+      // отменяет свою правку, а не утверждает, что участник ниоткуда.
+      const user = userEvent.setup();
+      renderFor(withOrganization("ДШИ №2", "ДШИ №2"));
+
+      await user.clear(await section("Участники").findByLabelText("Учреждение"));
+      await user.click(screen.getByRole("button", { name: "Сохранить исправление" }));
+
+      await waitFor(() => expect(save).toHaveBeenCalled());
+      expect(save.mock.calls[0]?.[0].payload.participants[0].organizationName).toBeNull();
+    });
+  });
+
   it("offers only the nominations of the chosen genre", async () => {
     // Номинация заведена внутри жанра; чужая строка — сочетание, которого фестиваль
     // не принимает, и заявка встанет на нём же.
@@ -199,5 +293,65 @@ describe("SubmissionCorrectionDialog", () => {
 
     expect(await screen.findByText("Укажите название номера.")).toBeInTheDocument();
     expect(save).not.toHaveBeenCalled();
+  });
+});
+
+describe("SubmissionCorrectionDialog — файлы за участника", () => {
+  it("не предлагает загрузку там, где файлов не просили и у участника", () => {
+    // Форма участия без настроенных требований: в мастере подачи участник тоже не
+    // видел ни одной строки загрузки, и организатор не должен класть к номеру то,
+    // чего по нему никто не ждёт.
+    renderFor(aPerformance({ uploadRequirement: null }));
+
+    expect(screen.queryByRole("region", { name: "Файлы" })).not.toBeInTheDocument();
+  });
+
+  it("показывает ровно те строки, что фестиваль просил по этой форме участия", () => {
+    renderFor(aPerformance({ uploadRequirement: MUSIC_ONLY }));
+
+    const files = within(screen.getByRole("region", { name: "Файлы" }));
+    expect(files.getByText("Фонограммы")).toBeInTheDocument();
+    // Медиа по этой форме участия не принимают — значит, и строки нет.
+    expect(files.queryByText("Видео и фото")).not.toBeInTheDocument();
+  });
+
+  it("загружает выбранный файл как фонограмму — сразу, не дожидаясь «Сохранить»", async () => {
+    const user = userEvent.setup();
+    renderFor(aPerformance({ uploadRequirement: MUSIC_ONLY }));
+
+    const track = new File(["музыка"], "katyusha.mp3", { type: "audio/mpeg" });
+    await user.upload(screen.getByLabelText("Фонограммы"), track);
+
+    await waitFor(() =>
+      expect(uploadFile).toHaveBeenCalledWith({ file: track, attachmentType: "MUSIC" }),
+    );
+    // Сохранение формы при этом не трогали: файл — отдельное действие.
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it("перечисляет уже приложенное и даёт это снять", async () => {
+    // Без удаления присланный дважды трек нечем заменить — а играет тот, что остался.
+    const user = userEvent.setup();
+    renderFor(
+      aPerformance({
+        uploadRequirement: MUSIC_ONLY,
+        attachments: [
+          {
+            id: "att-1",
+            type: "MUSIC",
+            fileReference: "/media/uploads/katyusha.mp3",
+            caption: null,
+            sizeBytes: 2_000_000,
+          },
+        ],
+      }),
+    );
+
+    const files = within(screen.getByRole("region", { name: "Файлы" }));
+    expect(files.getByRole("link", { name: "katyusha.mp3" })).toBeInTheDocument();
+
+    await user.click(files.getByRole("button", { name: "Удалить" }));
+
+    expect(removeFile).toHaveBeenCalledWith("att-1");
   });
 });
