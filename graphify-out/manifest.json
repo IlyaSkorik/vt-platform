@@ -8265,8 +8265,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/public-program/api.ts": {
-    "mtime": 1785860601.0012028,
-    "ast_hash": "b809461f9ce49144fd39a9255caf8752",
+    "mtime": 1792790914.3414736,
+    "ast_hash": "2dc8d37819da591221bec36eb9989ef1",
     "semantic_hash": ""
   },
   "frontend/src/features/public-program/index.ts": {
@@ -9375,8 +9375,8 @@
     "semantic_hash": ""
   },
   "backend/gunicorn.conf.py": {
-    "mtime": 1785860600.8516164,
-    "ast_hash": "f3333fbe11cb7caa4238ca96ead88381",
+    "mtime": 1792790614.9116864,
+    "ast_hash": "a6eb30fae0185fc9c6f11e277c36ac6c",
     "semantic_hash": ""
   },
   "backend/shared/utils/json_values.py": {
@@ -11997,6 +11997,11 @@
   "backend/tests/infrastructure/diplomas/test_snapshot_refresh.py": {
     "mtime": 1792759343.9805958,
     "ast_hash": "790cf68c409005048c817c271583c305",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/public-program/live.test.tsx": {
+    "mtime": 1792790914.3437283,
+    "ast_hash": "78634470b3d2fb9bd5169f8c18795858",
     "semantic_hash": ""
   }
 }
