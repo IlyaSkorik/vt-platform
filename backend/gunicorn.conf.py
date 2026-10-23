@@ -23,8 +23,15 @@ workers = int(os.environ.get("GUNICORN_WORKERS", "3"))
 
 # reportlab and pypdf hold on to memory across a big print run. Recycling workers keeps a
 # long-lived process from growing indefinitely; the jitter avoids all of them restarting at once.
-max_requests = 1000
-max_requests_jitter = 100
+#
+# Configurable because the number is sized for ordinary traffic, and a live programme is not
+# that: every open screen in the hall polls the public endpoint every few seconds, so a few
+# hundred viewers spend this budget in under a minute and the workers spend the event
+# recycling instead of answering. Raise it for the day (`GUNICORN_MAX_REQUESTS=50000`) and
+# the leak this guards against — a print run, which nobody starts mid-festival — is simply
+# not happening meanwhile.
+max_requests = int(os.environ.get("GUNICORN_MAX_REQUESTS", "1000"))
+max_requests_jitter = int(os.environ.get("GUNICORN_MAX_REQUESTS_JITTER", "100"))
 
 timeout = 120  # a large synchronous PDF export must not be killed mid-render
 graceful_timeout = 30
