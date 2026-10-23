@@ -30,11 +30,13 @@ from reportlab.pdfgen import canvas
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import CategoryModel
+from apps.diplomas.application.batch_services import BatchResult, NominationTarget
 from apps.diplomas.application.refresh import RefreshOutcome, RefreshStatus
 from apps.diplomas.composition import build_diploma_award_service, build_diploma_snapshot_refresh_service
 from apps.diplomas.infrastructure.models import DiplomaModel, TemplateDocumentModel, TemplateModel
 from apps.diplomas.infrastructure.repositories import DjangoDiplomaRepository
 from apps.diplomas.presentation.api.v1.diplomas import composition
+from apps.diplomas.presentation.api.v1.diplomas.print_package import build_batch_service
 from apps.diplomas.presentation.scope import Scope
 
 if TYPE_CHECKING:
@@ -139,6 +141,15 @@ def _correct_organization(submission: SubmissionModel, name: str = _SCHOOL) -> N
 def _refresh(competition: CompetitionModel, *, apply: bool) -> list[RefreshOutcome]:
     diplomas = DjangoDiplomaRepository().list_by_competition(competition.id)
     return build_diploma_snapshot_refresh_service().refresh(diplomas, now=_LATER, apply=apply)
+
+
+def _print_package(competition: CompetitionModel, category: CategoryModel, template: TemplateModel) -> BatchResult:
+    """Собрать печатный пакет по одной номинации — «напечатай то, что есть сейчас»."""
+    return build_batch_service(competition.id).generate_print_package(
+        competition_id=competition.id,
+        targets=[NominationTarget(category_id=category.id, template_id=template.id)],
+        now=_LATER,
+    )
 
 
 def _text(reference: str) -> str:
@@ -433,3 +444,61 @@ class TestPublishingPicksUpCorrections:
             assert row.snapshot["organization"]["name"] == _SCHOOL
             # Ребёнок остался собой: имя — это и есть удостоверяемое дипломом.
             assert row.snapshot["member"]["full_name"] == row.recipient
+
+
+class TestPrintPackagePicksUpCorrections:
+    """Пересборка печатного пакета — это «напечатай то, что есть сейчас».
+
+    Существующий диплом раньше просто считался готовым, и пачка уезжала в типографию
+    с листом, напечатанным по данным до правки.
+    """
+
+    def test_regenerating_reprints_a_corrected_entry(self, setup: tuple[CompetitionModel, CategoryModel]) -> None:
+        competition, vocals = setup
+        submission = _submission(competition, vocals)
+        template = _template("Диплом", "DIPLOMA")
+        _assign(competition, vocals, template)
+        _print_package(competition, vocals, template)
+        before = DiplomaModel.objects.get(document_type="DIPLOMA")
+        assert _SCHOOL not in _text(before.print_pdf_path)
+
+        _correct_organization(submission)
+        result = _print_package(competition, vocals, template)
+
+        after = DiplomaModel.objects.get(pk=before.pk)
+        assert result.created == 0
+        assert after.snapshot["organization"]["name"] == _SCHOOL
+        assert _SCHOOL in _text(after.print_pdf_path)
+        assert after.number == before.number
+
+    def test_an_unchanged_entry_keeps_its_sheet(self, setup: tuple[CompetitionModel, CategoryModel]) -> None:
+        competition, vocals = setup
+        _submission(competition, vocals)
+        template = _template("Диплом", "DIPLOMA")
+        _assign(competition, vocals, template)
+        _print_package(competition, vocals, template)
+        before = DiplomaModel.objects.get(document_type="DIPLOMA")
+
+        _print_package(competition, vocals, template)
+
+        after = DiplomaModel.objects.get(pk=before.pk)
+        assert after.version == before.version
+        assert after.updated_at == before.updated_at
+
+    def test_an_already_issued_copy_is_refreshed_alongside_the_sheet(self, setup: tuple[CompetitionModel, CategoryModel]) -> None:
+        # Иначе кабинет показывал бы одно учреждение, а PDF за ним — другое.
+        competition, vocals = setup
+        submission = _submission(competition, vocals)
+        template = _template("Диплом", "DIPLOMA")
+        _assign(competition, vocals, template)
+        _award(competition, vocals, submission)
+        before = DiplomaModel.objects.get(document_type="DIPLOMA")
+
+        _correct_organization(submission)
+        _print_package(competition, vocals, template)
+
+        after = DiplomaModel.objects.get(pk=before.pk)
+        assert _SCHOOL in _text(after.official_pdf_path)
+        assert after.official_pdf_path == before.official_pdf_path
+        assert after.issued_at == before.issued_at
+        assert after.status == "ISSUED"

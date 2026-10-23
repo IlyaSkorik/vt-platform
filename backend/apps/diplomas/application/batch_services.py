@@ -213,10 +213,15 @@ class DiplomaBatchGenerationService:
                     )
                     self._repository.add(diploma)
                     created += 1
+                    stale = False
                 else:
                     skipped += 1
+                    diploma, stale = self._refreshed(diploma, assets=assets, now=now)
 
-                if force or not diploma.print_pdf_path:
+                # ``stale`` forces the re-render on its own: a diploma whose data was
+                # just rebuilt would otherwise go into the ZIP with the sheet printed
+                # from what the entry said before the organizer corrected it.
+                if force or stale or not diploma.print_pdf_path:
                     data = self._workspace.render(
                         assets=assets,
                         snapshot=diploma.snapshot,
@@ -241,6 +246,38 @@ class DiplomaBatchGenerationService:
             extras=self._place_sheets(assets_by_template, folders),
         )
         return BatchResult(created=created, skipped=skipped, zip_path=zip_path)
+
+    def _refreshed(self, diploma: Diploma, *, assets: TemplateAssets, now: datetime) -> tuple[Diploma, bool]:
+        """``diploma`` rebuilt from its entry when the entry has moved since.
+
+        Regenerating the package is the organizer's "print what we have now", so an
+        entry corrected after the last run has to reach the sheets. Nothing is touched
+        when nothing moved — an issued document that changes for no reason is one
+        nobody can vouch for afterwards — and neither the number nor the verification
+        token ever changes, so a sheet already printed stays the same document.
+
+        A diploma already handed to its participant has its copy re-rendered here too.
+        Leaving it would mean a cabinet showing one institution and the PDF behind it
+        another; the storage key is derived from the number, so the link the
+        participant holds keeps working and simply serves the corrected file.
+
+        Returns the diploma and whether its print sheet is now out of date.
+        """
+        build = self._snapshots.build(diploma.submission_id)
+        if build is None or not diploma.differs_from(build.snapshot):
+            return diploma, False
+        refreshed = diploma.with_refreshed_snapshot(build.snapshot, now=now)
+        if refreshed.official_pdf_path:
+            data = self._workspace.render(
+                assets=assets,
+                snapshot=refreshed.snapshot,
+                number=refreshed.number,
+                verification_token=refreshed.verification_token,
+            )
+            path = self._workspace.store_official_pdf(competition_id=refreshed.competition_id, number=refreshed.number, data=data)
+            refreshed = refreshed.issued(path, now=now)
+        self._repository.update(refreshed)
+        return refreshed, True
 
     def _place_sheets(
         self,
