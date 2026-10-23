@@ -375,3 +375,61 @@ class TestCommand:
         # словом, по ошибке или из истории шелла.
         with pytest.raises(CommandError, match="--competition"):
             call_command("refresh_diploma_snapshots", "--apply", stdout=io.StringIO())
+
+
+class TestPublishingPicksUpCorrections:
+    """Публикация протокола печатает то, что в заявке написано сегодня.
+
+    Она и так перерисовывает PDF ради степени — но делала это из снимка, который у
+    диплома уже был, и исправление организатора до бумаги не доходило. Чинить это
+    командой задним числом можно, но организатор, перепубликовавший протокол,
+    справедливо считает, что уже починил.
+    """
+
+    def test_a_correction_made_after_the_print_package_reaches_the_published_pdf(self, setup: tuple[CompetitionModel, CategoryModel]) -> None:
+        competition, vocals = setup
+        submission = _submission(competition, vocals)
+        _assign(competition, vocals, _template("Диплом", "DIPLOMA"))
+        _award(competition, vocals, submission)
+        before = DiplomaModel.objects.get(document_type="DIPLOMA")
+
+        _correct_organization(submission)
+        _award(competition, vocals, submission, degree="Лауреат II степени")
+
+        after = DiplomaModel.objects.get(pk=before.pk)
+        assert after.snapshot["organization"]["name"] == _SCHOOL
+        assert after.snapshot["award"]["degree"] == "Лауреат II степени"
+        assert _SCHOOL in _text(after.official_pdf_path)
+        # Тот же документ: номер и токен напечатаны и разосланы.
+        assert after.number == before.number
+        assert after.verification_token == before.verification_token
+
+    def test_republishing_an_unchanged_entry_does_not_rewrite_its_data(self, setup: tuple[CompetitionModel, CategoryModel]) -> None:
+        competition, vocals = setup
+        submission = _submission(competition, vocals)
+        _assign(competition, vocals, _template("Диплом", "DIPLOMA"))
+        _award(competition, vocals, submission)
+        before = DiplomaModel.objects.get(document_type="DIPLOMA")
+
+        _award(competition, vocals, submission)
+
+        after = DiplomaModel.objects.get(pk=before.pk)
+        assert after.snapshot == before.snapshot
+
+    def test_members_of_a_collective_follow_the_correction(self, setup: tuple[CompetitionModel, CategoryModel]) -> None:
+        competition, vocals = setup
+        roster = ["Иванова Мария", "Петров Пётр"]
+        submission = _submission(competition, vocals, members=roster)
+        _assign(competition, vocals, _template("Диплом", "DIPLOMA"))
+        _assign(competition, vocals, _template("Диплом участнику", "INDIVIDUAL_DIPLOMA", with_member=True))
+        _award(competition, vocals, submission)
+
+        _correct_organization(submission)
+        _award(competition, vocals, submission)
+
+        rows = list(DiplomaModel.objects.filter(document_type="INDIVIDUAL_DIPLOMA").order_by("recipient"))
+        assert [row.recipient for row in rows] == sorted(roster)
+        for row in rows:
+            assert row.snapshot["organization"]["name"] == _SCHOOL
+            # Ребёнок остался собой: имя — это и есть удостоверяемое дипломом.
+            assert row.snapshot["member"]["full_name"] == row.recipient
