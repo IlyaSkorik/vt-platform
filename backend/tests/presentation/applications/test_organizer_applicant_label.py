@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from apps.applications.presentation.api.v1.organizer.views import _applicant_label
+from apps.applications.presentation.api.v1.organizer.support import _applicant_label
 
 
 def test_solo_is_named_last_first_middle() -> None:

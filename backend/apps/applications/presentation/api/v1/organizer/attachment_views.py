@@ -39,7 +39,8 @@ from apps.applications.presentation.api.v1.files import file_url
 from apps.applications.presentation.api.v1.submissions import composition
 from apps.applications.presentation.api.v1.submissions.serializers import UploadAttachmentRequestSerializer
 
-from .views import _now, _StaffView
+from .support import _StaffView
+from .views import _now
 
 __all__ = ["OrganizerSubmissionAttachmentDetailView", "OrganizerSubmissionAttachmentsView"]
 

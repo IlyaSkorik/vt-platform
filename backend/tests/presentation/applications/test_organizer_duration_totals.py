@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from apps.applications.presentation.api.v1.organizer.views import _duration_seconds
+from apps.applications.presentation.api.v1.organizer.support import _duration_seconds
 
 
 def test_a_normal_duration_comes_through_unchanged() -> None:
