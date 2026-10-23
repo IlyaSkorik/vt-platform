@@ -22,6 +22,7 @@ from apps.diplomas.domain.value_objects import (
 )
 
 _NOW = datetime(2026, 5, 20, 12, 0, tzinfo=UTC)
+_LATER = datetime(2026, 6, 1, 9, 0, tzinfo=UTC)
 
 
 def _snapshot(*, degree: str | None = None) -> DiplomaSnapshot:
@@ -85,3 +86,22 @@ def test_with_degree_sets_only_the_degree_and_bumps_version() -> None:
     assert updated.number == diploma.number
     assert updated.snapshot.participant == diploma.snapshot.participant
     assert updated.snapshot.competition == diploma.snapshot.competition
+
+
+def test_printing_a_blank_does_not_un_issue_a_diploma() -> None:
+    # Пересборка печатного пакета после публикации результатов — обычное дело
+    # (добавили номинацию, поменяли макет). Выданный документ от этого выданным
+    # быть не перестаёт.
+    issued = _create(_snapshot(degree="Гран-при")).issued("/media/official.pdf", now=_NOW)
+
+    reprinted = issued.with_print_pdf("/media/print.pdf", now=_LATER)
+
+    assert reprinted.status is DiplomaStatus.ISSUED
+    assert reprinted.official_pdf_path == "/media/official.pdf"
+    assert reprinted.print_pdf_path == "/media/print.pdf"
+
+
+def test_printing_a_blank_marks_an_unissued_diploma_generated() -> None:
+    diploma = _create(_snapshot())
+
+    assert diploma.with_print_pdf("/media/print.pdf", now=_NOW).status is DiplomaStatus.GENERATED

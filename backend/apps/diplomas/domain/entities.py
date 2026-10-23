@@ -135,11 +135,18 @@ class Diploma:
         return self.snapshot.award.degree
 
     def with_print_pdf(self, path: str, *, now: datetime) -> Diploma:
-        """Record the generated print PDF (pre-ceremony copy) and mark GENERATED."""
+        """Record the generated print PDF (pre-ceremony copy) and mark GENERATED.
+
+        A diploma already issued stays issued: printing a blank is something the
+        organizer does to paper, and it cannot un-give the participant a document
+        they are holding. Regenerating the print package after the results were
+        published used to drop such a diploma back to ``GENERATED`` — the ZIP needs
+        the sheet, so the re-render is legitimate; the status change was not.
+        """
         return replace(
             self,
             print_pdf_path=path,
-            status=DiplomaStatus.GENERATED,
+            status=self.status if self.status is DiplomaStatus.ISSUED else DiplomaStatus.GENERATED,
             updated_at=now,
             version=self.version + 1,
         )
