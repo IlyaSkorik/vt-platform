@@ -173,6 +173,43 @@ class Diploma:
             version=self.version + 1,
         )
 
+    def _merged(self, snapshot: DiplomaSnapshot) -> DiplomaSnapshot:
+        """``snapshot`` as it would look on this diploma, keeping what is only ours.
+
+        Two values never come from the submission and must survive a rebuild:
+
+        * the **degree** — it is the jury's, written here by awarding and nowhere
+          present in the entry a snapshot is built from, so a fresh build always
+          carries ``None`` and a naive replacement would blank every award;
+        * the **member** — an individual diploma is the collective's snapshot
+          addressed to one person, and that person is this document's identity.
+          Rebuilding without them would turn twelve children's diplomas into twelve
+          copies of the ensemble's.
+        """
+        return replace(snapshot, award=self.snapshot.award, member=self.snapshot.member)
+
+    def differs_from(self, snapshot: DiplomaSnapshot) -> bool:
+        """Whether a rebuilt ``snapshot`` says anything this one does not.
+
+        The question a refresh asks before touching anything: a diploma whose data has
+        not moved must not be rewritten, re-rendered or re-versioned — an issued
+        document that changes for no reason is one nobody can vouch for afterwards.
+        """
+        return self._merged(snapshot) != self.snapshot
+
+    def with_refreshed_snapshot(self, snapshot: DiplomaSnapshot, *, now: datetime) -> Diploma:
+        """Return a copy rebuilt from ``snapshot`` — same document, corrected data.
+
+        The deliberate exception to this aggregate's rule that an issued document is
+        frozen. The rule exists so that a later edit to an entry cannot quietly rewrite
+        a diploma somebody is holding; it is not meant to make a correction the
+        organizer *did* make unprintable. Everything the document is identified by
+        stays untouched: its id, its registry number and its verification token — so
+        the QR already printed on paper keeps resolving to this diploma — along with
+        its degree and member (see :meth:`_merged`).
+        """
+        return replace(self, snapshot=self._merged(snapshot), updated_at=now, version=self.version + 1)
+
     def with_degree(self, degree: str | None, *, now: datetime) -> Diploma:
         """Return a copy whose award degree is set — the only snapshot field the
         organizer fills in after the fact (offline: printed later as "Степень").
