@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, Check, Play, SkipForward } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
 
 import {
@@ -76,6 +77,7 @@ function PublicProgramTable({
   const heading = [program.competitionTitle, program.nomination].filter(Boolean).join(" · ");
   const isHost = program.controlsRunningOrder;
   const columnKeys = program.columns.map((column) => column.key);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
 
   return (
     // This page has no shell to clip for it, so it clips for itself: the table below is as
@@ -119,57 +121,63 @@ function PublicProgramTable({
             description="Организатор ещё не добавил пункты в эту программу."
           />
         ) : (
-          // `relative` is load-bearing, not decoration. `sr-only` is `position: absolute`,
-          // and the host column's screen-reader header sits at the far right of a table that
-          // can be 2600px wide. Without a positioned ancestor its containing block is the
-          // document, so this scroll container never clips it and that one 1px span drags the
-          // whole page's scroll width out with it. `shared/ui/DataTable` carries the same
-          // `relative` for the same reason.
-          <div className="scrollbar-custom relative w-full max-w-full overflow-x-auto rounded-lg border border-border">
-            {/* `w-max min-w-full`: may exceed the container (that is what scrolls) but never
-                leaves it narrower than the space available. */}
-            <table className="w-max min-w-full border-collapse text-left">
-              <caption className="sr-only">{program.name}</caption>
-              <thead>
-                <tr className="border-border border-b bg-muted/50">
-                  {program.columns.map((column) => (
-                    <th
-                      key={column.key}
-                      scope="col"
-                      className="px-2 py-1.5 align-bottom font-medium text-muted-foreground text-[11px] uppercase tracking-wide sm:px-3"
-                    >
-                      {/* Capped like the cells below it: a column the organizer named
-                          «Ответственный за фонограмму» would otherwise set the column's
-                          width from its header alone. */}
-                      <span className="block max-w-[26ch] [overflow-wrap:anywhere]">
-                        {column.label}
-                      </span>
-                    </th>
+          <div className="flex min-w-0 flex-col gap-1">
+            <TopScrollbar targetRef={tableScrollRef} />
+            {/* `relative` is load-bearing, not decoration. `sr-only` is `position: absolute`,
+                and the host column's screen-reader header sits at the far right of a table that
+                can be 2600px wide. Without a positioned ancestor its containing block is the
+                document, so this scroll container never clips it and that one 1px span drags the
+                whole page's scroll width out with it. `shared/ui/DataTable` carries the same
+                `relative` for the same reason. */}
+            <div
+              ref={tableScrollRef}
+              className="scrollbar-custom relative w-full max-w-full overflow-x-auto rounded-lg border border-border"
+            >
+              {/* `w-max min-w-full`: may exceed the container (that is what scrolls) but never
+                  leaves it narrower than the space available. */}
+              <table className="w-max min-w-full border-collapse text-left">
+                <caption className="sr-only">{program.name}</caption>
+                <thead>
+                  <tr className="border-border border-b bg-muted/50">
+                    {program.columns.map((column) => (
+                      <th
+                        key={column.key}
+                        scope="col"
+                        className="px-2 py-1.5 align-bottom font-medium text-muted-foreground text-[11px] uppercase tracking-wide sm:px-3"
+                      >
+                        {/* Capped like the cells below it: a column the organizer named
+                            «Ответственный за фонограмму» would otherwise set the column's
+                            width from its header alone. */}
+                        <span className="block max-w-[26ch] [overflow-wrap:anywhere]">
+                          {column.label}
+                        </span>
+                      </th>
+                    ))}
+                    {isHost ? (
+                      <th scope="col" className="px-2 py-1.5 text-right sm:px-3">
+                        <span className="sr-only">Управление</span>
+                      </th>
+                    ) : null}
+                  </tr>
+                </thead>
+                <tbody>
+                  {program.rows.map((row, index) => (
+                    <ProgramTableRow
+                      // A public row carries no id unless this is the host's edition, so its
+                      // own published content identifies it. Safe here: the table is
+                      // re-rendered whole from each poll.
+                      key={row.id ?? `${row.kind}${row.cells.join("")}`}
+                      slug={slug}
+                      row={row}
+                      rows={program.rows}
+                      index={index}
+                      columns={columnKeys}
+                      isHost={isHost}
+                    />
                   ))}
-                  {isHost ? (
-                    <th scope="col" className="px-2 py-1.5 text-right sm:px-3">
-                      <span className="sr-only">Управление</span>
-                    </th>
-                  ) : null}
-                </tr>
-              </thead>
-              <tbody>
-                {program.rows.map((row, index) => (
-                  <ProgramTableRow
-                    // A public row carries no id unless this is the host's edition, so its
-                    // own published content identifies it. Safe here: the table is
-                    // re-rendered whole from each poll.
-                    key={row.id ?? `${row.kind}${row.cells.join("")}`}
-                    slug={slug}
-                    row={row}
-                    rows={program.rows}
-                    index={index}
-                    columns={columnKeys}
-                    isHost={isHost}
-                  />
-                ))}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -177,6 +185,90 @@ function PublicProgramTable({
           Программа обновляется автоматически · «{APP_NAME}»
         </footer>
       </div>
+    </div>
+  );
+}
+
+/**
+ * A second horizontal scrollbar, mirrored above the programme table.
+ *
+ * A published programme can be 2600px wide and dozens of rows long, so the table's own
+ * bar sits at the bottom of something that runs well past the fold: to reach the columns
+ * on the right the reader first has to scroll the page *down*, past every act, to find
+ * the control that moves it. This rail is that same control, kept where the table starts.
+ *
+ * Desktop only. On a phone the table is dragged sideways with a finger, the bar is an
+ * overlay hint that fades at rest, and a duplicate would cost a row of a page that is
+ * read backstage with the next act already walking on.
+ */
+function TopScrollbar({
+  targetRef,
+}: {
+  targetRef: React.RefObject<HTMLDivElement | null>;
+}): React.JSX.Element {
+  const railRef = useRef<HTMLDivElement>(null);
+  // The table's scroll width, or 0 when it fits — a rail with nothing left to scroll is
+  // hidden rather than drawn as an empty strip above a narrow programme.
+  const [scrollWidth, setScrollWidth] = useState(0);
+
+  useEffect(() => {
+    const target = targetRef.current;
+    if (!target) return;
+
+    const measure = (): void => {
+      setScrollWidth(target.scrollWidth > target.clientWidth ? target.scrollWidth : 0);
+    };
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    // Both boxes: the container changes with the window, the table with the programme —
+    // a poll that adds an act or widens a column moves the table without touching the
+    // container around it.
+    observer.observe(target);
+    const table = target.firstElementChild;
+    if (table) observer.observe(table);
+    return () => observer.disconnect();
+  }, [targetRef]);
+
+  useEffect(() => {
+    const target = targetRef.current;
+    const rail = railRef.current;
+    if (!target || !rail) return;
+
+    // Each handler writes only when the two differ, which is what stops the pair from
+    // echoing a scroll back and forth at each other forever.
+    const follow = (from: HTMLElement, to: HTMLElement) => (): void => {
+      if (to.scrollLeft !== from.scrollLeft) to.scrollLeft = from.scrollLeft;
+    };
+    const railToTable = follow(rail, target);
+    const tableToRail = follow(target, rail);
+    rail.scrollLeft = target.scrollLeft;
+
+    rail.addEventListener("scroll", railToTable, { passive: true });
+    target.addEventListener("scroll", tableToRail, { passive: true });
+    return () => {
+      rail.removeEventListener("scroll", railToTable);
+      target.removeEventListener("scroll", tableToRail);
+    };
+  }, [targetRef]);
+
+  return (
+    // Hidden from assistive tech and from the tab order: it moves the same table the
+    // element below it moves, and a keyboard already scrolls that one.
+    //
+    // Always mounted, even when there is nothing to scroll: the effect above needs the
+    // element to attach to, and a rail that comes and goes with the programme's width
+    // would have to re-bind its listeners on every poll.
+    <div
+      ref={railRef}
+      aria-hidden="true"
+      className={
+        scrollWidth === 0
+          ? "hidden"
+          : "scrollbar-custom hidden w-full max-w-full overflow-x-auto overflow-y-hidden sm:block"
+      }
+    >
+      <div className="h-px" style={{ width: scrollWidth }} />
     </div>
   );
 }
