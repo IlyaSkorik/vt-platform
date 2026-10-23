@@ -1,21 +1,17 @@
 from __future__ import annotations
 
 import contextlib
-import csv
 import uuid
-from collections import Counter
+from collections import Counter, defaultdict
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
-from io import StringIO
 from pathlib import PurePosixPath
 from typing import Any
 
 from django.conf import settings
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from apps.applications.application.dto import ParticipantView, TeacherView
 from apps.applications.application.dto.commands import (
@@ -49,31 +45,28 @@ from apps.competitions.infrastructure.models.taxonomy import (
 )
 from apps.competitions.infrastructure.repositories.django_competition_repository import DjangoCompetitionRepository
 from apps.emailing import render_transactional_email_html
-from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
 from apps.identity.infrastructure.models.user import UserModel
 from apps.notifications.infrastructure import feed as notification_feed
 from apps.notifications.infrastructure.models import NotificationKind
-from apps.organization.domain.value_objects import OrganizationModule
-from apps.organization.presentation.permissions import IsModuleEnabled, IsOrganizationStaff
-from apps.organization.presentation.scope import callers_organization_id, is_platform_operator
 from apps.participants.infrastructure.models import ParticipantOrganizationMembershipModel
 from apps.teachers.infrastructure.models import TeacherModel
 from config.archive import ArchiveMember, zip_response
+from shared.spreadsheet import xlsx_response
 
-_QUEUE_BY_STATUS = {
-    "WAITLISTED": "WAITLIST",
-    "SUBMITTED": "NEW",
-    "UNDER_REVIEW": "NEW",
-    "REQUIRES_CORRECTION": "NEW",
-    "APPROVED": "READY",
-    "WAITING_PAYMENT": "READY",
-    "PAID": "READY",
-    "ACCEPTED": "READY",
-    "SCHEDULED": "RUNNING",
-    "COMPLETED": "RUNNING",
-    "CANCELLED": "ARCHIVE",
-}
-
+from .export import applications_workbook
+from .filters import ProcessingFilters
+from .selection import OrderFacts, select_submissions
+from .support import (
+    _QUEUE_BY_STATUS,
+    _applicant_label,
+    _duration_seconds,
+    _missing_type_label,
+    _payer_full_name,
+    _queue_for,
+    _receipt_references,
+    _StaffView,
+    _visible_competitions,
+)
 
 #: Статусы, в которых организатор ещё может исправить содержимое заявки за участника.
 #:
@@ -272,43 +265,6 @@ def _taxonomy_options(competition_id: str) -> dict[str, list[dict[str, Any]]]:
     }
 
 
-def _visible_competitions(request: Request) -> Any:
-    """The competitions this caller's organization runs (all of them, for the operator).
-
-    Everything in the organizer workspace hangs off this queryset — the queues, the
-    filters, the exports, the archives — so scoping it here scopes the workspace.
-    A caller who is staff of no organization sees nothing rather than everything.
-    """
-    competitions = CompetitionModel.objects.filter(deleted_at__isnull=True)
-    if is_platform_operator(request):
-        return competitions
-    organization_id = callers_organization_id(request)
-    if organization_id is None:
-        return competitions.none()
-    return competitions.filter(organizer_id=organization_id)
-
-
-def _receipt_references(payment_receipts: Any) -> list[str]:
-    """The stored file of every receipt on an order, oldest first, blanks dropped.
-
-    An order carries a list because its fee is regularly settled by more than one
-    transfer; everything downstream (the payment badge, the archive, the reminder)
-    asks about the whole list rather than a single document.
-    """
-    return [reference for entry in payment_receipts or [] if (reference := str((entry or {}).get("file_reference") or "").strip())]
-
-
-def _payer_full_name(row: Any) -> str | None:
-    """The order's payer rendered ``Last First Middle``, or ``None`` if unnamed.
-
-    Only festivals that ask for the contract party have anything in these columns, so
-    an absent name is the normal case rather than missing data.
-    """
-    parts = [str(row.get(key) or "").strip() for key in ("payer_last_name", "payer_first_name", "payer_middle_name")]
-    named = [part for part in parts if part]
-    return " ".join(named) or None
-
-
 def _educational_organizations(participants: Sequence[ParticipantView]) -> list[str]:
     """Учреждения выступающих — одним запросом в реестр участников.
 
@@ -368,47 +324,6 @@ def _educational_organizations(participants: Sequence[ParticipantView]) -> list[
     return list(seen)
 
 
-def _participant_label(entry: Any) -> str:
-    """One performer as the organizer knows them — a soloist's name or the group's.
-
-    A collective stores only ``display_name``; a soloist stores the name parts and,
-    often, a ``display_name`` repeating them. Reading the parts first keeps the
-    order ``Last First Middle`` even when the stored caption was typed the other
-    way round.
-    """
-    person = " ".join(part for key in ("last_name", "first_name", "middle_name") if (part := str(entry.get(key) or "").strip()))
-    return person or str(entry.get("display_name") or "").strip()
-
-
-def _applicant_label(participants: Sequence[Any], *fallbacks: str | None) -> str:
-    """Who the entry is for, in one line for the queue card.
-
-    The queue used to print ``applicant_id`` — a raw UUID that tells the organizer
-    nothing and cannot be matched against a transfer or a phone call. The performers
-    are what they recognise, so the card names the first one and counts the rest;
-    only an entry with no performers at all falls back to the studio or the payer.
-    """
-    names = [label for entry in participants or [] if (label := _participant_label(entry))]
-    if names:
-        return names[0] if len(names) == 1 else f"{names[0]} и ещё {len(names) - 1}"
-    for fallback in fallbacks:
-        if fallback and fallback.strip():
-            return fallback.strip()
-    return "—"
-
-
-def _duration_seconds(value: Any) -> int:
-    """Хронометраж номера в секундах; всё, что не число, считается нулём.
-
-    Длительности складывают в итог по жанру, и одна заявка с испорченным значением
-    не должна обнулять или взорвать весь подсчёт.
-    """
-    try:
-        return max(0, int(value))
-    except (TypeError, ValueError):
-        return 0
-
-
 def _receipt_urls(references: Sequence[str]) -> list[str]:
     """The same receipts as addresses a browser can open.
 
@@ -463,18 +378,6 @@ def _cabinet_path(application_id: str | None) -> str:
     return f"/cabinet/applications/{application_id}" if application_id else "/cabinet/applications"
 
 
-def _missing_type_label(raw: str) -> str:
-    labels = {
-        "MUSIC": "Музыка",
-        "VIDEO": "Видео",
-        "DOCUMENT": "Документы",
-        "RECEIPT": "Квитанция",
-        "OTHER": "Другое",
-    }
-    key = str(raw or "").upper()
-    return labels.get(key, key)
-
-
 def _capabilities(status: str) -> list[dict[str, str]]:
     """What the organizer may do to a submission in this status.
 
@@ -504,29 +407,14 @@ def _capabilities(status: str) -> list[dict[str, str]]:
     return [{"key": key, "label": label} for key, label in mapping.get(status, [])]
 
 
-class _StaffView(APIView):
-    authentication_classes = (CredentialAwareJWTAuthentication,)
-    permission_classes = (IsAuthenticated, IsOrganizationStaff, IsModuleEnabled.of(OrganizationModule.APPLICATIONS))
-
-
 class OrganizerProcessingWorkspaceView(_StaffView):
     def get(self, request: Request) -> Response:
         user_id = str(request.user.id)
-        query = (request.query_params.get("q") or "").strip().lower()
-        queue_filter = (request.query_params.get("queue") or "").strip().upper()
+        # Тот же разбор, по которому собираются выгрузки: организатор жмёт «Скачать»
+        # поверх отобранного экрана и ждёт в файле ровно то, что видит.
+        filters = ProcessingFilters.from_request(request)
         selected_id = (request.query_params.get("selected") or "").strip()
-        competition_filter = (request.query_params.get("competitionId") or "").strip()
-        status_filter = (request.query_params.get("status") or "").strip().upper()
-        payment_filter = (request.query_params.get("payment") or "").strip().upper()
-        teacher_filter = (request.query_params.get("teacher") or "").strip().lower()
-        # Жанр фильтруется по названию, а не по id: у каждого фестиваля своя строка
-        # справочника, и организатор, выбирая «Вокал», имеет в виду вокал везде.
-        nomination_filter = (request.query_params.get("nomination") or "").strip().lower()
-        organization_filter = (request.query_params.get("organization") or "").strip().lower()
-        from_date = (request.query_params.get("from") or "").strip()
-        to_date = (request.query_params.get("to") or "").strip()
-        has_corrections_filter = (request.query_params.get("hasCorrections") or "").strip().lower()
-        has_missing_files_filter = (request.query_params.get("hasMissingFiles") or "").strip().lower()
+        competition_filter = filters.competition_id
 
         competitions = list(_visible_competitions(request).values("id", "title", "status").order_by("title"))
         competition_ids = [row["id"] for row in competitions]
@@ -607,7 +495,6 @@ class OrganizerProcessingWorkspaceView(_StaffView):
             teachers = model.teachers or []
             missing_requests = model.missing_files_requests or []
             has_missing_files = any(not bool(entry.get("resolved_at")) for entry in missing_requests)
-            queue_key = _QUEUE_BY_STATUS.get(model.status, "ARCHIVE")
             title = str(performance.get("title") or "")
             nomination_id = str(performance.get("nomination_id") or "")
             nomination = nomination_name.get(nomination_id, "")
@@ -645,8 +532,7 @@ class OrganizerProcessingWorkspaceView(_StaffView):
             receipt_refs = list(app_meta.get("receipt_refs") or [])
             payment = "RECEIPT_ATTACHED" if receipt_refs else "RECEIPT_MISSING"
             has_corrections = model.status == "REQUIRES_CORRECTION"
-            if model.status not in {"REQUIRES_CORRECTION", "SCHEDULED", "COMPLETED", "CANCELLED"}:
-                queue_key = "READY" if receipt_refs else "WAITING_PAYMENT"
+            queue_key = _queue_for(model.status, has_receipts=bool(receipt_refs))
             # Named `card`, not `row`: `row` is already the loop variable for the
             # `.values()` querysets above, and reusing it made the checker treat this
             # response payload as one of those database row shapes.
@@ -677,29 +563,19 @@ class OrganizerProcessingWorkspaceView(_StaffView):
             }
             all_rows.append(card)
 
-            if query and query not in haystack:
-                continue
-            if queue_filter and queue_key != queue_filter:
-                continue
-            if competition_filter and str(model.competition_id) != competition_filter:
-                continue
-            if status_filter and model.status != status_filter:
-                continue
-            if payment_filter and payment != payment_filter:
-                continue
-            if teacher_filter and teacher_filter not in teachers_text.lower():
-                continue
-            if nomination_filter and nomination.lower() != nomination_filter:
-                continue
-            if organization_filter and organization_filter not in organization_name.lower():
-                continue
-            if from_date and model.created_at.date().isoformat() < from_date:
-                continue
-            if to_date and model.created_at.date().isoformat() > to_date:
-                continue
-            if has_corrections_filter in {"true", "false"} and has_corrections != (has_corrections_filter == "true"):
-                continue
-            if has_missing_files_filter in {"true", "false"} and has_missing_files != (has_missing_files_filter == "true"):
+            if not filters.matches(
+                haystack=haystack,
+                queue=queue_key,
+                competition_id=str(model.competition_id),
+                status=model.status,
+                payment=payment,
+                teachers_text=teachers_text,
+                nomination=nomination,
+                submitted_on=model.created_at.date().isoformat(),
+                has_corrections=has_corrections,
+                has_missing_files=has_missing_files,
+                organization=organization_name,
+            ):
                 continue
             rows.append(card)
 
@@ -1446,16 +1322,14 @@ def _archive_safe(text: str) -> str:
     return cleaned or "—"
 
 
-def _application_folder(application: ApplicationModel) -> str:
+def _order_folder(order: OrderFacts) -> str:
     """The folder an order's paperwork goes in: who it is, then which order.
 
     The name alone is not enough — two Ивановых Анны are ordinary at a festival — so
     the order's short id follows it. Accounting reconciles against that id anyway.
     """
-    refs = application.submission_refs or []
-    lead = next((str(ref.get("participant_display_name") or "").strip() for ref in refs if ref.get("participant_display_name")), "")
-    short = str(application.id).split("-")[0]
-    return _archive_safe(f"{lead} — {short}" if lead else f"Заявка {short}")
+    short = order.id.split("-")[0]
+    return _archive_safe(f"{order.lead_performer} — {short}" if order.lead_performer else f"Заявка {short}")
 
 
 class OrganizerProcessingDocumentsArchiveView(_StaffView):
@@ -1465,10 +1339,16 @@ class OrganizerProcessingDocumentsArchiveView(_StaffView):
     somebody reconciles payments and benefits from, and mixing the two would mean
     downloading gigabytes of audio to read four PDFs.
 
-    Scoped with ``competitionId`` when given; without it, every order the organizer
-    can see. One folder per order, so the receipts and the certificate justifying the
-    amount sit together — the receipts first, because they are the documents the rest
-    of the folder explains.
+    Собирается по тому же отбору, что и очередь на экране (:mod:`.selection`):
+    фестиваль, очередь, статус, жанр, учреждение, поиск. Организатор ставит
+    «назначены на фестиваль» и жмёт «Скачать документы», имея в виду бумаги этих
+    заявок, — архив за весь сезон вместо них он заметит, уже отправив папку в
+    бухгалтерию.
+
+    One folder per order, so the receipts and the certificate justifying the amount
+    sit together — the receipts first, because they are the documents the rest of the
+    folder explains. Справки берутся по отобранным номерам, а не по всему заказу: в
+    папке должно лежать то, что отобрано, и ничего сверх того.
 
     An order settled by several transfers carries several receipts, and they are all
     included, numbered in upload order (``Квитанция 1``, ``Квитанция 2``, …) so the
@@ -1482,74 +1362,42 @@ class OrganizerProcessingDocumentsArchiveView(_StaffView):
     """
 
     def get(self, request: Request) -> Any:
-        competition_filter = (request.query_params.get("competitionId") or "").strip()
-        # Scoped to the caller's own organization first, then narrowed by the
-        # filter: an archive is a bulk download, and a bulk download is exactly
-        # where a missing scope would hand over someone else's paperwork.
-        visible = list(_visible_competitions(request).values_list("id", flat=True))
-        applications = ApplicationModel.objects.filter(deleted_at__isnull=True, competition_id__in=visible)
-        if competition_filter:
-            applications = applications.filter(competition_id=competition_filter)
-        applications = applications.order_by("created_at")
+        selection = select_submissions(request)
+
+        benefits_by_order: dict[str, list[tuple[str, str]]] = defaultdict(list)
+        for entry in selection.entries:
+            if entry.order is None:
+                continue
+            for attachment in entry.model.attachments or []:
+                if (attachment or {}).get("type") != "BENEFIT":
+                    continue
+                if reference := str((attachment or {}).get("file") or "").strip():
+                    benefits_by_order[entry.order.id].append((str((attachment or {}).get("caption") or "Документ о льготе"), reference))
 
         members: list[ArchiveMember] = []
         without_receipt: list[str] = []
-        for application in applications:
-            folder = _application_folder(application)
-            # ``file_reference``, not ``file``: an order's receipt and a submission's
-            # attachment are stored under different keys, and only the attachment uses
-            # the short one.
-            receipts = _receipt_references(application.payment_receipts)
-            for index, receipt in enumerate(receipts, start=1):
-                caption = "Квитанция" if len(receipts) == 1 else f"Квитанция {index}"
+        for order in selection.orders:
+            folder = _order_folder(order)
+            for index, receipt in enumerate(order.receipts, start=1):
+                caption = "Квитанция" if len(order.receipts) == 1 else f"Квитанция {index}"
                 members.append(ArchiveMember(arcname=f"{folder}/{caption}{PurePosixPath(receipt).suffix.lower()}", reference=receipt))
-            if not receipts:
+            if not order.receipts:
                 without_receipt.append(folder)
-            submission_ids = [ref.get("submission_id") for ref in application.submission_refs or [] if ref.get("submission_id")]
-            for row in SubmissionModel.objects.filter(id__in=submission_ids, deleted_at__isnull=True).values_list("attachments", flat=True):
-                for entry in row or []:
-                    if (entry or {}).get("type") != "BENEFIT":
-                        continue
-                    reference = str((entry or {}).get("file") or "").strip()
-                    if not reference:
-                        continue
-                    caption = _archive_safe((entry or {}).get("caption") or "Документ о льготе")
-                    members.append(ArchiveMember(arcname=f"{folder}/{caption}{PurePosixPath(reference).suffix.lower()}", reference=reference))
+            for caption, reference in benefits_by_order.get(order.id, []):
+                safe = _archive_safe(caption)
+                members.append(ArchiveMember(arcname=f"{folder}/{safe}{PurePosixPath(reference).suffix.lower()}", reference=reference))
 
         notes = [f"Без квитанции: {folder}" for folder in without_receipt]
         return zip_response(members, filename="Документы заявок.zip", notes=notes)
 
 
 class OrganizerProcessingExportView(_StaffView):
-    def get(self, request: Request) -> Response:
-        export_type = (request.query_params.get("type") or "applications").strip()
-        submissions = SubmissionModel.objects.filter(deleted_at__isnull=True).order_by("-updated_at")
-        buffer = StringIO()
-        writer = csv.writer(buffer)
-        if export_type == "teachers":
-            writer.writerow(["submission_id", "teacher_name", "role"])
-            for model in submissions:
-                for teacher in model.teachers or []:
-                    writer.writerow(
-                        [
-                            str(model.id),
-                            " ".join(filter(None, [str(teacher.get("last_name") or ""), str(teacher.get("first_name") or "")])).strip(),
-                            str(teacher.get("role") or ""),
-                        ]
-                    )
-        elif export_type == "organizations":
-            writer.writerow(["submission_id", "organization"])
-            apps = ApplicationModel.objects.filter(deleted_at__isnull=True).values("organization_name", "submission_refs")
-            for row in apps:
-                for ref in row.get("submission_refs") or []:
-                    writer.writerow([str(ref.get("submission_id") or ""), str(row.get("organization_name") or "")])
-        else:
-            writer.writerow(["submission_id", "competition_id", "applicant_id", "status", "created_at", "updated_at"])
-            for model in submissions:
-                writer.writerow([model.id, model.competition_id, model.applicant_id, model.status, model.created_at, model.updated_at])
+    """``GET`` отобранные заявки как таблицу Excel.
 
-        content = buffer.getvalue()
-        response = Response(content, content_type="text/csv; charset=utf-8")
-        filename = f"{export_type}.csv"
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
-        return response
+    Содержимое и его устройство — в :mod:`.export`; здесь только то, что делает из
+    книги загрузку. Отбор тот же, что у экрана и у архива бумаг.
+    """
+
+    def get(self, request: Request) -> Any:
+        workbook, filename = applications_workbook(request)
+        return xlsx_response(workbook, filename=filename)
