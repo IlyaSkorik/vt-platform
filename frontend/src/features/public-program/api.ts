@@ -99,6 +99,22 @@ export function usePublicProgram(
     queryFn: ({ signal }) => fetchPublicProgram(slug ?? "", signal),
     refetchInterval: (query) => livePollInterval(query.state.data, isHidden()),
     refetchIntervalInBackground: true,
+    // Both of these exist to restart a poll this file deliberately stops.
+    //
+    // A viewer who switches away stops polling (see `livePollInterval`), and nothing
+    // starts it again on its own: the interval is recomputed only when a fetch settles,
+    // so a screen that stopped while hidden stays stopped after it comes back — for the
+    // rest of the festival, showing a running order frozen at the moment of the switch.
+    // Coming back to the tab is the event that restarts it, which is what
+    // `refetchOnWindowFocus` subscribes to (the platform default turns it off).
+    //
+    // `staleTime: 0` is what makes that refetch actually happen: a refetch on focus is
+    // skipped while the data is still fresh, and the platform's 30s freshness window is
+    // six polls of a programme that changes while people watch. Both halves are needed —
+    // with the default window, a viewer back inside 30 seconds would get no refetch, and
+    // so no new interval either.
+    refetchOnWindowFocus: true,
+    staleTime: 0,
     retry: false,
   });
 }
@@ -107,9 +123,9 @@ export function usePublicProgram(
  * How long until this screen should re-read the programme, or `false` to stop for now.
  *
  * Visible, everyone polls. Hidden, only the edition that drives the day keeps polling: a
- * phone in a pocket and a switched-away tab show nobody anything, and on return TanStack
- * refetches on focus, so that viewer sees a current programme the moment they look — no
- * tick to wait for. A display beside the stage is the opposite case: nothing ever brings
+ * phone in a pocket and a switched-away tab show nobody anything, and on return the
+ * refetch on focus — switched on in `usePublicProgram`, since the platform default is
+ * off — both shows that viewer a current programme and starts the interval again. A display beside the stage is the opposite case: nothing ever brings
  * it back to the foreground, and it has to be right whenever somebody glances at it.
  *
  * An edition whose first read has not landed yet keeps polling: it may turn out to be the
