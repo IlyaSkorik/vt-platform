@@ -158,6 +158,17 @@ function useHostMutation<TVariables>(
 ): UseMutationResult<PublicProgram, ApiError, TVariables> {
   const queryClient = useQueryClient();
   return useMutation<PublicProgram, ApiError, TVariables>({
+    // A poll that was already on its way carries the table as it was *before* this
+    // write, and it lands after the answer to the write does — so the host's own screen
+    // jumps back to what they just changed and stays wrong until the next tick. In front
+    // of a hall that reads as the button not having worked, and the second press puts the
+    // act that is already on stage back on it.
+    //
+    // So the poll in flight is cancelled before the write goes out: there is nothing left
+    // to overwrite the answer with, and the next tick asks again a few seconds later.
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: publicProgramKeys.detail(slug) });
+    },
     mutationFn: async (variables) => {
       try {
         return (await send(variables)).data;

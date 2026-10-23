@@ -5,11 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createQueryClient } from "@/shared/api/query-client";
 
-import { type PublicProgram, usePublicProgram } from "./api";
+import { type PublicProgram, usePublicProgram, useSetRowProgress } from "./api";
 
 /**
- * How a live screen stops telling the truth during a festival — silently, which is why
- * it is pinned down here.
+ * The two ways a live screen stops telling the truth during a festival — both of them
+ * silent, which is why they are pinned down here.
  */
 
 const program = (progress: "PENDING" | "ON_STAGE"): PublicProgram => ({
@@ -72,5 +72,56 @@ describe("a screen that was switched away from", () => {
     await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(whileAway + 1), {
       timeout: 9000,
     });
+  }, 30000);
+
+  it("does not roll the host's screen back to a poll that was already in flight", async () => {
+    const poll: { release: ((value: Response) => void) | null } = { release: null };
+    const fetchMock = vi.fn(async (input: unknown, init?: RequestInit) => {
+      // Ky hands fetch a `Request`, so the method is on the input, not on the init.
+      const method = String(
+        init?.method ?? (input instanceof Request ? input.method : "get"),
+      ).toLowerCase();
+      if (method !== "get") {
+        return json(program("ON_STAGE"));
+      }
+      if (fetchMock.mock.calls.length === 1) {
+        return json(program("PENDING"));
+      }
+      return new Promise<Response>((resolve, reject) => {
+        poll.release = resolve;
+        // Honour the abort the way the browser does: cancelling the poll is exactly
+        // what the mutation waits on before it writes.
+        const signal = init?.signal ?? (input instanceof Request ? input.signal : null);
+        signal?.addEventListener("abort", () => {
+          reject(new DOMException("Aborted", "AbortError"));
+        });
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const wrapper = wrapperFor();
+    const { result } = renderHook(
+      () => ({
+        read: usePublicProgram("Sound2345"),
+        mark: useSetRowProgress("Sound2345"),
+      }),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.read.data?.rows[0]?.progress).toBe("PENDING"));
+    // A poll goes out and hangs…
+    await waitFor(() => expect(poll.release).not.toBeNull(), { timeout: 9000 });
+
+    // …the host marks the act, and the write answers first.
+    result.current.mark.mutate({
+      itemId: "11111111-1111-1111-1111-111111111111",
+      progress: "ON_STAGE",
+    });
+    await waitFor(() => expect(result.current.read.data?.rows[0]?.progress).toBe("ON_STAGE"));
+
+    // The stale poll lands afterwards carrying the table as it was before the press.
+    poll.release?.(json(program("PENDING")));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(result.current.read.data?.rows[0]?.progress).toBe("ON_STAGE");
   }, 30000);
 });
