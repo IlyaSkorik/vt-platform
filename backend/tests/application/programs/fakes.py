@@ -15,7 +15,13 @@ from datetime import UTC, datetime
 from apps.programs.application.interfaces import CatalogApplicant, CatalogPerformance
 from apps.programs.domain.entities import Program, ProgramItem
 
-__all__ = ["FixedClock", "InMemoryProgramRepository", "ScriptedSlugFactory", "StubPerformanceCatalog"]
+__all__ = [
+    "FixedClock",
+    "InMemoryProgramRepository",
+    "RecordingPerformanceSchedule",
+    "ScriptedSlugFactory",
+    "StubPerformanceCatalog",
+]
 
 
 class FixedClock:
@@ -78,6 +84,15 @@ class InMemoryProgramRepository:
 
     def items_retired_at(self, program_id: uuid.UUID, moment: datetime) -> tuple[ProgramItem, ...]:
         return self.retired.get(program_id, {}).get(moment, ())
+
+    def submission_ids_with_slots(self, submission_ids: Sequence[uuid.UUID]) -> frozenset[uuid.UUID]:
+        wanted = set(submission_ids)
+        seated: set[uuid.UUID] = set()
+        for program in self.programs.values():
+            if program.deleted_at is not None:
+                continue
+            seated.update(wanted.intersection(program.performance_submission_ids))
+        return frozenset(seated)
 
     def slug_taken(self, slug: str) -> bool:
         return slug in self.claimed_slugs
@@ -147,3 +162,22 @@ class StubPerformanceCatalog:
 
     def nomination_title(self, nomination_id: uuid.UUID) -> str | None:
         return self._nomination
+
+
+class RecordingPerformanceSchedule:
+    """Records what the running order told the Applications context, in order.
+
+    Two logs rather than one with a flag: every assertion about this port is about
+    *which* way an act moved, and a test that has to unpack a tuple to find out
+    reads worse than one that names the list it looks in.
+    """
+
+    def __init__(self) -> None:
+        self.scheduled: list[uuid.UUID] = []
+        self.unscheduled: list[uuid.UUID] = []
+
+    def mark_scheduled(self, submission_ids: Sequence[uuid.UUID]) -> None:
+        self.scheduled.extend(submission_ids)
+
+    def mark_unscheduled(self, submission_ids: Sequence[uuid.UUID]) -> None:
+        self.unscheduled.extend(submission_ids)

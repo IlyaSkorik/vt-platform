@@ -18,6 +18,7 @@ Applications context does it, and a stale write is refused rather than applied.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from datetime import datetime
 
 from django.db import transaction
@@ -59,6 +60,25 @@ class DjangoProgramRepository:
         """
         rows = ProgramItemModel.objects.filter(program_id=program_id, deleted_at=moment).order_by("position")
         return tuple(ProgramMapper.item_to_entity(row) for row in rows)
+
+    def submission_ids_with_slots(self, submission_ids: Sequence[uuid.UUID]) -> frozenset[uuid.UUID]:
+        """Which of these acts still stand in a live slot of a live programme.
+
+        Both halves of "live" matter: a soft-deleted item is a slot that was pulled,
+        and a soft-deleted programme takes every slot in it down with it — neither
+        keeps an act scheduled. The join is why this is a repository query rather
+        than something the caller could assemble from ``list_for_competition``.
+        """
+        if not submission_ids:
+            return frozenset()
+        rows = ProgramItemModel.objects.filter(
+            submission_id__in=list(submission_ids),
+            deleted_at__isnull=True,
+            program__deleted_at__isnull=True,
+        ).values_list("submission_id", flat=True)
+        # The column is nullable (a block carries no submission), so the rows come
+        # back optional even though this filter can only match performances.
+        return frozenset(row for row in rows if row is not None)
 
     def slug_taken(self, slug: str) -> bool:
         """Whether any share - live or revoked - has ever used this slug."""

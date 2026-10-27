@@ -26,6 +26,7 @@ __all__ = [
     "CatalogPerformance",
     "Clock",
     "PerformanceCatalog",
+    "PerformanceSchedule",
     "ProgramNotifier",
     "ProgramRepository",
     "SlugFactory",
@@ -130,6 +131,16 @@ class ProgramRepository(Protocol):
         """
         ...
 
+    def submission_ids_with_slots(self, submission_ids: Sequence[uuid.UUID]) -> frozenset[uuid.UUID]:
+        """Which of these acts still hold a slot in *some* live programme.
+
+        Asked before an act is told it is no longer scheduled. A competition can run
+        several programmes, and an act pulled from one may well stand in another —
+        unscheduling it on the strength of a single programme's diff would blank a
+        status the other programme still justifies.
+        """
+        ...
+
     def stamp_for_slug(self, slug: str) -> tuple[uuid.UUID, int] | None:
         """The edition's id and its program's version, without loading the aggregate.
 
@@ -214,6 +225,29 @@ class ProgramNotifier(Protocol):
         note: str | None,
     ) -> None:
         """Write to one applicant. ``slots`` is (number, time, act title) per act."""
+        ...
+
+
+class PerformanceSchedule(Protocol):
+    """Tells the Applications context which acts currently hold a slot.
+
+    The one place this context writes outward. ``SCHEDULED`` is a fact about the
+    running order, and the running order lives here — so it is this context that has
+    to say when an act enters one and when it leaves. Before programmes drove it, the
+    status was set by the organizer's "Одобрить" button in the same millisecond as
+    ``ACCEPTED``, which made it mean nothing at all.
+
+    An id-only port (ARCH-001 §9.2): no foreign aggregate crosses the boundary, and
+    this context never learns what a submission is. Both calls are idempotent and
+    take batches, because the caller drives them from a diff of a whole programme.
+    """
+
+    def mark_scheduled(self, submission_ids: Sequence[uuid.UUID]) -> None:
+        """These acts now hold a slot."""
+        ...
+
+    def mark_unscheduled(self, submission_ids: Sequence[uuid.UUID]) -> None:
+        """These acts hold no slot in any programme any more."""
         ...
 
 

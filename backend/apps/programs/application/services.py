@@ -59,6 +59,7 @@ from apps.programs.application.interfaces import (
     CatalogPerformance,
     Clock,
     PerformanceCatalog,
+    PerformanceSchedule,
     ProgramNotifier,
     ProgramRepository,
     SlugFactory,
@@ -312,6 +313,7 @@ class ProgramService:
         slugs: SlugFactory,
         tables: TableRenderer | None = None,
         notifier: ProgramNotifier | None = None,
+        schedule: PerformanceSchedule | None = None,
     ) -> None:
         self._programs = programs
         self._catalog = catalog
@@ -322,6 +324,11 @@ class ProgramService:
         # announcement.
         self._tables = tables
         self._notifier = notifier
+        # Optional for the same reason, and with one extra consequence worth naming: a
+        # service assembled without it builds programmes that never tell Applications an
+        # act was scheduled. That is the right default for a unit test of the running
+        # order and the wrong one in production, where `composition` always supplies it.
+        self._schedule = schedule
 
     # ------------------------------------------------------------------
     # Programs
@@ -391,8 +398,12 @@ class ProgramService:
         whoever asks; this edge only has to carry the refusal back out.
         """
         program = self._load(program_id)
+        before = self._slots_of(program)
         program.delete(now=self._clock.utcnow())
         self._programs.save(program)
+        # A deleted programme holds nothing, whatever its items still say in memory:
+        # the rows went down with it, which is what `submission_ids_with_slots` reads.
+        self._sync_schedule(before, frozenset())
 
     # ------------------------------------------------------------------
     # Items
@@ -416,6 +427,7 @@ class ProgramService:
         """Give one act a slot, seeding the slot's length from the act."""
         now = self._clock.utcnow()
         program = self._load(command.program_id)
+        before = self._slots_of(program)
         submission_id = _uuid(command.submission_id, what="submissionId")
         performance = self._require_available(program, submission_id)
         duration = ItemDuration(int(command.duration_seconds)) if command.duration_seconds is not None else ItemDuration(performance.duration_seconds)
@@ -427,6 +439,7 @@ class ProgramService:
             position=command.position,
         )
         self._programs.save(program)
+        self._sync_schedule(before, self._slots_of(program))
         return self._detail(program)
 
     def fill_from_scope(self, program_id: str) -> ProgramDetailView:
@@ -438,6 +451,7 @@ class ProgramService:
         """
         now = self._clock.utcnow()
         program = self._load(program_id)
+        before = self._slots_of(program)
         taken = set(program.performance_submission_ids)
         for performance in self._catalog.competing_performances(
             competition_id=program.competition_id,
@@ -452,6 +466,7 @@ class ProgramService:
                 now=now,
             )
         self._programs.save(program)
+        self._sync_schedule(before, self._slots_of(program))
         return self._detail(program)
 
     def arrange_program(self, command: ArrangeProgramCommand) -> ProgramDetailView:
@@ -468,6 +483,7 @@ class ProgramService:
         """
         now = self._clock.utcnow()
         program = self._load(command.program_id)
+        before = self._slots_of(program)
         settings = _arrangement_settings(command.settings, saved=program.arrangement)
         candidates = tuple(
             _candidate(performance)
@@ -479,6 +495,7 @@ class ProgramService:
         plan = arrange(candidates=candidates, settings=settings, buffer=program.buffer)
         program.rebuild([_arranged_to_item(entry) for entry in plan], settings=settings, now=now)
         self._programs.save(program)
+        self._sync_schedule(before, self._slots_of(program))
         return self._detail(program)
 
     def undo_arrange(self, program_id: str) -> ProgramDetailView:
@@ -495,10 +512,12 @@ class ProgramService:
         """
         now = self._clock.utcnow()
         program = self._load(program_id)
+        before = self._slots_of(program)
         if program.rebuilt_at is None:
             raise NoRestorePointError("Отменять нечего: программу не пересобирали, либо отмену уже применили.")
         program.restore_order(self._programs.items_retired_at(program.id, program.rebuilt_at), now=now)
         self._programs.save(program)
+        self._sync_schedule(before, self._slots_of(program))
         return self._detail(program)
 
     def add_block(self, command: AddBlockCommand) -> ProgramDetailView:
@@ -533,8 +552,10 @@ class ProgramService:
         """Remove one slot - a cancelled break, an act pulled from the running order."""
         now = self._clock.utcnow()
         program = self._load(program_id)
+        before = self._slots_of(program)
         program.remove_item(_uuid(item_id, what="itemId"), now=now)
         self._programs.save(program)
+        self._sync_schedule(before, self._slots_of(program))
         return self._detail(program)
 
     def reorder_items(self, command: ReorderItemsCommand) -> ProgramDetailView:
@@ -987,6 +1008,36 @@ class ProgramService:
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
+
+    def _slots_of(self, program: Program) -> frozenset[uuid.UUID]:
+        """Which acts this programme holds — the input to the schedule diff."""
+        return frozenset(program.performance_submission_ids)
+
+    def _sync_schedule(self, before: frozenset[uuid.UUID], after: frozenset[uuid.UUID]) -> None:
+        """Tell Applications which acts gained a slot and which lost their last one.
+
+        Driven from a diff rather than hooked onto each use case: a programme is
+        mutated six different ways — one act added, the whole scope filled, a slot
+        pulled, the order rebuilt from rules, a rebuild undone, the programme deleted
+        — and every one of them ends in the same ``save``. Six hooks would be six
+        chances to forget one, and the one forgotten is a status that silently
+        disagrees with the programme beside it.
+
+        Losing a slot here is not the same as losing every slot. A competition runs
+        several programmes and an act pulled from one may still stand in another, so
+        the departed ids are checked against the rest before anything is unscheduled.
+        """
+        if self._schedule is None:
+            return
+        gained = after - before
+        if gained:
+            self._schedule.mark_scheduled(tuple(gained))
+        lost = before - after
+        if lost:
+            still_seated = self._programs.submission_ids_with_slots(tuple(lost))
+            orphaned = tuple(submission_id for submission_id in lost if submission_id not in still_seated)
+            if orphaned:
+                self._schedule.mark_unscheduled(orphaned)
 
     def _load(self, program_id: str) -> Program:
         program = self._programs.get(_uuid(program_id, what="programId"))
