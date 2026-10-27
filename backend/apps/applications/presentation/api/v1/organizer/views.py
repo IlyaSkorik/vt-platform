@@ -818,18 +818,25 @@ class OrganizerProcessingActionView(_StaffView):
                         continue
                     if model.status == "SUBMITTED":
                         composition.build_start_review_handler().handle(StartReviewCommand(submission_id=target_id, reviewer_id=user_id))
-                    # Approval takes the submission straight into the running competition
-                    # (UNDER_REVIEW → APPROVED → … → ACCEPTED → SCHEDULED) — no separate
-                    # "confirm participation" / "move to running" steps for the organizer.
+                    # Approval takes the submission into the competition in one press
+                    # (UNDER_REVIEW → APPROVED → … → ACCEPTED) — no separate "confirm
+                    # participation" step for the organizer.
+                    #
+                    # It stops at ACCEPTED and no longer runs on to SCHEDULED. That
+                    # status means "holds a slot in a running order", and the running
+                    # order is built in the Programs context; setting it here put the
+                    # whole tail on one timestamp and made the status say nothing —
+                    # every approved act read as scheduled, including the ones nobody
+                    # had put in a programme yet. Programs now sets it when an act is
+                    # actually placed, and clears it when the slot is pulled.
                     composition.build_approve_submission_handler().handle(ApproveSubmissionCommand(submission_id=target_id, reviewer_id=user_id))
                     composition.build_mark_waiting_payment_handler().handle(MarkWaitingPaymentCommand(submission_id=target_id, reviewer_id=user_id))
                     composition.build_mark_paid_handler().handle(MarkPaidCommand(submission_id=target_id, reviewer_id=user_id))
-                    composition.build_accept_submission_handler().handle(AcceptSubmissionCommand(submission_id=target_id, reviewer_id=user_id))
-                    scheduled = composition.build_schedule_submission_handler().handle(
-                        ScheduleSubmissionCommand(submission_id=target_id, reviewer_id=user_id)
+                    accepted = composition.build_accept_submission_handler().handle(
+                        AcceptSubmissionCommand(submission_id=target_id, reviewer_id=user_id)
                     )
                     if result is None:
-                        result = scheduled
+                        result = accepted
                     processed_ids.append(target_id)
                 if not processed_ids or result is None:
                     return Response({"detail": "Нет выступлений, доступных для одобрения."}, status=409)

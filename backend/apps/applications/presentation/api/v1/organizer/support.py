@@ -155,8 +155,13 @@ def _missing_type_label(raw: str) -> str:
 
 #: Статусы, в которых очередь определяется не статусом, а квитанцией: заявка либо
 #: ещё ждёт оплату, либо уже готова к фестивалю. Отменённая, завершённая,
-#: назначенная и возвращённая на исправление к оплате отношения не имеют.
-_PAYMENT_DRIVEN_QUEUE: Final = frozenset({"REQUIRES_CORRECTION", "SCHEDULED", "COMPLETED", "CANCELLED"})
+#: назначенная, принятая и возвращённая на исправление к оплате отношения не имеют.
+#:
+#: ACCEPTED здесь с тех пор, как «Одобрить» перестало доводить номер до SCHEDULED:
+#: принятый номер уже прошёл оплату в той же цепочке, и без этой строки он падал бы
+#: обратно в «ждут оплату» всякий раз, когда квитанции нет, — то есть сразу после
+#: одобрения.
+_PAYMENT_DRIVEN_QUEUE: Final = frozenset({"REQUIRES_CORRECTION", "ACCEPTED", "SCHEDULED", "COMPLETED", "CANCELLED"})
 
 
 def _queue_for(status: str, *, has_receipts: bool) -> str:
