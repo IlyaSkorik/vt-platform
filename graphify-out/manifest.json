@@ -2830,8 +2830,8 @@
     "semantic_hash": "b42392d586464bc67dada36cc05a2a2c"
   },
   "backend/apps/results/infrastructure/models/__init__.py": {
-    "mtime": 1785860600.8352246,
-    "ast_hash": "746a6f589f9e54f7e2ad122f3ca5510e",
+    "mtime": 1793117991.448998,
+    "ast_hash": "5b48c0ac188830b8cf451258e8d0f534",
     "semantic_hash": ""
   },
   "backend/apps/results/infrastructure/repositories/__init__.py": {
@@ -4695,7 +4695,7 @@
     "semantic_hash": ""
   },
   "frontend/src/shared/api/config.ts": {
-    "mtime": 1792353580.4828827,
+    "mtime": 1793118772.939923,
     "ast_hash": "ecdb0f0843debe5a6660bb8493cad5aa",
     "semantic_hash": ""
   },
@@ -4735,7 +4735,7 @@
     "semantic_hash": "33841961796f8daa964267760724518f"
   },
   "frontend/src/shared/api/index.ts": {
-    "mtime": 1792669095.3344975,
+    "mtime": 1793118772.940363,
     "ast_hash": "b1e7cb9769113fc787f3e80f62ec1c85",
     "semantic_hash": ""
   },
@@ -6505,8 +6505,8 @@
     "semantic_hash": "d4ecc328966ff21da30ecd22f0b2a981"
   },
   "frontend/openapi/schema-full.yaml": {
-    "mtime": 1792742903.0234575,
-    "ast_hash": "996560da2add147e22d01fcd3d9d8406",
+    "mtime": 1793118451.635416,
+    "ast_hash": "8e0561d7f218584e740ddda8fbe325e4",
     "semantic_hash": ""
   },
   "frontend/openapi/schema.yaml": {
@@ -8415,13 +8415,13 @@
     "semantic_hash": ""
   },
   "backend/apps/results/application/dto.py": {
-    "mtime": 1792669095.072688,
-    "ast_hash": "a96222f73ceabdff2a93645419d6ccd5",
+    "mtime": 1793118030.9043393,
+    "ast_hash": "593755b662f9b65641a9836e68cd9e71",
     "semantic_hash": ""
   },
   "backend/apps/results/application/services.py": {
-    "mtime": 1792669095.0818357,
-    "ast_hash": "67676f165a64a22c43417e44d58a4ada",
+    "mtime": 1793118030.9040337,
+    "ast_hash": "163812d24b7f89e711d90dea6675e9af",
     "semantic_hash": ""
   },
   "backend/apps/results/composition.py": {
@@ -8510,8 +8510,8 @@
     "semantic_hash": ""
   },
   "backend/apps/results/presentation/api/v1/serializers.py": {
-    "mtime": 1792669095.085559,
-    "ast_hash": "8201beb0240dabf8a963ba034adc7ec6",
+    "mtime": 1793118170.8459938,
+    "ast_hash": "476f4efd8d64393f116f5d384bf60d90",
     "semantic_hash": ""
   },
   "backend/apps/results/presentation/api/v1/urls.py": {
@@ -8520,8 +8520,8 @@
     "semantic_hash": ""
   },
   "backend/apps/results/presentation/api/v1/views.py": {
-    "mtime": 1792669095.0865579,
-    "ast_hash": "1b2dd9172f4e36d4260d6819bbe71492",
+    "mtime": 1793118175.650971,
+    "ast_hash": "6244ad0ffcaedf5cea6130995547cf41",
     "semantic_hash": ""
   },
   "backend/apps/results/presentation/public_urls.py": {
@@ -8545,8 +8545,8 @@
     "semantic_hash": ""
   },
   "backend/tests/application/results/test_services.py": {
-    "mtime": 1792669095.0946608,
-    "ast_hash": "c551a0ad35c0be38aca171cde7fe07f9",
+    "mtime": 1793118483.5777588,
+    "ast_hash": "628921ebe5d114b0ae3b09eea0f556ed",
     "semantic_hash": ""
   },
   "backend/tests/domain/results/__init__.py": {
@@ -8565,13 +8565,13 @@
     "semantic_hash": ""
   },
   "frontend/src/features/jury-protocols/api.ts": {
-    "mtime": 1785860600.9958057,
-    "ast_hash": "32db1a7b19a8c3b2cc96f927ae3703df",
+    "mtime": 1793118665.631408,
+    "ast_hash": "d713c161cbb7c3f4ae1cca5beef5c846",
     "semantic_hash": ""
   },
   "frontend/src/features/jury-protocols/index.ts": {
-    "mtime": 1785860600.9965525,
-    "ast_hash": "af8c465e9a5e63217c4992a32a36d2cc",
+    "mtime": 1793118641.0996625,
+    "ast_hash": "0252fc6bdc89669d2e544df5dc1a613c",
     "semantic_hash": ""
   },
   "frontend/src/features/jury-protocols/model.test.ts": {
@@ -8580,8 +8580,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/jury-protocols/model.ts": {
-    "mtime": 1792669095.267993,
-    "ast_hash": "eb2786b6e04e18d2a4de28856caf97d2",
+    "mtime": 1793118641.0993738,
+    "ast_hash": "bc87b575ce7990705a307d2a5fc71e67",
     "semantic_hash": ""
   },
   "frontend/src/features/jury-protocols/sections.ts": {
@@ -8635,13 +8635,13 @@
     "semantic_hash": ""
   },
   "frontend/src/widgets/jury-workspace/ui/protocol-editor.tsx": {
-    "mtime": 1792669095.3886983,
-    "ast_hash": "f7661e9854e1d6caf6d668b9c46d76d8",
+    "mtime": 1793118765.70838,
+    "ast_hash": "124e65bdaa0ab967b8379394242c3ecd",
     "semantic_hash": ""
   },
   "frontend/src/widgets/jury-workspace/ui/publish-protocol-dialog.tsx": {
-    "mtime": 1789240106.6753259,
-    "ast_hash": "f3c2bd75ec33117894a44245db1c46bd",
+    "mtime": 1793118765.7094233,
+    "ast_hash": "401fada4f5179689f5d58e7be768c82b",
     "semantic_hash": ""
   },
   "frontend/src/widgets/jury-workspace/ui/sections/protocols-section.tsx": {
@@ -12052,6 +12052,51 @@
   "backend/tests/presentation/applications/test_approval_stops_at_accepted.py": {
     "mtime": 1793098509.561512,
     "ast_hash": "7cb41193cad25c54a184da11c3158830",
+    "semantic_hash": ""
+  },
+  "backend/apps/results/infrastructure/migrations/0003_publicationjobmodel.py": {
+    "mtime": 1793117993.8021274,
+    "ast_hash": "9d6189dc51d77a2598209d378bd6036c",
+    "semantic_hash": ""
+  },
+  "backend/apps/results/infrastructure/models/publication_job.py": {
+    "mtime": 1793117991.4150062,
+    "ast_hash": "8b304f17cc7a1dd614000490e9fc0551",
+    "semantic_hash": ""
+  },
+  "backend/apps/results/presentation/api/v1/publication_jobs.py": {
+    "mtime": 1793119699.7262018,
+    "ast_hash": "84c7a6c070c05ed2a32ea8a15fa9e044",
+    "semantic_hash": ""
+  },
+  "backend/apps/results/tasks.py": {
+    "mtime": 1793118175.650971,
+    "ast_hash": "d32e6d2997abb1a156368ba4a8784df1",
+    "semantic_hash": ""
+  },
+  "backend/tests/presentation/results/__init__.py": {
+    "mtime": 1793118336.7109365,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "backend/tests/presentation/results/conftest.py": {
+    "mtime": 1793118336.7208908,
+    "ast_hash": "3beff50347343a90d00c35b7b68124af",
+    "semantic_hash": ""
+  },
+  "backend/tests/presentation/results/test_publication_api.py": {
+    "mtime": 1793119464.0547173,
+    "ast_hash": "9988a0cd735e85bf563d54acfd3d6fd2",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/jury-workspace/ui/publication-status.test.tsx": {
+    "mtime": 1793119206.778078,
+    "ast_hash": "58a68a975742a82861db42f3057a6d4d",
+    "semantic_hash": ""
+  },
+  "frontend/src/widgets/jury-workspace/ui/publication-status.tsx": {
+    "mtime": 1793118766.962851,
+    "ast_hash": "47b26ba81a7577315cc2ba9fdbd98e9c",
     "semantic_hash": ""
   }
 }
