@@ -4,12 +4,19 @@ Covers the flow a jury and an organizer actually perform: open a protocol for a 
 find it already in performance order, enter results, publish, and see the three effects of
 publishing land - the public page, the diplomas, the letters. Then correct a result and
 publish again, which is the path that most needs to be exactly right.
+
+Publishing is two calls here, as it is in production: :meth:`ProtocolService.publish`
+makes the page public, and :meth:`ProtocolService.complete_publication` - which a worker
+runs - issues the diplomas and the letters. :meth:`Env.publish` performs both and hands
+back both halves under one object, so a test that only cares about the outcome reads as
+it always did; the tests that care about the seam itself call the two halves apart.
 """
 
 from __future__ import annotations
 
 import uuid
 from dataclasses import replace
+from typing import Any
 
 import pytest
 
@@ -21,6 +28,7 @@ from apps.results.application.commands import (
     ReorderRowsCommand,
     UpdateProtocolCommand,
 )
+from apps.results.application.dto import ProtocolDetailView, PublicationResultView
 from apps.results.application.interfaces import CatalogPerformance, RunningOrderEntry
 from apps.results.application.services import PUBLIC_PROTOCOL_PATH, ProtocolService
 from apps.results.domain.exceptions import (
@@ -110,6 +118,27 @@ class Env:
     def award_all(self, protocol_id: str, award: AwardKind = AwardKind.PARTICIPANT) -> object:
         rows = self.service.get_protocol(protocol_id).rows
         return self.service.award_rows(AwardRowsCommand(protocol_id=protocol_id, awards=tuple((row.id, award.value) for row in rows)))
+
+    def publish(self, protocol_id: str, *, notify: bool = True, **command: object) -> Published:
+        """Publish and then finish publishing - what the request and the worker do together."""
+        protocol = self.service.publish(PublishProtocolCommand(protocol_id=protocol_id, notify=notify, **command))  # type: ignore[arg-type]
+        return Published(protocol, self.service.complete_publication(protocol_id, notify=notify))
+
+
+class Published:
+    """One whole publication: the protocol the request answered with, and the worker's counts.
+
+    Delegates unknown attributes to the counts so that ``published.diplomas_awarded`` reads
+    the same as it did when one call did both - the split is a matter of *when* the diplomas
+    are issued, not of what a publication produces.
+    """
+
+    def __init__(self, protocol: ProtocolDetailView, outcome: PublicationResultView) -> None:
+        self.protocol = protocol
+        self.outcome = outcome
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.outcome, name)
 
 
 class TestCreationAndSeeding:
@@ -273,7 +302,57 @@ class TestPublication:
                 awards=((rows[0].id, AwardKind.LAUREATE_I.value), (rows[1].id, AwardKind.PARTICIPANT.value)),
             )
         )
-        return env, env.service.publish(PublishProtocolCommand(protocol_id=protocol.id))  # type: ignore[attr-defined]
+        return env, env.publish(protocol.id)  # type: ignore[attr-defined]
+
+    def test_the_page_is_public_before_a_single_diploma_is_issued(self) -> None:
+        # The seam publishing is split on: what the organizer pressed the button for
+        # happens in the request, and everything that is linear in the number of rows
+        # waits for a worker. A hundred and fifty acts must not stand between pressing
+        # the button and the link resolving.
+        env = Env(_act("Песня А"), _act("Песня Б"))
+        protocol = env.create()
+        env.award_all(protocol.id, AwardKind.LAUREATE_I)  # type: ignore[attr-defined]
+        published = env.service.publish(PublishProtocolCommand(protocol_id=protocol.id))  # type: ignore[attr-defined]
+        assert published.status == "PUBLISHED"
+        assert env.service.public_protocol("Vokas2345") is not None
+        assert env.awards.calls == []
+        assert env.notifier.letters == []
+
+    def test_the_worker_half_issues_the_diplomas_and_the_letters(self) -> None:
+        env = Env(_act("Песня А"), _act("Песня Б"))
+        protocol = env.create()
+        env.award_all(protocol.id, AwardKind.LAUREATE_I)  # type: ignore[attr-defined]
+        env.service.publish(PublishProtocolCommand(protocol_id=protocol.id))  # type: ignore[attr-defined]
+        outcome = env.service.complete_publication(protocol.id, notify=True)  # type: ignore[attr-defined]
+        assert outcome.diplomas_awarded == 2
+        assert outcome.letters_sent == 2
+
+    def test_the_worker_half_run_twice_corrects_rather_than_duplicates(self) -> None:
+        # A job that dies halfway is fixed by running it again, so running it again must
+        # be safe: the same degrees are written onto the same diplomas.
+        act = _act("Песня А")
+        env = Env(act)
+        protocol = env.create()
+        env.award_all(protocol.id, AwardKind.LAUREATE_II)  # type: ignore[attr-defined]
+        env.service.publish(PublishProtocolCommand(protocol_id=protocol.id))  # type: ignore[attr-defined]
+        env.service.complete_publication(protocol.id, notify=False)  # type: ignore[attr-defined]
+        again = env.service.complete_publication(protocol.id, notify=False)  # type: ignore[attr-defined]
+        assert again.diplomas_awarded == 1
+        assert again.diplomas_created == 0
+        assert env.awards.issued[act.submission_id] == "Лауреат II степени"
+
+    def test_a_protocol_taken_down_before_the_worker_ran_issues_nothing(self) -> None:
+        # Unpublishing says "these were not the results". A worker arriving a minute
+        # later must not hand out the documents the organizer has just withdrawn.
+        env = Env(_act("Песня А"))
+        protocol = env.create()
+        env.award_all(protocol.id, AwardKind.LAUREATE_I)  # type: ignore[attr-defined]
+        env.service.publish(PublishProtocolCommand(protocol_id=protocol.id))  # type: ignore[attr-defined]
+        env.service.unpublish(protocol.id)  # type: ignore[attr-defined]
+        outcome = env.service.complete_publication(protocol.id, notify=True)  # type: ignore[attr-defined]
+        assert outcome.diplomas_awarded == 0
+        assert env.awards.calls == []
+        assert env.notifier.letters == []
 
     def test_publishing_reports_all_three_effects(self) -> None:
         _env, result = self._published()
@@ -311,7 +390,7 @@ class TestPublication:
         env = Env(studio_a, studio_b, other)
         protocol = env.create()
         env.award_all(protocol.id, AwardKind.LAUREATE_III)  # type: ignore[attr-defined]
-        result = env.service.publish(PublishProtocolCommand(protocol_id=protocol.id))  # type: ignore[attr-defined]
+        result = env.publish(protocol.id)  # type: ignore[attr-defined]
         assert result.letters_sent == 2
         studio_letter = next(letter for letter in env.notifier.letters if letter["email"] == "studio@example.com")
         assert len(studio_letter["results"]) == 2  # type: ignore[arg-type]
@@ -321,7 +400,7 @@ class TestPublication:
         env = Env(_act("Песня А", email=None), _act("Песня Б"))
         protocol = env.create()
         env.award_all(protocol.id)  # type: ignore[attr-defined]
-        result = env.service.publish(PublishProtocolCommand(protocol_id=protocol.id))  # type: ignore[attr-defined]
+        result = env.publish(protocol.id)  # type: ignore[attr-defined]
         assert result.letters_sent == 1
         assert result.letters_skipped == 1
 
@@ -329,7 +408,7 @@ class TestPublication:
         env = Env(_act("Песня А"))
         protocol = env.create()
         env.award_all(protocol.id)  # type: ignore[attr-defined]
-        result = env.service.publish(PublishProtocolCommand(protocol_id=protocol.id, notify=False))  # type: ignore[attr-defined]
+        result = env.publish(protocol.id, notify=False)  # type: ignore[attr-defined]
         assert result.letters_sent == 0
         assert env.notifier.letters == []
         # The diplomas still happen: it is the letter that was suppressed, not the results.
@@ -340,7 +419,7 @@ class TestPublication:
         env = Env(first, second, missing_diplomas={first.submission_id})
         protocol = env.create()
         env.award_all(protocol.id, AwardKind.LAUREATE_II)  # type: ignore[attr-defined]
-        result = env.service.publish(PublishProtocolCommand(protocol_id=protocol.id))  # type: ignore[attr-defined]
+        result = env.publish(protocol.id)  # type: ignore[attr-defined]
         assert result.protocol.status == "PUBLISHED"
         assert result.diplomas_awarded == 1
         # The gap an organizer must be able to see: a result with no document behind it.
@@ -352,7 +431,7 @@ class TestPublication:
         protocol = env.create()
         rows = env.service.get_protocol(protocol.id).rows  # type: ignore[attr-defined]
         env.service.award_rows(AwardRowsCommand(protocol_id=protocol.id, awards=((rows[0].id, AwardKind.GRAND_PRIX.value),)))  # type: ignore[attr-defined]
-        result = env.service.publish(PublishProtocolCommand(protocol_id=protocol.id))  # type: ignore[attr-defined]
+        result = env.publish(protocol.id)  # type: ignore[attr-defined]
         assert result.diplomas_awarded == 1
         assert result.letters_sent == 1
 
@@ -360,11 +439,9 @@ class TestPublication:
         env = Env(_act("Песня А"))
         protocol = env.create()
         env.award_all(protocol.id)  # type: ignore[attr-defined]
-        result = env.service.publish(
-            PublishProtocolCommand(
-                protocol_id=protocol.id,  # type: ignore[attr-defined]
-                columns=(ProtocolColumn.PARTICIPANT.value, ProtocolColumn.AWARD.value, ProtocolColumn.TEACHERS.value),
-            )
+        result = env.publish(
+            protocol.id,  # type: ignore[attr-defined]
+            columns=(ProtocolColumn.PARTICIPANT.value, ProtocolColumn.AWARD.value, ProtocolColumn.TEACHERS.value),
         )
         assert [column.key for column in result.protocol.public_columns] == ["PARTICIPANT", "AWARD", "TEACHERS"]
 
@@ -373,7 +450,7 @@ class TestPublication:
         env.repository.claimed_slugs.add("Taken2345")
         protocol = env.create()
         env.award_all(protocol.id)  # type: ignore[attr-defined]
-        result = env.service.publish(PublishProtocolCommand(protocol_id=protocol.id))  # type: ignore[attr-defined]
+        result = env.publish(protocol.id)  # type: ignore[attr-defined]
         assert result.protocol.slug == "Free23456"
 
     def test_a_slug_that_never_comes_free_is_an_explicit_failure(self) -> None:
@@ -391,12 +468,12 @@ class TestCorrection:
         env = Env(act, slugs=("Vokas2345", "Second234"))
         protocol = env.create()
         env.award_all(protocol.id, AwardKind.LAUREATE_II)  # type: ignore[attr-defined]
-        first = env.service.publish(PublishProtocolCommand(protocol_id=protocol.id))  # type: ignore[attr-defined]
+        first = env.publish(protocol.id)  # type: ignore[attr-defined]
 
         env.award_all(protocol.id, AwardKind.LAUREATE_I)  # type: ignore[attr-defined]
         assert env.service.get_protocol(protocol.id).has_unpublished_changes is True  # type: ignore[attr-defined]
 
-        second = env.service.publish(PublishProtocolCommand(protocol_id=protocol.id))  # type: ignore[attr-defined]
+        second = env.publish(protocol.id)  # type: ignore[attr-defined]
         assert second.protocol.revision == 2
         assert second.protocol.slug == first.protocol.slug
         assert second.protocol.has_unpublished_changes is False
@@ -408,7 +485,7 @@ class TestCorrection:
         env = Env(_act("Песня А"))
         protocol = env.create()
         env.award_all(protocol.id, AwardKind.LAUREATE_II)  # type: ignore[attr-defined]
-        env.service.publish(PublishProtocolCommand(protocol_id=protocol.id))  # type: ignore[attr-defined]
+        env.publish(protocol.id)  # type: ignore[attr-defined]
         env.service.update_protocol(UpdateProtocolCommand(protocol_id=protocol.id, name="Вокал (итоги)"))  # type: ignore[attr-defined]
         published = env.service.public_protocol("Vokas2345")
         assert published is not None
@@ -420,7 +497,7 @@ class TestCorrection:
         env = Env(act)
         protocol = env.create()
         env.award_all(protocol.id, AwardKind.LAUREATE_I)  # type: ignore[attr-defined]
-        env.service.publish(PublishProtocolCommand(protocol_id=protocol.id))  # type: ignore[attr-defined]
+        env.publish(protocol.id)  # type: ignore[attr-defined]
         env.service.unpublish(protocol.id)  # type: ignore[attr-defined]
         assert env.service.public_protocol("Vokas2345") is None
         # A diploma that reached a participant's cabinet was issued; pretending otherwise
@@ -432,7 +509,7 @@ class TestPublicReads:
     def _publish(self, env: Env, **publish: object) -> object:
         protocol = env.create()
         env.award_all(protocol.id, AwardKind.LAUREATE_I)  # type: ignore[attr-defined]
-        return env.service.publish(PublishProtocolCommand(protocol_id=protocol.id, **publish))  # type: ignore[arg-type,attr-defined]
+        return env.publish(protocol.id, **publish)  # type: ignore[arg-type,attr-defined]
 
     def test_only_published_columns_reach_the_wire(self) -> None:
         env = Env(_act("Песня А"))
