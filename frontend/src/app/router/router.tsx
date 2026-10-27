@@ -557,6 +557,13 @@ export const routes: RouteObject[] = [
                 ),
               },
               {
+                path: ROUTES.platformCommission.slice(1),
+                lazy: lazyPage(
+                  () => import("@/applications/platform/pages/commission"),
+                  "PlatformCommissionPage",
+                ),
+              },
+              {
                 path: ROUTES.platformTesting.slice(1),
                 lazy: lazyPage(
                   () => import("@/applications/platform/pages/testing"),

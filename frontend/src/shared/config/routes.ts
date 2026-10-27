@@ -107,6 +107,8 @@ export const ROUTES = {
   platformTesting: "/platform/testing",
   /** The platform's own books: what it spent, and the difference against income. */
   platformFinance: "/platform/finance",
+  /** The other side of those books: commission organizations actually paid. */
+  platformCommission: "/platform/commission",
   /** Every review left on the platform — where a complaint about one is settled. */
   platformReviews: "/platform/reviews",
   /** The eraser: removing a festival, an order or an account for good. */

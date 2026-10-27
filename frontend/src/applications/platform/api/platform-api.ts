@@ -230,6 +230,57 @@ export type RecordExpenseInput = {
 };
 
 /**
+ * One commission payment the platform received, as the ledger reads it back.
+ *
+ * The other side of the books from `PlatformExpense`, and a separate record rather
+ * than a cost with a minus sign: a payment always has a payer, a cost need not.
+ */
+export type CommissionPayment = {
+  id: string;
+  /** Who paid. Never null, unlike an expense's attribution. */
+  organizationId: string;
+  /** `null` only when the organization has since been erased. */
+  organizationName: string | null;
+  amount: string;
+  /** The day the money landed, as the bank statement says (`YYYY-MM-DD`). */
+  receivedAt: string;
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type OrganizationPaymentTotal = {
+  organizationId: string;
+  organizationName: string | null;
+  amount: string;
+  count: number;
+};
+
+/** The receipts matching the operator's filters, with the totals of *those* rows. */
+export type CommissionPaymentLedger = {
+  payments: CommissionPayment[];
+  total: string;
+  byOrganization: OrganizationPaymentTotal[];
+  /** The list was cut short — a truncated total is a wrong total, so it says so. */
+  truncated: boolean;
+};
+
+/** The filters on the receipts screen. Every one of them optional. */
+export type CommissionPaymentFilters = {
+  organizationId?: string;
+  from?: string;
+  to?: string;
+};
+
+export type RecordCommissionPaymentInput = {
+  /** Required: a payment that reduces nobody's debt is not a payment. */
+  organizationId: string;
+  amount: string;
+  receivedAt: string;
+  note?: string;
+};
+
+/**
  * The platform's head counts: cabinets, registry participants, teachers.
  *
  * Each figure carries the subset worth naming beside it rather than netted out —
@@ -432,6 +483,14 @@ export const platformKeys = {
       filters.from ?? "",
       filters.to ?? "",
     ] as const,
+  commissionPayments: (filters: CommissionPaymentFilters) =>
+    [
+      "platform",
+      "commission-payments",
+      filters.organizationId ?? "",
+      filters.from ?? "",
+      filters.to ?? "",
+    ] as const,
   purgeSearch: (kind: PurgeKind, query: string) =>
     ["platform", "purge", "search", kind, query] as const,
   purgePlan: (kind: PurgeKind, id: string) => ["platform", "purge", "plan", kind, id] as const,
@@ -601,6 +660,82 @@ export function useRemoveExpense() {
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
       await apiClient.delete(`platform/expenses/${id}`);
+    },
+    onSuccess: invalidate,
+  });
+}
+
+/**
+ * The commission the platform has been paid, narrowed by whichever filters are set.
+ *
+ * The totals come back with the rows and are of *those* rows, exactly as the
+ * expense ledger does it.
+ */
+export function useCommissionPayments(filters: CommissionPaymentFilters) {
+  return useQuery({
+    queryKey: platformKeys.commissionPayments(filters),
+    queryFn: async (): Promise<CommissionPaymentLedger> => {
+      const search = new URLSearchParams();
+      if (filters.organizationId) search.set("organizationId", filters.organizationId);
+      if (filters.from) search.set("from", filters.from);
+      if (filters.to) search.set("to", filters.to);
+      const query = search.toString();
+      return unwrap<CommissionPaymentLedger>(
+        await apiClient.get(`platform/commission-payments${query ? `?${query}` : ""}`),
+      );
+    },
+  });
+}
+
+/**
+ * Every write to the receipts ledger invalidates the dashboard too.
+ *
+ * The debt on that screen is this table subtracted from what was accrued, so a
+ * payment entered here and a summary still showing yesterday's debt would be the
+ * console disagreeing with itself.
+ */
+function useReceiptsInvalidation() {
+  const queryClient = useQueryClient();
+  return () => {
+    void queryClient.invalidateQueries({ queryKey: ["platform", "commission-payments"] });
+    void queryClient.invalidateQueries({ queryKey: ["platform", "dashboard"] });
+  };
+}
+
+/** Record commission the platform has actually been paid. */
+export function useRecordCommissionPayment() {
+  const invalidate = useReceiptsInvalidation();
+  return useMutation({
+    mutationFn: async (input: RecordCommissionPaymentInput): Promise<CommissionPayment> =>
+      unwrap<CommissionPayment>(
+        await apiClient.post("platform/commission-payments", { json: input }),
+      ),
+    onSuccess: invalidate,
+  });
+}
+
+/** Correct a recorded payment — a mistyped sum, or one credited to the wrong client. */
+export function useAmendCommissionPayment() {
+  const invalidate = useReceiptsInvalidation();
+  return useMutation({
+    mutationFn: async (
+      input: { id: string } & Partial<RecordCommissionPaymentInput>,
+    ): Promise<CommissionPayment> => {
+      const { id, ...payload } = input;
+      return unwrap<CommissionPayment>(
+        await apiClient.patch(`platform/commission-payments/${id}`, { json: payload }),
+      );
+    },
+    onSuccess: invalidate,
+  });
+}
+
+/** Strike a payment from the books. The row stays; the totals stop counting it. */
+export function useRemoveCommissionPayment() {
+  const invalidate = useReceiptsInvalidation();
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      await apiClient.delete(`platform/commission-payments/${id}`);
     },
     onSuccess: invalidate,
   });
