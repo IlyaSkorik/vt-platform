@@ -43,6 +43,25 @@ export type PlatformOrganization = {
   createdAt: string;
 };
 
+/**
+ * One band of a fee schedule with what actually fell into it — an act's row.
+ *
+ * Every band of the schedule appears, including the ones nothing fell into: a
+ * price list with rows silently missing is one the organizer cannot check against
+ * their own copy.
+ */
+export type FeeTierBreakdown = {
+  minParticipants: number;
+  maxParticipants: number | null;
+  /** The band as a human reads it: `1`, `2-5`, `6+`. */
+  rangeLabel: string;
+  /** What one entry in this band costs the organization. */
+  unitAmount: string;
+  performances: number;
+  /** `unitAmount` × `performances`. */
+  amount: string;
+};
+
 export type OrganizationBreakdown = {
   organizationId: string | null;
   name: string;
@@ -53,16 +72,26 @@ export type OrganizationBreakdown = {
   competitions: number;
   applications: number;
   statusCounts: Record<string, number>;
-  expectedFees: string;
-  settledFees: string;
-  expectedCommission: string;
-  settledCommission: string;
+  /** What participants paid the organizer. Context, not a base. */
+  orderFees: string;
+  /** Billable entries in scope, and the people in them. */
+  performances: number;
+  participants: number;
+  /** The sum those entries cost — what a percentage is taken of. "0.00" under the
+   * per-performance model, where the price list replaces it entirely. */
+  commissionBase: string;
+  /** What the organization owes for them. */
+  accruedCommission: string;
+  /** What it has actually paid, from the receipts ledger. */
+  receivedCommission: string;
+  /** The difference. Negative means it has overpaid. */
+  commissionDebt: string;
+  /** Per-band rows behind `accruedCommission`. Empty under the percentage model. */
+  feeBreakdown: FeeTierBreakdown[];
   /** Costs recorded against this organization. Usually "0.00". */
   expenses: string;
-  /** Commission actually paid, less those costs. Negative is an ordinary answer. */
+  /** Money received, less those costs. Negative is an ordinary answer. */
   profit: string;
-  /** The same subtraction against commission still expected. */
-  potentialProfit: string;
 };
 
 export type CompetitionOption = {
@@ -75,24 +104,33 @@ export type CompetitionOption = {
 export type PlatformDashboard = {
   statusCounts: Record<string, number>;
   applications: number;
-  expectedFees: string;
-  settledFees: string;
-  expectedCommission: string;
-  settledCommission: string;
+  orderFees: string;
+  /** The billing unit: entries committed to taking part, and the people in them. */
+  performances: number;
+  participants: number;
+  commissionBase: string;
+  /** Owed, paid, and the difference — the three figures the screen exists for. */
+  accruedCommission: string;
+  receivedCommission: string;
+  commissionDebt: string;
   /** Every recorded cost in scope, attributed to a client or not. */
   expenses: string;
   /** The part of it carried for no particular client — hosting, an accountant. */
   unattributedExpenses: string;
-  /** Commission in hand, less the costs. The screen's whole point. */
+  /** Money received, less the costs. The screen's whole point. */
   profit: string;
-  /** The same, against the commission still expected. */
-  potentialProfit: string;
   /**
    * False under a competition filter. Expenses are recorded per organization and
    * never per festival, so the figures above are zeroed rather than guessed at and
    * the console hides the profit block instead of showing a number it invented.
    */
   expensesApply: boolean;
+  /**
+   * True when a period filter is on. The money figures honour it; the order funnel
+   * does not, because an order has no one date to file it under — so the screen
+   * labels that half rather than letting the dates look like they applied.
+   */
+  periodApplies: boolean;
   organizations: OrganizationBreakdown[];
   competitions: CompetitionOption[];
 };
@@ -378,8 +416,8 @@ export type PurgePlan = {
 };
 
 export const platformKeys = {
-  dashboard: (organizationId: string, competitionId: string) =>
-    ["platform", "dashboard", organizationId, competitionId] as const,
+  dashboard: (organizationId: string, competitionId: string, from: string, to: string) =>
+    ["platform", "dashboard", organizationId, competitionId, from, to] as const,
   audience: ["platform", "audience"] as const,
   organizations: ["platform", "organizations"] as const,
   organizationModules: (organizationId: string) =>
@@ -456,14 +494,26 @@ async function unwrap<T>(response: Response): Promise<T> {
   return body.data;
 }
 
-/** The pipeline and the money behind it, across every connected organization. */
-export function usePlatformDashboard(organizationId: string, competitionId: string) {
+/**
+ * The pipeline and the money behind it, across every connected organization.
+ *
+ * `from`/`to` narrow the money to a period and deliberately leave the funnel
+ * alone; the response says so through `periodApplies`.
+ */
+export function usePlatformDashboard(
+  organizationId: string,
+  competitionId: string,
+  from = "",
+  to = "",
+) {
   return useQuery({
-    queryKey: platformKeys.dashboard(organizationId, competitionId),
+    queryKey: platformKeys.dashboard(organizationId, competitionId, from, to),
     queryFn: async (): Promise<PlatformDashboard> => {
       const search = new URLSearchParams();
       if (organizationId) search.set("organizationId", organizationId);
       if (competitionId) search.set("competitionId", competitionId);
+      if (from) search.set("from", from);
+      if (to) search.set("to", to);
       const query = search.toString();
       return unwrap<PlatformDashboard>(
         await apiClient.get(`platform/dashboard${query ? `?${query}` : ""}`),

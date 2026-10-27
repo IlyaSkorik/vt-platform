@@ -6,7 +6,7 @@ import {
   usePlatformAudience,
   usePlatformDashboard,
 } from "@/applications/platform/api/platform-api";
-import { formatFeeTier, formatMoney } from "@/applications/platform/lib/billing";
+import { formatFeeTier, formatMoney, formatTierRange } from "@/applications/platform/lib/billing";
 import {
   Badge,
   Card,
@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
   EmptyState,
+  Input,
   LoadingState,
   Select,
 } from "@/shared/ui";
@@ -160,10 +161,25 @@ function OrganizationRow({
           <span className="tabular-nums">{row.commissionPercent}%</span>
         )}
       </td>
-      <td className="py-3 pr-4 tabular-nums">{formatMoney(row.expectedFees)}</td>
-      <td className="py-3 pr-4 tabular-nums">{formatMoney(row.settledFees)}</td>
-      <td className="py-3 pr-4 font-medium tabular-nums">{formatMoney(row.expectedCommission)}</td>
-      <td className="py-3 pr-4 tabular-nums">{formatMoney(row.settledCommission)}</td>
+      <td className="py-3 pr-4 tabular-nums">
+        <div className="flex flex-col">
+          <span>{count(row.performances)}</span>
+          <span className="text-muted-foreground text-xs">
+            {count(row.participants)} участников
+          </span>
+        </div>
+      </td>
+      <td className="py-3 pr-4 font-medium tabular-nums">{formatMoney(row.accruedCommission)}</td>
+      <td className="py-3 pr-4 tabular-nums">{formatMoney(row.receivedCommission)}</td>
+      <td
+        className={
+          Number(row.commissionDebt) > 0
+            ? "py-3 pr-4 font-medium text-destructive tabular-nums"
+            : "py-3 pr-4 tabular-nums"
+        }
+      >
+        {formatMoney(row.commissionDebt)}
+      </td>
       {withProfit ? (
         <>
           <td className="py-3 pr-4 tabular-nums">{formatMoney(row.expenses)}</td>
@@ -183,19 +199,83 @@ function OrganizationRow({
 }
 
 /**
- * The platform operator's summary: who is registered on the platform, how much work
- * sits in each state across every connected organization, the participation fees
- * behind it, and the platform's share of those fees.
+ * The per-band table an act is written from.
  *
- * Two figures per money column on purpose. "Ожидается" is every order that is
- * not a draft or a cancellation — what the festival should collect; "получено"
- * is what has actually been paid. The difference is the operator's follow-up
- * list, and collapsing them into one number would hide it.
+ * Only the per-performance model has one: under a percentage there are no bands,
+ * and an empty table would imply the organization is billed off a price list it
+ * is not. Rendered under the organization's own name because an act is written
+ * for one client at a time.
+ */
+function FeeBreakdownCard({ row }: { row: OrganizationBreakdown }): React.JSX.Element | null {
+  if (row.feeBreakdown.length === 0) {
+    return null;
+  }
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Разбивка по тарифу — {row.name}</CardTitle>
+        <CardDescription>
+          Сколько номеров какого размера засчитано и по какой цене. Строки складываются в
+          начисленную комиссию: {formatMoney(row.accruedCommission)}. Диапазоны, в которые ничего не
+          попало, показаны нулями — так таблицу можно сверить с прайсом организатора.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="overflow-x-auto">
+        <table className="w-full min-w-lg text-sm">
+          <thead>
+            <tr className="border-border border-b text-left text-muted-foreground text-xs uppercase">
+              <th className="py-2 pr-4 font-medium">Участников в номере</th>
+              <th className="py-2 pr-4 font-medium">Номеров</th>
+              <th className="py-2 pr-4 font-medium">Цена за номер</th>
+              <th className="py-2 font-medium">Сумма</th>
+            </tr>
+          </thead>
+          <tbody>
+            {row.feeBreakdown.map((tier) => (
+              <tr className="border-border border-b last:border-0" key={tier.rangeLabel}>
+                <td className="py-3 pr-4">
+                  {formatTierRange(tier.minParticipants, tier.maxParticipants)}
+                </td>
+                <td className="py-3 pr-4 tabular-nums">{count(tier.performances)}</td>
+                <td className="py-3 pr-4 tabular-nums">{formatMoney(tier.unitAmount)}</td>
+                <td className="py-3 font-medium tabular-nums">{formatMoney(tier.amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-border border-t-2">
+              <td className="py-3 pr-4 font-medium">Итого</td>
+              <td className="py-3 pr-4 font-medium tabular-nums">{count(row.performances)}</td>
+              <td className="py-3 pr-4" />
+              <td className="py-3 font-medium tabular-nums">
+                {formatMoney(row.accruedCommission)}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * The platform operator's summary: who is registered on the platform, how much work
+ * sits in each state across every connected organization, and the three money
+ * figures the screen exists for — what the platform is owed, what it has been paid,
+ * and the difference.
+ *
+ * Commission is counted per номер, not per заявка. An order is a basket: it can
+ * hold five entries, be half cancelled, and carry services the organizer sells and
+ * the platform has no share of. So the figures below are built from entries that
+ * are actually taking part, priced either off the organization's tariff or as a
+ * percentage of what those entries cost.
  */
 export function PlatformDashboardPage(): React.JSX.Element {
   const [organizationId, setOrganizationId] = useState("");
   const [competitionId, setCompetitionId] = useState("");
-  const dashboard = usePlatformDashboard(organizationId, competitionId);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const dashboard = usePlatformDashboard(organizationId, competitionId, from, to);
   const audience = usePlatformAudience();
 
   const organizationOptions = useMemo(
@@ -239,14 +319,14 @@ export function PlatformDashboardPage(): React.JSX.Element {
       <header className="flex flex-col gap-1">
         <h1 className="font-semibold text-2xl">Сводка платформы</h1>
         <p className="text-muted-foreground text-sm">
-          Кто зарегистрирован на платформе, заявки по статусам во всех подключённых организациях,
-          взносы за ними, доля платформы — и, против неё, записанные расходы и разница между ними.
+          Кто зарегистрирован на платформе, заявки по статусам во всех подключённых организациях и
+          деньги за ними: сколько начислено, сколько поступило и сколько ещё должны.
         </p>
       </header>
 
       <AudienceSection audience={audience.data} />
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Select
           label="Организация"
           options={organizationOptions}
@@ -262,6 +342,18 @@ export function PlatformDashboardPage(): React.JSX.Element {
           value={competitionId}
           onValueChange={setCompetitionId}
         />
+        <Input
+          label="Период с"
+          type="date"
+          value={from}
+          onChange={(event) => setFrom(event.target.value)}
+        />
+        <Input
+          label="Период по"
+          type="date"
+          value={to}
+          onChange={(event) => setTo(event.target.value)}
+        />
       </div>
 
       <section aria-label="Заявки по статусам" className="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
@@ -270,34 +362,45 @@ export function PlatformDashboardPage(): React.JSX.Element {
         ))}
       </section>
 
-      <section aria-label="Деньги" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {/* A period filters the money and not the funnel: an order spans the weeks
+          between being drafted and being paid, so there is no one date to file it
+          under. Said out loud rather than left to look like the dates applied. */}
+      {data.periodApplies ? (
+        <p className="text-muted-foreground text-sm">
+          Заявки по статусам показаны за всё время — у заявки нет одной даты, по которой её можно
+          отнести к периоду. Период применён к деньгам ниже.
+        </p>
+      ) : null}
+
+      <section aria-label="Комиссия" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile
-          label="Взносы ожидаются"
-          value={formatMoney(data.expectedFees)}
-          hint="Все заявки, кроме черновиков и отменённых"
+          label="Номеров засчитано"
+          value={count(data.performances)}
+          hint={`${count(data.participants)} участников в них`}
         />
         <StatTile
-          label="Взносы получены"
-          value={formatMoney(data.settledFees)}
-          hint="Оплаченные заявки"
+          label="Комиссия начислена"
+          value={formatMoney(data.accruedCommission)}
+          hint="По условиям каждой организации"
         />
         <StatTile
-          label="Комиссия ожидается"
-          value={formatMoney(data.expectedCommission)}
-          hint="Доля платформы от ожидаемых взносов"
+          label="Комиссия поступила"
+          value={formatMoney(data.receivedCommission)}
+          hint="Внесено вручную по факту оплаты"
         />
         <StatTile
-          label="Комиссия получена"
-          value={formatMoney(data.settledCommission)}
-          hint="Доля платформы от полученных взносов"
+          label="Долг организаторов"
+          value={formatMoney(data.commissionDebt)}
+          hint="Начислено минус поступило"
+          tone={Number(data.commissionDebt) > 0 ? "negative" : "positive"}
         />
       </section>
 
       {/* The bottom line. Hidden under a competition filter rather than shown as a
-          zero: expenses are recorded per organization and never per festival, so
-          there is nothing honest to subtract from one festival's commission. */}
+          zero: expenses and receipts are recorded per organization and never per
+          festival, so there is nothing honest to subtract for one festival. */}
       {data.expensesApply ? (
-        <section aria-label="Прибыль" className="grid gap-3 sm:grid-cols-3">
+        <section aria-label="Прибыль" className="grid gap-3 sm:grid-cols-2">
           <StatTile
             label="Расходы"
             value={formatMoney(data.expenses)}
@@ -306,20 +409,15 @@ export function PlatformDashboardPage(): React.JSX.Element {
           <StatTile
             label="Разница"
             value={formatMoney(data.profit)}
-            hint="Полученная комиссия минус расходы"
+            hint="Поступившая комиссия минус расходы"
             tone={profitTone(data.profit)}
-          />
-          <StatTile
-            label="Разница потенциальная"
-            value={formatMoney(data.potentialProfit)}
-            hint="Если все ожидаемые заявки будут оплачены"
-            tone={profitTone(data.potentialProfit)}
           />
         </section>
       ) : (
         <p className="text-muted-foreground text-sm">
-          Расходы записываются по организациям, а не по фестивалям, поэтому при выбранном фестивале
-          прибыль не считается. Снимите фильтр по фестивалю, чтобы увидеть разницу.
+          Расходы и поступления записываются по организациям, а не по фестивалям, поэтому при
+          выбранном фестивале прибыль не считается. Снимите фильтр по фестивалю, чтобы увидеть
+          разницу.
         </p>
       )}
 
@@ -327,10 +425,11 @@ export function PlatformDashboardPage(): React.JSX.Element {
         <CardHeader>
           <CardTitle>По организациям</CardTitle>
           <CardDescription>
-            Комиссия считается по условиям организации — процентом от взносов или ценой за каждый
-            номер: {STATUS_LABELS.length} статусов сворачиваются в две суммы, ожидаемую и
-            полученную. Разница — это полученная комиссия минус расходы, записанные на эту
-            организацию; общие расходы платформы в строки не входят и учтены только в итоге выше.
+            Комиссия начисляется за каждый номер, дошедший до конкурса, — процентом от его взноса
+            или ценой по тарифу организации. «Поступило» — это то, что оператор внёс в журнал
+            поступлений по факту оплаты; долг — разница между начисленным и поступившим. Разница в
+            последней колонке — поступившая комиссия минус расходы, записанные на эту организацию;
+            общие расходы платформы в строки не входят и учтены только в итоге выше.
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
@@ -340,10 +439,10 @@ export function PlatformDashboardPage(): React.JSX.Element {
                 <th className="py-2 pr-4 font-medium">Организация</th>
                 <th className="py-2 pr-4 font-medium">Статус</th>
                 <th className="py-2 pr-4 font-medium">Условия</th>
-                <th className="py-2 pr-4 font-medium">Взносы ожид.</th>
-                <th className="py-2 pr-4 font-medium">Взносы получ.</th>
-                <th className="py-2 pr-4 font-medium">Комиссия ожид.</th>
-                <th className="py-2 pr-4 font-medium">Комиссия получ.</th>
+                <th className="py-2 pr-4 font-medium">Номеров</th>
+                <th className="py-2 pr-4 font-medium">Начислено</th>
+                <th className="py-2 pr-4 font-medium">Поступило</th>
+                <th className="py-2 pr-4 font-medium">Долг</th>
                 {data.expensesApply ? (
                   <>
                     <th className="py-2 pr-4 font-medium">Расходы</th>
@@ -369,6 +468,10 @@ export function PlatformDashboardPage(): React.JSX.Element {
           ) : null}
         </CardContent>
       </Card>
+
+      {data.organizations.map((row) => (
+        <FeeBreakdownCard key={row.organizationId ?? "unassigned"} row={row} />
+      ))}
     </div>
   );
 }
