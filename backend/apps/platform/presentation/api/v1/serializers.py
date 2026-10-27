@@ -147,6 +147,17 @@ class _OrganizationSerializer(serializers.Serializer[dict[str, object]]):
     createdAt = serializers.DateTimeField()
 
 
+class _FeeTierBreakdownSerializer(serializers.Serializer[dict[str, object]]):
+    """One band of a fee schedule with what actually fell into it — an act's row."""
+
+    minParticipants = serializers.IntegerField()
+    maxParticipants = serializers.IntegerField(allow_null=True)
+    rangeLabel = serializers.CharField()
+    unitAmount = serializers.CharField()
+    performances = serializers.IntegerField()
+    amount = serializers.CharField()
+
+
 class _OrganizationBreakdownSerializer(serializers.Serializer[dict[str, object]]):
     organizationId = serializers.UUIDField(allow_null=True)
     name = serializers.CharField()
@@ -157,13 +168,20 @@ class _OrganizationBreakdownSerializer(serializers.Serializer[dict[str, object]]
     competitions = serializers.IntegerField()
     applications = serializers.IntegerField()
     statusCounts = serializers.DictField(child=serializers.IntegerField())
-    expectedFees = serializers.CharField()
-    settledFees = serializers.CharField()
-    expectedCommission = serializers.CharField()
-    settledCommission = serializers.CharField()
+    # What participants paid the organizer. Context for the figures below, not the
+    # base any of them is computed from.
+    orderFees = serializers.CharField()
+    performances = serializers.IntegerField()
+    participants = serializers.IntegerField()
+    commissionBase = serializers.CharField()
+    accruedCommission = serializers.CharField()
+    receivedCommission = serializers.CharField()
+    commissionDebt = serializers.CharField()
+    # Empty unless the organization is billed per performance, where it is the only
+    # honest way to show how the accrued figure was arrived at.
+    feeBreakdown = _FeeTierBreakdownSerializer(many=True)
     expenses = serializers.CharField()
     profit = serializers.CharField()
-    potentialProfit = serializers.CharField()
 
 
 class _CompetitionOptionSerializer(serializers.Serializer[dict[str, object]]):
@@ -193,19 +211,28 @@ DashboardResponseSerializer = inline_serializer(
             fields={
                 "statusCounts": serializers.DictField(child=serializers.IntegerField()),
                 "applications": serializers.IntegerField(),
-                "expectedFees": serializers.CharField(),
-                "settledFees": serializers.CharField(),
-                "expectedCommission": serializers.CharField(),
-                "settledCommission": serializers.CharField(),
-                # The expense side of the same books, and the two differences the
+                "orderFees": serializers.CharField(),
+                # The billing unit: entries committed to taking part, and the people
+                # in them. What every commission figure below is counted from.
+                "performances": serializers.IntegerField(),
+                "participants": serializers.IntegerField(),
+                "commissionBase": serializers.CharField(),
+                # Owed, paid, and the difference — the three figures the console
+                # exists to put side by side.
+                "accruedCommission": serializers.CharField(),
+                "receivedCommission": serializers.CharField(),
+                "commissionDebt": serializers.CharField(),
+                # The expense side of the same books, and the difference the
                 # operator reads it for. Negative figures are ordinary here.
                 "expenses": serializers.CharField(),
                 "unattributedExpenses": serializers.CharField(),
                 "profit": serializers.CharField(),
-                "potentialProfit": serializers.CharField(),
                 # False under a competition filter, where expenses — recorded per
                 # organization, never per festival — cannot honestly be narrowed.
                 "expensesApply": serializers.BooleanField(),
+                # True when a period filter is on: the money honours it, the funnel
+                # above it does not.
+                "periodApplies": serializers.BooleanField(),
                 "organizations": _OrganizationBreakdownSerializer(many=True),
                 "competitions": _CompetitionOptionSerializer(many=True),
             },

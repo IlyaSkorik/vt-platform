@@ -3,8 +3,9 @@
 Two things are under test and they are different kinds of thing. One is the ledger
 itself — the operator entering what the platform spent, correcting a figure,
 striking one out. The other is the arithmetic on the console's summary: commission
-in, recorded costs out, and the difference that says whether the platform is ahead
-or behind.
+actually received, recorded costs out, and the difference that says whether the
+platform is ahead or behind. Commission is accrued per entry and received by hand,
+so these fixtures write entries and receipts rather than orders.
 
 Access is granted the way the deployment grants it, through
 ``grant_platform_admin``: an organization's own OWNER must not be able to read what
@@ -18,7 +19,7 @@ import uuid
 import pytest
 from rest_framework.test import APIClient
 
-from apps.applications.infrastructure.models import ApplicationModel
+from apps.applications.infrastructure.models import SubmissionModel
 from apps.competitions.infrastructure.models import CompetitionModel
 from apps.finance.infrastructure.models import PlatformExpenseModel
 from apps.identity.presentation.api.v1.auth import composition as identity_composition
@@ -33,6 +34,7 @@ _PASSWORD = "V3ry$ecurePass!"
 _EXPENSES = "/api/v1/platform/expenses"
 _ORGANIZATIONS = "/api/v1/platform/organizations"
 _DASHBOARD = "/api/v1/platform/dashboard"
+_COMMISSION_PAYMENTS = "/api/v1/platform/commission-payments"
 
 
 def _register(client: APIClient, email: str) -> str:
@@ -91,24 +93,31 @@ def _connected(operator: APIClient, *, name: str, commission: str) -> str:
     return str(organization["id"])
 
 
-def _total_price(amount: str) -> dict[str, str]:
-    """The price snapshot exactly as ``ApplicationMapper._total_to_json`` writes it."""
-    return {
-        "total": amount,
-        "submissions_total": amount,
-        "services_total": "0.00",
-        "currency": "BYN",
-        "calculated_at": "2026-01-01T00:00:00+00:00",
-    }
+def _performance(*, competition_id: uuid.UUID, price: str, billed_on: str = "2026-03-15") -> None:
+    """One billable entry — the unit commission is actually counted from.
 
-
-def _order(*, competition_id: uuid.UUID, status: str, amount: str) -> None:
-    ApplicationModel.objects.create(
+    Written the way the Submission mapper writes one, including the transition into
+    ``PAID`` the period filter reads, so these fixtures cannot drift from what the
+    console reads.
+    """
+    SubmissionModel.objects.create(
         competition_id=competition_id,
         applicant_id=uuid.uuid4(),
-        status=status,
-        total_price=_total_price(amount),
+        status="ACCEPTED",
+        participants=[{"id": str(uuid.uuid4()), "display_name": "Соло", "member_count": 1, "members": []}],
+        price_snapshot={"amount": price, "currency": "BYN", "calculated_at": "2026-01-01T00:00:00+00:00"},
+        status_history=[{"from_status": "WAITING_PAYMENT", "to_status": "PAID", "occurred_at": f"{billed_on}T12:00:00+00:00"}],
     )
+
+
+def _received(operator: APIClient, *, organization_id: str, amount: str, received_at: str = "2026-03-20") -> None:
+    """Commission the operator records as actually paid."""
+    response = operator.post(
+        _COMMISSION_PAYMENTS,
+        {"organizationId": organization_id, "amount": amount, "receivedAt": received_at},
+        format="json",
+    )
+    assert response.status_code == 201, response.data
 
 
 class TestAccess:
@@ -275,31 +284,34 @@ class TestProfitOnTheDashboard:
             season="2025/2026",
         )
 
-    def test_subtracts_the_recorded_costs_from_the_commission(self, operator: APIClient) -> None:
+    def test_subtracts_the_recorded_costs_from_what_was_actually_paid(self, operator: APIClient) -> None:
         organization = _connected(operator, name="Гармония", commission="10")
         festival = self._festival_of(organization, title="Гармония — сезон")
-        # 200 paid and 100 still owed: 20.00 of commission in hand, 30.00 expected.
-        _order(competition_id=festival.id, status="PAID", amount="200.00")
-        _order(competition_id=festival.id, status="SUBMITTED", amount="100.00")
+        # 300.00 of entries at 10% is 30.00 accrued; 20.00 of it has arrived.
+        _performance(competition_id=festival.id, price="200.00")
+        _performance(competition_id=festival.id, price="100.00")
+        _received(operator, organization_id=organization, amount="20.00")
         _expense(operator, amount="25.00", purpose="Печать дипломов", organization_id=organization)
 
         data = operator.get(_DASHBOARD).data["data"]
 
-        assert data["settledCommission"] == "20.00"
-        assert data["expectedCommission"] == "30.00"
+        assert data["accruedCommission"] == "30.00"
+        assert data["receivedCommission"] == "20.00"
+        assert data["commissionDebt"] == "10.00"
         assert data["expenses"] == "25.00"
-        # In the red on what has actually been paid, in the black once the
-        # outstanding order settles. Both figures, because they answer different
-        # questions and one of them alone would be a half-truth.
+        # Profit is money in hand less money out, and nothing else: 20.00 received
+        # against 25.00 spent. The 10.00 still owed is reported as a debt rather
+        # than folded into a profit figure it has not become yet.
         assert data["profit"] == "-5.00"
-        assert data["potentialProfit"] == "5.00"
         assert data["expensesApply"] is True
 
     def test_gives_each_organization_its_own_line(self, operator: APIClient) -> None:
         first = _connected(operator, name="Гармония", commission="10")
         second = _connected(operator, name="Созвездие", commission="10")
-        _order(competition_id=self._festival_of(first, title="Г").id, status="PAID", amount="1000.00")
-        _order(competition_id=self._festival_of(second, title="С").id, status="PAID", amount="1000.00")
+        _performance(competition_id=self._festival_of(first, title="Г").id, price="1000.00")
+        _performance(competition_id=self._festival_of(second, title="С").id, price="1000.00")
+        _received(operator, organization_id=first, amount="100.00")
+        _received(operator, organization_id=second, amount="100.00")
         _expense(operator, amount="30.00", purpose="Печать", organization_id=first)
         _expense(operator, amount="400.00", purpose="Сервер", category="INFRASTRUCTURE")
 
@@ -312,7 +324,8 @@ class TestProfitOnTheDashboard:
 
     def test_the_platform_total_includes_the_overheads_no_line_carries(self, operator: APIClient) -> None:
         organization = _connected(operator, name="Гармония", commission="10")
-        _order(competition_id=self._festival_of(organization, title="Г").id, status="PAID", amount="1000.00")
+        _performance(competition_id=self._festival_of(organization, title="Г").id, price="1000.00")
+        _received(operator, organization_id=organization, amount="100.00")
         _expense(operator, amount="30.00", purpose="Печать", organization_id=organization)
         _expense(operator, amount="400.00", purpose="Сервер", category="INFRASTRUCTURE")
 
@@ -326,7 +339,8 @@ class TestProfitOnTheDashboard:
 
     def test_narrowing_to_one_organization_drops_the_platform_overheads(self, operator: APIClient) -> None:
         organization = _connected(operator, name="Гармония", commission="10")
-        _order(competition_id=self._festival_of(organization, title="Г").id, status="PAID", amount="1000.00")
+        _performance(competition_id=self._festival_of(organization, title="Г").id, price="1000.00")
+        _received(operator, organization_id=organization, amount="100.00")
         _expense(operator, amount="30.00", purpose="Печать", organization_id=organization)
         _expense(operator, amount="400.00", purpose="Сервер", category="INFRASTRUCTURE")
 
@@ -339,7 +353,7 @@ class TestProfitOnTheDashboard:
     def test_a_competition_filter_says_the_expenses_do_not_apply(self, operator: APIClient) -> None:
         organization = _connected(operator, name="Гармония", commission="10")
         festival = self._festival_of(organization, title="Г")
-        _order(competition_id=festival.id, status="PAID", amount="1000.00")
+        _performance(competition_id=festival.id, price="1000.00")
         _expense(operator, amount="30.00", purpose="Печать", organization_id=organization)
 
         data = operator.get(f"{_DASHBOARD}?competitionId={festival.id}").data["data"]
