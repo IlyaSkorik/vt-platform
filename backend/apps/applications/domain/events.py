@@ -92,6 +92,7 @@ __all__ = [
     "SubmissionReviewStarted",
     "SubmissionScheduled",
     "SubmissionSubmitted",
+    "SubmissionUnscheduled",
     "SubmissionWaitlisted",
     "TeacherAdded",
     "TeacherRemoved",
@@ -343,6 +344,16 @@ class SubmissionAccepted(DomainEvent):
 @dataclass(frozen=True, slots=True, kw_only=True)
 class SubmissionScheduled(DomainEvent):
     """The submission was assigned a slot in the running order."""
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SubmissionUnscheduled(DomainEvent):
+    """The submission lost its slot and went back to merely competing.
+
+    Not a cancellation and not a step backwards in review: the act is still in the
+    competition, it simply holds no place in any running order — because the slot
+    was pulled, or because the whole programme it stood in was deleted.
+    """
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
