@@ -11,7 +11,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-__all__ = ["AmendExpenseCommand", "RecordExpenseCommand"]
+__all__ = [
+    "AmendCommissionPaymentCommand",
+    "AmendExpenseCommand",
+    "RecordCommissionPaymentCommand",
+    "RecordExpenseCommand",
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,3 +54,34 @@ class AmendExpenseCommand:
     note: str | None = None
     organization_id: str | None = None
     reassign: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class RecordCommissionPaymentCommand:
+    """One sum an organization paid the platform, as the operator is entering it.
+
+    ``organization_id`` is required and has no "platform's own" reading: a receipt
+    exists to reduce one organization's debt.
+    """
+
+    organization_id: str
+    amount: str
+    received_at: date
+    note: str | None = None
+    recorded_by: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class AmendCommissionPaymentCommand:
+    """A correction to a recorded receipt: every field optional, ``None`` = unchanged.
+
+    Unlike :class:`AmendExpenseCommand` there is no ``reassign`` flag, because
+    ``organization_id`` has no "move it off the client" case to express — a receipt
+    always has a payer. ``None`` here means only "leave the payer alone".
+    """
+
+    payment_id: str
+    organization_id: str | None = None
+    amount: str | None = None
+    received_at: date | None = None
+    note: str | None = None

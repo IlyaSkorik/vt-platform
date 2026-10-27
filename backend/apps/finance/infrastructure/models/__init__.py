@@ -9,10 +9,12 @@ representation the mapper/repository reads from and writes to.
 from __future__ import annotations
 
 from .base import BasePersistenceModel, uuid7
+from .commission_payment import CommissionPaymentModel
 from .expense import PlatformExpenseModel
 
 __all__ = [
     "BasePersistenceModel",
+    "CommissionPaymentModel",
     "PlatformExpenseModel",
     "uuid7",
 ]

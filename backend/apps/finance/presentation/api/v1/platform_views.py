@@ -1,4 +1,4 @@
-"""The platform operator's expense book, over HTTP.
+"""The platform operator's own books, over HTTP: what was spent and what arrived.
 
 Every route here is gated by :class:`IsPlatformAdministrator` and there is no
 organizer-facing counterpart. That is the point: what the platform spends is not
@@ -22,17 +22,26 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.finance.application.dto.commands import AmendExpenseCommand, RecordExpenseCommand
-from apps.finance.composition import build_expense_service
-from apps.finance.domain.exceptions import ExpenseNotFoundError, FinanceError
+from apps.finance.application.dto.commands import (
+    AmendCommissionPaymentCommand,
+    AmendExpenseCommand,
+    RecordCommissionPaymentCommand,
+    RecordExpenseCommand,
+)
+from apps.finance.composition import build_commission_payment_service, build_expense_service
+from apps.finance.domain.exceptions import CommissionPaymentNotFoundError, ExpenseNotFoundError, FinanceError
 from apps.finance.presentation.api.v1 import resources
 from apps.finance.presentation.api.v1.problems import envelope, finance_problem
 from apps.finance.presentation.api.v1.serializers import (
     EXPENSE_CATEGORIES,
+    AmendCommissionPaymentRequestSerializer,
     AmendExpenseRequestSerializer,
+    CommissionPaymentLedgerResponseSerializer,
+    CommissionPaymentResponseSerializer,
     ExpenseLedgerResponseSerializer,
     ExpenseResponseSerializer,
     FinanceProblemDetailSerializer,
+    RecordCommissionPaymentRequestSerializer,
     RecordExpenseRequestSerializer,
 )
 from apps.identity.infrastructure.auth import CredentialAwareJWTAuthentication
@@ -40,12 +49,17 @@ from apps.platform.presentation.permissions import IsPlatformAdministrator
 
 _TAG = "Platform Finance"
 
-__all__ = ["PlatformExpenseCollectionView", "PlatformExpenseDetailView"]
+__all__ = [
+    "PlatformCommissionPaymentCollectionView",
+    "PlatformCommissionPaymentDetailView",
+    "PlatformExpenseCollectionView",
+    "PlatformExpenseDetailView",
+]
 
 _PROBLEM_RESPONSES = {
     400: OpenApiResponse(FinanceProblemDetailSerializer, description="Malformed request."),
     403: OpenApiResponse(FinanceProblemDetailSerializer, description="Not a platform operator."),
-    404: OpenApiResponse(FinanceProblemDetailSerializer, description="No such expense."),
+    404: OpenApiResponse(FinanceProblemDetailSerializer, description="No such expense or receipt."),
 }
 
 
@@ -214,6 +228,126 @@ class PlatformExpenseDetailView(_OperatorView):
             return self._problem(ExpenseNotFoundError("Расход не найден."), request)
         try:
             build_expense_service().remove(parsed)
+        except FinanceError as exc:
+            return self._problem(exc, request)
+        return Response(status=204)
+
+
+class PlatformCommissionPaymentCollectionView(_OperatorView):
+    """``GET``/``POST`` the commission the platform has been paid."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="platform_commission_payments_list",
+        summary="Commission the platform received",
+        description=(
+            "Recorded receipts, newest first, with their total and a breakdown by payer. "
+            "Every filter is optional and narrows both the list and the totals beside it: "
+            "`organizationId` to one client, `from`/`to` to a period, read against the day "
+            "the money landed rather than the day it was typed in."
+        ),
+        parameters=[
+            OpenApiParameter(name="organizationId", type=str, required=False, description="Only what this organization paid."),
+            OpenApiParameter(name="from", type=str, required=False, description="Earliest receipt date, inclusive (YYYY-MM-DD)."),
+            OpenApiParameter(name="to", type=str, required=False, description="Latest receipt date, inclusive (YYYY-MM-DD)."),
+        ],
+        request=None,
+        responses={200: CommissionPaymentLedgerResponseSerializer, **_PROBLEM_RESPONSES},
+    )
+    def get(self, request: Request) -> Response:
+        try:
+            view = build_commission_payment_service().ledger(
+                organization_id=(request.query_params.get("organizationId") or "").strip() or None,
+                since=_optional_date(request, "from"),
+                until=_optional_date(request, "to"),
+            )
+        except FinanceError as exc:
+            return self._problem(exc, request)
+        return envelope(resources.commission_payment_ledger(view), request)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="platform_commission_payments_record",
+        summary="Record commission received",
+        description=(
+            "Enter one payment. `organizationId` is who paid and is required — the figure "
+            "exists to be subtracted from that organization's debt. `receivedAt` is the day "
+            "the money landed, as the bank statement says."
+        ),
+        request=RecordCommissionPaymentRequestSerializer,
+        responses={201: CommissionPaymentResponseSerializer, **_PROBLEM_RESPONSES},
+    )
+    def post(self, request: Request) -> Response:
+        serializer = RecordCommissionPaymentRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payload = serializer.validated_data
+        command = RecordCommissionPaymentCommand(
+            organization_id=str(payload["organizationId"]),
+            amount=str(payload["amount"]),
+            received_at=payload["receivedAt"],
+            note=str(payload.get("note") or ""),
+            # Who entered it. Recorded on the row rather than in a log: a figure in
+            # the books that nobody owns is one nobody can be asked about.
+            recorded_by=str(request.user.id),
+        )
+        try:
+            view = build_commission_payment_service().record(command)
+        except FinanceError as exc:
+            return self._problem(exc, request)
+        return envelope(resources.commission_payment(view), request, status=201)
+
+
+class PlatformCommissionPaymentDetailView(_OperatorView):
+    """``PATCH``/``DELETE`` one recorded receipt."""
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="platform_commission_payments_amend",
+        summary="Correct a recorded receipt",
+        description=(
+            "Every field is optional and an omitted one is left alone. `organizationId` may "
+            "be sent to re-point a payment credited to the wrong client; unlike an expense "
+            "there is no `null` case, because a receipt always has a payer."
+        ),
+        request=AmendCommissionPaymentRequestSerializer,
+        responses={200: CommissionPaymentResponseSerializer, **_PROBLEM_RESPONSES},
+    )
+    def patch(self, request: Request, payment_id: str) -> Response:
+        # An id that is not an id names nothing, and "nothing" is a 404 rather than a
+        # malformed-request 400 — the same answer this route gives for an id that is
+        # well-formed and simply not in the books.
+        if _parsed(payment_id) is None:
+            return self._problem(CommissionPaymentNotFoundError("Поступление не найдено."), request)
+        serializer = AmendCommissionPaymentRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payload = serializer.validated_data
+        organization = payload.get("organizationId")
+        command = AmendCommissionPaymentCommand(
+            payment_id=payment_id,
+            organization_id=None if organization is None else str(organization),
+            amount=None if "amount" not in payload else str(payload["amount"]),
+            received_at=payload.get("receivedAt"),
+            note=None if "note" not in payload else str(payload["note"]),
+        )
+        try:
+            view = build_commission_payment_service().amend(command)
+        except FinanceError as exc:
+            return self._problem(exc, request)
+        return envelope(resources.commission_payment(view), request)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="platform_commission_payments_delete",
+        summary="Strike a receipt from the books",
+        request=None,
+        responses={204: OpenApiResponse(description="Removed."), **_PROBLEM_RESPONSES},
+    )
+    def delete(self, request: Request, payment_id: str) -> Response:
+        parsed = _parsed(payment_id)
+        if parsed is None:
+            return self._problem(CommissionPaymentNotFoundError("Поступление не найдено."), request)
+        try:
+            build_commission_payment_service().remove(parsed)
         except FinanceError as exc:
             return self._problem(exc, request)
         return Response(status=204)

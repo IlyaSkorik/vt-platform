@@ -17,13 +17,15 @@ from __future__ import annotations
 import uuid
 from collections.abc import Sequence
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Protocol, runtime_checkable
 
-from apps.finance.domain.entities import PlatformExpense
+from apps.finance.domain.entities import CommissionPayment, PlatformExpense
 from apps.finance.domain.value_objects import ExpenseCategory
 
 __all__ = [
     "Clock",
+    "CommissionPaymentRepository",
     "ExpenseRepository",
     "OrganizationDirectory",
     "UuidGenerator",
@@ -70,6 +72,42 @@ class ExpenseRepository(Protocol):
     ) -> Sequence[PlatformExpense]: ...
 
     def soft_delete(self, expense: PlatformExpense, *, now: datetime) -> None: ...
+
+
+@runtime_checkable
+class CommissionPaymentRepository(Protocol):
+    """Port: persistence & retrieval of :class:`CommissionPayment` aggregates.
+
+    ``totals_by_organization`` is here rather than derived from ``list_payments``
+    because the dashboard wants one figure per client and never the receipts behind
+    it. Summing a year of rows in Python to throw them away is the kind of read that
+    only shows up as a slow console six months later.
+    """
+
+    def add(self, payment: CommissionPayment) -> None: ...
+
+    def get(self, payment_id: uuid.UUID) -> CommissionPayment | None: ...
+
+    def save(self, payment: CommissionPayment) -> None: ...
+
+    def list_payments(
+        self,
+        *,
+        organization_id: uuid.UUID | None = None,
+        since: date | None = None,
+        until: date | None = None,
+        limit: int | None = None,
+    ) -> Sequence[CommissionPayment]: ...
+
+    def totals_by_organization(
+        self,
+        *,
+        organization_id: uuid.UUID | None = None,
+        since: date | None = None,
+        until: date | None = None,
+    ) -> dict[uuid.UUID, Decimal]: ...
+
+    def soft_delete(self, payment: CommissionPayment, *, now: datetime) -> None: ...
 
 
 @runtime_checkable

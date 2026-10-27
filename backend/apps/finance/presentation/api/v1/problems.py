@@ -31,6 +31,8 @@ _REQUEST_ID_HEADER: Final = "X-Request-ID"
 _PROBLEM_MAP: Final[dict[str, tuple[int, str, str]]] = {
     "invalid_expense_data": (400, "bad-request", "Bad request"),
     "expense_not_found": (404, "not-found", "Resource not found"),
+    "invalid_commission_payment_data": (400, "bad-request", "Bad request"),
+    "commission_payment_not_found": (404, "not-found", "Resource not found"),
 }
 
 _FALLBACK: Final[tuple[int, str, str]] = (400, "bad-request", "Bad request")

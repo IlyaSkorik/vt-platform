@@ -14,14 +14,18 @@ from __future__ import annotations
 from drf_spectacular.utils import inline_serializer
 from rest_framework import serializers
 
-from apps.finance.domain.value_objects import EXPENSE_NOTE_MAX, EXPENSE_PURPOSE_MAX, ExpenseCategory
+from apps.finance.domain.value_objects import EXPENSE_NOTE_MAX, EXPENSE_PURPOSE_MAX, PAYMENT_NOTE_MAX, ExpenseCategory
 
 __all__ = [
     "EXPENSE_CATEGORIES",
+    "AmendCommissionPaymentRequestSerializer",
     "AmendExpenseRequestSerializer",
+    "CommissionPaymentLedgerResponseSerializer",
+    "CommissionPaymentResponseSerializer",
     "ExpenseLedgerResponseSerializer",
     "ExpenseResponseSerializer",
     "FinanceProblemDetailSerializer",
+    "RecordCommissionPaymentRequestSerializer",
     "RecordExpenseRequestSerializer",
 ]
 
@@ -120,6 +124,78 @@ ExpenseLedgerResponseSerializer = inline_serializer(
                 "expenses": _ExpenseSerializer(many=True),
                 "total": serializers.CharField(),
                 "byCategory": _CategoryTotalSerializer(many=True),
+                "truncated": serializers.BooleanField(),
+            },
+        ),
+        "meta": _meta,
+    },
+)
+
+
+class RecordCommissionPaymentRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """One commission payment being entered into the books.
+
+    ``amount`` is a string and not a number for the same reason it is on an
+    expense: it is money, and a JSON number would become a float somewhere between
+    the form and the column.
+
+    ``organizationId`` is required and has no null case — a receipt that reduces
+    nobody's debt is not a receipt.
+    """
+
+    organizationId = serializers.UUIDField()
+    amount = serializers.CharField(max_length=32)
+    receivedAt = serializers.DateField()
+    note = serializers.CharField(max_length=PAYMENT_NOTE_MAX, required=False, allow_blank=True)
+
+
+class AmendCommissionPaymentRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """A correction. Every field optional; an omitted one is left as it was.
+
+    ``organizationId`` may be sent to re-point a payment credited to the wrong
+    client, but never ``null``: unlike an expense, there is no "the platform
+    carried this itself" to move it to.
+    """
+
+    organizationId = serializers.UUIDField(required=False)
+    amount = serializers.CharField(max_length=32, required=False)
+    receivedAt = serializers.DateField(required=False)
+    note = serializers.CharField(max_length=PAYMENT_NOTE_MAX, required=False, allow_blank=True)
+
+
+class _CommissionPaymentSerializer(serializers.Serializer[dict[str, object]]):
+    id = serializers.UUIDField()
+    organizationId = serializers.UUIDField()
+    organizationName = serializers.CharField(allow_null=True)
+    # A decimal string, like every other money figure on this console.
+    amount = serializers.CharField()
+    receivedAt = serializers.DateField()
+    note = serializers.CharField(allow_blank=True)
+    createdAt = serializers.DateTimeField()
+    updatedAt = serializers.DateTimeField()
+
+
+class _OrganizationPaymentTotalSerializer(serializers.Serializer[dict[str, object]]):
+    organizationId = serializers.UUIDField()
+    organizationName = serializers.CharField(allow_null=True)
+    amount = serializers.CharField()
+    count = serializers.IntegerField()
+
+
+CommissionPaymentResponseSerializer = inline_serializer(
+    name="PlatformCommissionPaymentResponse",
+    fields={"data": _CommissionPaymentSerializer(), "meta": _meta},
+)
+
+CommissionPaymentLedgerResponseSerializer = inline_serializer(
+    name="PlatformCommissionPaymentLedgerResponse",
+    fields={
+        "data": inline_serializer(
+            name="PlatformCommissionPaymentLedger",
+            fields={
+                "payments": _CommissionPaymentSerializer(many=True),
+                "total": serializers.CharField(),
+                "byOrganization": _OrganizationPaymentTotalSerializer(many=True),
                 "truncated": serializers.BooleanField(),
             },
         ),
