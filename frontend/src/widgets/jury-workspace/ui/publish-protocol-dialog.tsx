@@ -89,27 +89,18 @@ export function PublishProtocolDialog({ protocol }: PublishProtocolDialogProps):
 
   async function handlePublish(): Promise<void> {
     try {
-      const result = await publish.mutateAsync({
+      const started = await publish.mutateAsync({
         columns: orderedColumns.map((column) => column.key),
         notify,
       });
-      const parts = [
-        `Ревизия ${result.protocol.revision}`,
-        `дипломов: ${result.diplomasAwarded}`,
-        notify ? `писем: ${result.lettersSent}` : "без писем",
-      ];
-      toast.success(`Протокол опубликован. ${parts.join(", ")}.`);
-      // Not a toast among toasts: a participant with a result and no document is the one
-      // outcome an organizer has to act on, and it normally means the nomination has no
-      // diploma template assigned yet.
-      if (result.diplomasMissing > 0) {
-        toast.error(
-          `Без диплома осталось ${result.diplomasMissing} — проверьте, назначен ли шаблон диплома этого жанра.`,
-        );
-      }
-      if (notify && result.lettersSkipped > 0) {
-        toast.error(`Не отправлено писем: ${result.lettersSkipped} — у заявителя нет e-mail.`);
-      }
+      // Про дипломы и письма здесь сказать нечего, и это честно: их выпускает воркер, а
+      // не этот запрос. Что с ними стало, доложит `PublicationStatus` — экран, который
+      // переживёт и закрытый диалог, и перезагруженную страницу.
+      toast.success(
+        `Протокол опубликован, ревизия ${started.protocol.revision}. ${
+          notify ? "Дипломы и письма выпускаются." : "Дипломы выпускаются, письма отключены."
+        }`,
+      );
       setOpen(false);
     } catch (error) {
       const message =
@@ -137,8 +128,8 @@ export function PublishProtocolDialog({ protocol }: PublishProtocolDialogProps):
           <DialogTitle>{republishing ? "Публикация исправлений" : "Публикация итогов"}</DialogTitle>
           <DialogDescription>
             {republishing
-              ? `Страница обновится до ревизии ${protocol.revision + 1}. Ссылка не изменится, дипломы будут перевыпущены с новыми степенями.`
-              : "Итоги станут публичными, дипломы получат степень и появятся в личных кабинетах участников."}
+              ? `Страница обновится до ревизии ${protocol.revision + 1} сразу. Ссылка не изменится, дипломы будут перевыпущены с новыми степенями следом — это занимает до нескольких минут на большой номинации.`
+              : "Итоги станут публичными сразу. Дипломы получат степень и появятся в личных кабинетах следом — на большой номинации это занимает до нескольких минут."}
           </DialogDescription>
         </DialogHeader>
 

@@ -19,6 +19,7 @@ import { ApiError } from "@/shared/api";
 import { Badge, Button, IconButton, Select, type SelectOption, toast } from "@/shared/ui";
 
 import { formatPublishedAt } from "../lib/format";
+import { PublicationStatus } from "./publication-status";
 import { PublishProtocolDialog } from "./publish-protocol-dialog";
 
 interface ProtocolEditorProps {
@@ -176,6 +177,8 @@ export function ProtocolEditor({ protocol }: ProtocolEditorProps): React.JSX.Ele
           <PublishProtocolDialog protocol={protocol} />
         </div>
       </header>
+
+      <PublicationStatus protocol={protocol} />
 
       {protocol.hasUnpublishedChanges ? (
         <p className="rounded-lg border border-warning/40 bg-warning-surface px-3 py-2 text-sm">

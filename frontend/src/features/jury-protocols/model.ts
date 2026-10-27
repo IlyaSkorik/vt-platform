@@ -142,9 +142,16 @@ export interface ProtocolSummary {
   updatedAt: string;
 }
 
-/** What one publication did, beyond changing the protocol's status. */
+/** Где сейчас фоновая доводка публикации. Те же четыре состояния, что у джоб дипломов. */
+export type PublicationJobStatus = "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
+
+/** Доводка ещё идёт — значит, её опрашивают дальше. */
+export function isPublicationRunning(job: PublicationJob | null | undefined): boolean {
+  return job?.status === "PENDING" || job?.status === "RUNNING";
+}
+
+/** Что выпустила и разослала фоновая половина публикации. */
 export interface PublicationResult {
-  protocol: Protocol;
   diplomasAwarded: number;
   diplomasCreated: number;
   /**
@@ -155,6 +162,38 @@ export interface PublicationResult {
   diplomasMissing: number;
   lettersSent: number;
   lettersSkipped: number;
+}
+
+/**
+ * Одна публикация, доводимая воркером: дипломы и письма.
+ *
+ * `result` пуст, пока прогон не кончился, и остаётся пустым при провале — тогда говорит
+ * `error`. Опрашивается по протоколу, а не по id задания: экран всегда знает протокол, а
+ * перезагрузивший страницу организатор иначе потерял бы единственную ручку от работы,
+ * которая идёт.
+ */
+export interface PublicationJob {
+  jobId: string;
+  protocolId: string;
+  revision: number;
+  notify: boolean;
+  status: PublicationJobStatus;
+  result: PublicationResult | null;
+  error: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Ответ на «Опубликовать»: страница уже публична, остальное — в очереди.
+ *
+ * Обе половины, потому что обе — новость. Протокол опубликован окончательно (статус,
+ * ревизия и ссылка уже не изменятся), а задание — ручка от дипломов и писем, которые к
+ * этому моменту выпускает воркер.
+ */
+export interface PublicationStarted {
+  protocol: Protocol;
+  job: PublicationJob;
 }
 
 /** A competing act of this nomination that has no row in the protocol yet. */
