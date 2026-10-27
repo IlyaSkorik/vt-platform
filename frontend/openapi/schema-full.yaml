@@ -11607,13 +11607,63 @@ paths:
                 $ref: '#/components/schemas/ProtocolProblemDetail'
           description: Unprocessable.
   /api/v1/staff/protocols/{protocol_id}/publication:
+    get:
+      operationId: protocolsPublicationJob
+      description: |-
+        The last publication of this protocol: its status, its counts, its failure.
+
+        Read by protocol rather than by job id on purpose: the screen that wants it
+        always has the protocol, and an organizer who reloaded the page mid-run would
+        otherwise have lost the only handle on the work still going on.
+      parameters:
+      - in: path
+        name: protocol_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Competition Results
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationJob'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolProblemDetail'
+          description: Unprocessable.
     post:
       operationId: protocolsPublish
       description: |-
-        ``POST`` to publish the results, ``DELETE`` to take them back off the page.
+        ``POST`` to publish the results, ``GET`` to follow what publishing set off,
+        ``DELETE`` to take them back off the page.
 
         Publishing is three effects in one action - the public page, the diplomas, the letters -
-        so the response carries what each of them did rather than just the protocol's new status.
+        and only the first of them is quick. So ``POST`` answers once the page is public, with
+        the protocol and a job to follow; the other two are issued by a worker and reported on
+        that job, which ``GET`` returns.
       parameters:
       - in: path
         name: protocol_id
@@ -11634,11 +11684,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PublishProtocolRequest'
       responses:
-        '200':
+        '202':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublicationResult'
+                $ref: '#/components/schemas/PublicationStarted'
           description: ''
         '400':
           content:
@@ -11667,10 +11717,13 @@ paths:
     delete:
       operationId: protocolsUnpublish
       description: |-
-        ``POST`` to publish the results, ``DELETE`` to take them back off the page.
+        ``POST`` to publish the results, ``GET`` to follow what publishing set off,
+        ``DELETE`` to take them back off the page.
 
         Publishing is three effects in one action - the public page, the diplomas, the letters -
-        so the response carries what each of them did rather than just the protocol's new status.
+        and only the first of them is quick. So ``POST`` answers once the page is public, with
+        the protocol and a job to follow; the other two are issued by a worker and reported on
+        that job, which ``GET`` returns.
       parameters:
       - in: path
         name: protocol_id
@@ -19537,17 +19590,60 @@ components:
       required:
       - data
       - meta
+    PublicationJob:
+      type: object
+      description: |-
+        One publication being carried out, as the client polls it.
+
+        ``result`` is absent while the run is unfinished and stays absent when it fails -
+        there ``error`` carries what went wrong instead. The whole object is ``null`` for a
+        protocol that has never been published.
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        protocolId:
+          type: string
+          format: uuid
+        revision:
+          type: integer
+        notify:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/Status54aEnum'
+        result:
+          oneOf:
+          - $ref: '#/components/schemas/PublicationResult'
+          - type: 'null'
+        error:
+          type:
+          - string
+          - 'null'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - createdAt
+      - error
+      - jobId
+      - notify
+      - protocolId
+      - result
+      - revision
+      - status
+      - updatedAt
     PublicationResult:
       type: object
       description: |-
-        What one publication did: the protocol, plus what it issued and sent.
+        What the worker half of a publication issued and sent.
 
-        The counts are what the confirmation shows. ``diplomasMissing`` is the one an organizer
-        must not miss: those participants have a result and no document, which normally means
-        the nomination has no diploma template assigned yet.
+        The counts are what the confirmation shows once the run finishes. ``diplomasMissing``
+        is the one an organizer must not miss: those participants have a result and no
+        document, which normally means the nomination has no diploma template assigned yet.
       properties:
-        protocol:
-          $ref: '#/components/schemas/ProtocolDetail'
         diplomasAwarded:
           type: integer
         diplomasCreated:
@@ -19564,6 +19660,21 @@ components:
       - diplomasMissing
       - lettersSent
       - lettersSkipped
+    PublicationStarted:
+      type: object
+      description: |-
+        The answer to pressing «Опубликовать»: the page is public, the rest is queued.
+
+        Both halves, because both are news: the protocol is already published (its status,
+        revision and public link are final), and the job is the handle on the diplomas and
+        the letters, which a worker is issuing by the time this is read.
+      properties:
+        protocol:
+          $ref: '#/components/schemas/ProtocolDetail'
+        job:
+          $ref: '#/components/schemas/PublicationJob'
+      required:
+      - job
       - protocol
     PublishProtocolRequest:
       type: object
