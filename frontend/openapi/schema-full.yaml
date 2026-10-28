@@ -5054,6 +5054,49 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompetitionProblemDetail'
           description: Competition or element not found.
+  /api/v1/jury/competitions:
+    get:
+      operationId: juryCompetitions
+      description: |-
+        ``GET /api/v1/jury/competitions`` — the festivals this account judges.
+
+        The judge's entry point, and the reason it exists at all: the organizer's festival
+        list is staff-only, so without this a panel member who closed the tab has no way of
+        finding the thing they were invited to. Answers with an empty list rather than a
+        403 for somebody who is on no panel — not being a judge is not an error.
+      tags:
+      - Jury
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JurySeatListEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
   /api/v1/jury/invitations/{token}/accept:
     post:
       operationId: juryInvitationAccept
@@ -5835,15 +5878,197 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
           description: Not a platform administrator.
+  /api/v1/platform/commission-payments:
+    get:
+      operationId: platform_commission_payments_list
+      description: 'Recorded receipts, newest first, with their total and a breakdown
+        by payer. Every filter is optional and narrows both the list and the totals
+        beside it: `organizationId` to one client, `from`/`to` to a period, read against
+        the day the money landed rather than the day it was typed in.'
+      summary: Commission the platform received
+      parameters:
+      - in: query
+        name: from
+        schema:
+          type: string
+        description: Earliest receipt date, inclusive (YYYY-MM-DD).
+      - in: query
+        name: organizationId
+        schema:
+          type: string
+        description: Only what this organization paid.
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: Latest receipt date, inclusive (YYYY-MM-DD).
+      tags:
+      - Platform Finance
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformCommissionPaymentLedgerResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Malformed request.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Not a platform operator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: No such expense or receipt.
+    post:
+      operationId: platform_commission_payments_record
+      description: Enter one payment. `organizationId` is who paid and is required
+        — the figure exists to be subtracted from that organization's debt. `receivedAt`
+        is the day the money landed, as the bank statement says.
+      summary: Record commission received
+      tags:
+      - Platform Finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordCommissionPaymentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecordCommissionPaymentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecordCommissionPaymentRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformCommissionPaymentResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Malformed request.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Not a platform operator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: No such expense or receipt.
+  /api/v1/platform/commission-payments/{payment_id}:
+    patch:
+      operationId: platform_commission_payments_amend
+      description: Every field is optional and an omitted one is left alone. `organizationId`
+        may be sent to re-point a payment credited to the wrong client; unlike an
+        expense there is no `null` case, because a receipt always has a payer.
+      summary: Correct a recorded receipt
+      parameters:
+      - in: path
+        name: payment_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Platform Finance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAmendCommissionPaymentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAmendCommissionPaymentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAmendCommissionPaymentRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformCommissionPaymentResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Malformed request.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Not a platform operator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: No such expense or receipt.
+    delete:
+      operationId: platform_commission_payments_delete
+      description: '``PATCH``/``DELETE`` one recorded receipt.'
+      summary: Strike a receipt from the books
+      parameters:
+      - in: path
+        name: payment_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Platform Finance
+      responses:
+        '204':
+          description: Removed.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Malformed request.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: Not a platform operator.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceProblemDetail'
+          description: No such expense or receipt.
   /api/v1/platform/dashboard:
     get:
       operationId: platform_dashboard
-      description: Application counts per status across all connected organizations,
-        with the participation fees behind them and the platform's commission on those
-        fees — and, against that income, the costs recorded in the platform's own
-        expense book and the difference between the two. Filterable by organization
-        and by competition; under a competition filter `expensesApply` is false, because
-        expenses are recorded per organization and never per festival.
+      description: |-
+        What the platform is owed, what it has been paid and what it has spent, across all connected organizations, with the order funnel behind the figures.
+
+        Commission is counted per **performance**, never per order: an entry is billable once it is committed to taking part (`ACCEPTED`, `SCHEDULED` or `COMPLETED`), and is priced either off the organization's fee schedule — banded by how many participants it has, with `feeBreakdown` giving the per-band rows an act is written from — or as a percentage of what those entries themselves cost. Additional services an organizer sells are outside the base in both models.
+
+        `accruedCommission` is what is owed; `receivedCommission` is what the operator has recorded as actually paid in the commission receipts ledger; `commissionDebt` is the difference.
+
+        Filterable by organization, by competition and by period. Under a competition filter `expensesApply` is false, because expenses and receipts are recorded per organization and never per festival. A period narrows the money — entries by the day they became chargeable, expenses by the day they were spent, receipts by the day they landed — and leaves the order funnel alone, which `periodApplies` says so the console can label it.
       summary: Platform dashboard
       parameters:
       - in: query
@@ -5852,10 +6077,20 @@ paths:
           type: string
         description: Narrow to one competition.
       - in: query
+        name: from
+        schema:
+          type: string
+        description: Start of the period, inclusive (YYYY-MM-DD).
+      - in: query
         name: organizationId
         schema:
           type: string
         description: Narrow to one organization.
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: End of the period, inclusive (YYYY-MM-DD).
       tags:
       - Platform
       responses:
@@ -5937,7 +6172,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FinanceProblemDetail'
-          description: No such expense.
+          description: No such expense or receipt.
     post:
       operationId: platform_expenses_record
       description: Enter one cost. `purpose` is what the money went on and is required
@@ -5983,7 +6218,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FinanceProblemDetail'
-          description: No such expense.
+          description: No such expense or receipt.
   /api/v1/platform/expenses/{expense_id}:
     patch:
       operationId: platform_expenses_amend
@@ -6034,7 +6269,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FinanceProblemDetail'
-          description: No such expense.
+          description: No such expense or receipt.
     delete:
       operationId: platform_expenses_delete
       description: '``PATCH``/``DELETE`` one recorded expense.'
@@ -6067,7 +6302,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FinanceProblemDetail'
-          description: No such expense.
+          description: No such expense or receipt.
   /api/v1/platform/loadtest/diplomas:
     get:
       operationId: platform_loadtest_overview
@@ -6887,6 +7122,84 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicProgramEnvelope'
           description: ''
+  /api/v1/public/programs/{slug}/rows/{item_id}/backstage:
+    put:
+      operationId: publicProgramSetBackstage
+      description: Mark one act as present behind the stage, or no longer present.
+        Visible on the host's link only.
+      parameters:
+      - in: path
+        name: item_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Public Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetBackstageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetBackstageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetBackstageRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProgramEnvelope'
+          description: ''
+  /api/v1/public/programs/{slug}/rows/{item_id}/note:
+    put:
+      operationId: publicProgramSetHostNote
+      description: Write the host's own note on one row. Visible on the host's link
+        only; blank clears it.
+      parameters:
+      - in: path
+        name: item_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Public Program
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetHostNoteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetHostNoteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetHostNoteRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicProgramEnvelope'
+          description: ''
   /api/v1/public/programs/{slug}/rows/{item_id}/progress:
     put:
       operationId: publicProgramSetProgress
@@ -7162,10 +7475,16 @@ paths:
         somebody reconciles payments and benefits from, and mixing the two would mean
         downloading gigabytes of audio to read four PDFs.
 
-        Scoped with ``competitionId`` when given; without it, every order the organizer
-        can see. One folder per order, so the receipts and the certificate justifying the
-        amount sit together — the receipts first, because they are the documents the rest
-        of the folder explains.
+        Собирается по тому же отбору, что и очередь на экране (:mod:`.selection`):
+        фестиваль, очередь, статус, жанр, учреждение, поиск. Организатор ставит
+        «назначены на фестиваль» и жмёт «Скачать документы», имея в виду бумаги этих
+        заявок, — архив за весь сезон вместо них он заметит, уже отправив папку в
+        бухгалтерию.
+
+        One folder per order, so the receipts and the certificate justifying the amount
+        sit together — the receipts first, because they are the documents the rest of the
+        folder explains. Справки берутся по отобранным номерам, а не по всему заказу: в
+        папке должно лежать то, что отобрано, и ничего сверх того.
 
         An order settled by several transfers carries several receipts, and they are all
         included, numbered in upload order (``Квитанция 1``, ``Квитанция 2``, …) so the
@@ -7184,6 +7503,11 @@ paths:
   /api/v1/staff/applications/export:
     get:
       operationId: staff_applications_export_retrieve
+      description: |-
+        ``GET`` отобранные заявки как таблицу Excel.
+
+        Содержимое и его устройство — в :mod:`.export`; здесь только то, что делает из
+        книги загрузку. Отбор тот же, что у экрана и у архива бумаг.
       tags:
       - staff
       responses:
@@ -9215,6 +9539,55 @@ paths:
               schema:
                 $ref: '#/components/schemas/JudgingProblemDetail'
           description: Unprocessable.
+  /api/v1/staff/judging/running-order:
+    get:
+      operationId: judgingRunningOrder
+      description: |-
+        ``GET /api/v1/staff/judging/running-order`` — the host's screen, in programme order.
+
+        Separate from the tally for the reason the service spells out: a tally is sorted
+        by score and a programme is not. The host announcing number 14 needs it where 14
+        sits, not wherever its marks have put it.
+      parameters:
+      - in: query
+        name: competitionId
+        schema:
+          type: string
+        description: The competition being judged.
+        required: true
+      tags:
+      - Judging
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunningOrderEnvelope'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Malformed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Conflict.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JudgingProblemDetail'
+          description: Unprocessable.
   /api/v1/staff/judging/scoring:
     get:
       operationId: scoringStates
@@ -9568,9 +9941,24 @@ paths:
         required: true
       tags:
       - Judging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TallyApplyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TallyApplyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TallyApplyRequest'
       responses:
         '200':
-          description: How many protocol rows were changed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TallyApplicationEnvelope'
+          description: ''
         '400':
           content:
             application/json:
@@ -15945,6 +16333,19 @@ components:
       required:
       - data
       - meta
+    JurySeatListEnvelope:
+      type: object
+      description: The festivals this account judges — the judge's own way back in.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/_JurySeat'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
     JuryTaskEnvelope:
       type: object
       properties:
@@ -16745,6 +17146,27 @@ components:
           format: email
       required:
       - email
+    PatchedAmendCommissionPaymentRequest:
+      type: object
+      description: |-
+        A correction. Every field optional; an omitted one is left as it was.
+
+        ``organizationId`` may be sent to re-point a payment credited to the wrong
+        client, but never ``null``: unlike an expense, there is no "the platform
+        carried this itself" to move it to.
+      properties:
+        organizationId:
+          type: string
+          format: uuid
+        amount:
+          type: string
+          maxLength: 32
+        receivedAt:
+          type: string
+          format: date
+        note:
+          type: string
+          maxLength: 2000
     PatchedAmendExpenseRequest:
       type: object
       description: |-
@@ -17455,6 +17877,46 @@ components:
       required:
       - archived
       - total
+    PlatformCommissionPaymentLedger:
+      type: object
+      properties:
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/_CommissionPayment'
+        total:
+          type: string
+        byOrganization:
+          type: array
+          items:
+            $ref: '#/components/schemas/_OrganizationPaymentTotal'
+        truncated:
+          type: boolean
+      required:
+      - byOrganization
+      - payments
+      - total
+      - truncated
+    PlatformCommissionPaymentLedgerResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/FinanceMeta'
+        data:
+          $ref: '#/components/schemas/PlatformCommissionPaymentLedger'
+      required:
+      - data
+      - meta
+    PlatformCommissionPaymentResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/FinanceMeta'
+        data:
+          $ref: '#/components/schemas/_CommissionPayment'
+      required:
+      - data
+      - meta
     PlatformDashboard:
       type: object
       properties:
@@ -17464,13 +17926,19 @@ components:
             type: integer
         applications:
           type: integer
-        expectedFees:
+        orderFees:
           type: string
-        settledFees:
+        performances:
+          type: integer
+        participants:
+          type: integer
+        commissionBase:
           type: string
-        expectedCommission:
+        accruedCommission:
           type: string
-        settledCommission:
+        receivedCommission:
+          type: string
+        commissionDebt:
           type: string
         expenses:
           type: string
@@ -17478,9 +17946,9 @@ components:
           type: string
         profit:
           type: string
-        potentialProfit:
-          type: string
         expensesApply:
+          type: boolean
+        periodApplies:
           type: boolean
         organizations:
           type: array
@@ -17491,17 +17959,20 @@ components:
           items:
             $ref: '#/components/schemas/_CompetitionOption'
       required:
+      - accruedCommission
       - applications
+      - commissionBase
+      - commissionDebt
       - competitions
-      - expectedCommission
-      - expectedFees
       - expenses
       - expensesApply
+      - orderFees
       - organizations
-      - potentialProfit
+      - participants
+      - performances
+      - periodApplies
       - profit
-      - settledCommission
-      - settledFees
+      - receivedCommission
       - statusCounts
       - unattributedExpenses
     PlatformDashboardResponse:
@@ -17942,10 +18413,13 @@ components:
           type: string
         custom:
           type: boolean
+        sensitive:
+          type: boolean
       required:
       - custom
       - key
       - label
+      - sensitive
     ProgramDetail:
       type: object
       description: 'One program in full: settings, timetable and public links.'
@@ -18280,12 +18754,14 @@ components:
       - ON_STAGE
       - PERFORMED
       - SKIPPED
+      - CANCELLED
       type: string
       description: |-
         * `PENDING` - PENDING
         * `ON_STAGE` - ON_STAGE
         * `PERFORMED` - PERFORMED
         * `SKIPPED` - SKIPPED
+        * `CANCELLED` - CANCELLED
     ProposeGuardianLinkRequest:
       type: object
       description: Validate a propose-guardian-link request body.
@@ -19528,10 +20004,13 @@ components:
           type: string
         custom:
           type: boolean
+        sensitive:
+          type: boolean
       required:
       - custom
       - key
       - label
+      - sensitive
     PublicProgramEnvelope:
       type: object
       properties:
@@ -19549,7 +20028,9 @@ components:
         One row of the table. ``cells`` is aligned with ``columns``.
 
         ``progress`` is what makes a screen live; ``id`` is present only on the host's edition,
-        where it is the handle their controls act on.
+        where it is the handle their controls act on. ``backstage`` and ``note`` are the host's
+        own marks and are null everywhere else - not hidden by the client, absent from the
+        payload.
       properties:
         kind:
           type: string
@@ -19564,10 +20045,20 @@ components:
           - string
           - 'null'
           format: uuid
+        backstage:
+          type:
+          - boolean
+          - 'null'
+        note:
+          type:
+          - string
+          - 'null'
       required:
+      - backstage
       - cells
       - id
       - kind
+      - note
       - progress
     PublicProtocolColumn:
       type: object
@@ -19717,6 +20208,34 @@ components:
       required:
       - data
       - meta
+    RecordCommissionPaymentRequest:
+      type: object
+      description: |-
+        One commission payment being entered into the books.
+
+        ``amount`` is a string and not a number for the same reason it is on an
+        expense: it is money, and a JSON number would become a float somewhere between
+        the form and the column.
+
+        ``organizationId`` is required and has no null case — a receipt that reduces
+        nobody's debt is not a receipt.
+      properties:
+        organizationId:
+          type: string
+          format: uuid
+        amount:
+          type: string
+          maxLength: 32
+        receivedAt:
+          type: string
+          format: date
+        note:
+          type: string
+          maxLength: 2000
+      required:
+      - amount
+      - organizationId
+      - receivedAt
     RecordConsentsRequest:
       type: object
       description: Validate a record-consents request body.
@@ -20392,6 +20911,19 @@ components:
         * `CONTENT_MANAGER` - CONTENT_MANAGER
         * `MODERATOR` - MODERATOR
         * `SUPPORT` - SUPPORT
+    RunningOrderEnvelope:
+      type: object
+      description: The programme in programme order — the host's screen.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/_RunningOrderEntry'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
     SaveLayoutRequest:
       type: object
       description: 'Whole-layout save: the full list of fields, persisted atomically.'
@@ -20558,6 +21090,28 @@ components:
       required:
       - data
       - meta
+    SetBackstageRequest:
+      type: object
+      description: |-
+        Validate the host's backstage mark.
+
+        The whole answer, not a toggle: the host may have the same link open on two screens,
+        and "invert whatever is there" sent from both lands wherever the second request
+        happened to find it.
+      properties:
+        backstage:
+          type: boolean
+      required:
+      - backstage
+    SetHostNoteRequest:
+      type: object
+      description: Validate the host's own note on one row. Blank clears it.
+      properties:
+        note:
+          type: string
+          maxLength: 500
+      required:
+      - note
     SetOrganizationModulesRequest:
       type: object
       description: |-
@@ -21146,6 +21700,24 @@ components:
           type:
           - string
           - 'null'
+    TallyApplicationEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/_TallyApplication'
+        meta:
+          $ref: '#/components/schemas/_Meta'
+      required:
+      - data
+      - meta
+    TallyApplyRequest:
+      type: object
+      description: '``createMissing`` opens a protocol for a genre that has none,
+        from the programme.'
+      properties:
+        createMissing:
+          type: boolean
+          default: false
     TallyEnvelope:
       type: object
       properties:
@@ -22091,6 +22663,41 @@ components:
       - amount
       - category
       - count
+    _CommissionPayment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        organizationName:
+          type:
+          - string
+          - 'null'
+        amount:
+          type: string
+        receivedAt:
+          type: string
+          format: date
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - amount
+      - createdAt
+      - id
+      - note
+      - organizationId
+      - organizationName
+      - receivedAt
+      - updatedAt
     _CompetitionOption:
       type: object
       properties:
@@ -22554,6 +23161,32 @@ components:
       - answer
       - id
       - question
+    _FeeTierBreakdown:
+      type: object
+      description: One band of a fee schedule with what actually fell into it — an
+        act's row.
+      properties:
+        minParticipants:
+          type: integer
+        maxParticipants:
+          type:
+          - integer
+          - 'null'
+        rangeLabel:
+          type: string
+        unitAmount:
+          type: string
+        performances:
+          type: integer
+        amount:
+          type: string
+      required:
+      - amount
+      - maxParticipants
+      - minParticipants
+      - performances
+      - rangeLabel
+      - unitAmount
     _FeeTierResponse:
       type: object
       properties:
@@ -22874,6 +23507,50 @@ components:
       - sortOrder
       - status
       - title
+    _JurySeat:
+      type: object
+      properties:
+        competitionId:
+          type: string
+        title:
+          type: string
+        onlineJudging:
+          type: boolean
+        isChair:
+          type: boolean
+        categoryNames:
+          type: array
+          items:
+            type: string
+        startsOn:
+          type:
+          - string
+          - 'null'
+          format: date
+        endsOn:
+          type:
+          - string
+          - 'null'
+          format: date
+        venue:
+          type:
+          - string
+          - 'null'
+        pendingCount:
+          type: integer
+        hasOpenAct:
+          type: boolean
+      required:
+      - categoryNames
+      - competitionId
+      - endsOn
+      - hasOpenAct
+      - isChair
+      - onlineJudging
+      - pendingCount
+      - startsOn
+      - title
+      - venue
     _JuryTask:
       type: object
       properties:
@@ -23403,37 +24080,67 @@ components:
           type: object
           additionalProperties:
             type: integer
-        expectedFees:
+        orderFees:
           type: string
-        settledFees:
+        performances:
+          type: integer
+        participants:
+          type: integer
+        commissionBase:
           type: string
-        expectedCommission:
+        accruedCommission:
           type: string
-        settledCommission:
+        receivedCommission:
           type: string
+        commissionDebt:
+          type: string
+        feeBreakdown:
+          type: array
+          items:
+            $ref: '#/components/schemas/_FeeTierBreakdown'
         expenses:
           type: string
         profit:
           type: string
-        potentialProfit:
-          type: string
       required:
+      - accruedCommission
       - applications
       - billingModel
+      - commissionBase
+      - commissionDebt
       - commissionPercent
       - competitions
-      - expectedCommission
-      - expectedFees
       - expenses
+      - feeBreakdown
       - feeTiers
       - name
+      - orderFees
       - organizationId
-      - potentialProfit
+      - participants
+      - performances
       - profit
-      - settledCommission
-      - settledFees
+      - receivedCommission
       - status
       - statusCounts
+    _OrganizationPaymentTotal:
+      type: object
+      properties:
+        organizationId:
+          type: string
+          format: uuid
+        organizationName:
+          type:
+          - string
+          - 'null'
+        amount:
+          type: string
+        count:
+          type: integer
+      required:
+      - amount
+      - count
+      - organizationId
+      - organizationName
     _OrganizationSnapshot:
       type: object
       properties:
@@ -23952,6 +24659,58 @@ components:
       - publicationDate
       - title
       - version
+    _RunningOrderEntry:
+      type: object
+      properties:
+        submissionId:
+          type: string
+        number:
+          type: integer
+        title:
+          type: string
+        categoryName:
+          type:
+          - string
+          - 'null'
+        disciplineName:
+          type:
+          - string
+          - 'null'
+        ageCategoryName:
+          type:
+          - string
+          - 'null'
+        organization:
+          type:
+          - string
+          - 'null'
+        status:
+          type: string
+        submittedCount:
+          type: integer
+        expectedJudges:
+          type: integer
+        score:
+          type:
+          - string
+          - 'null'
+        awardLabel:
+          type:
+          - string
+          - 'null'
+      required:
+      - ageCategoryName
+      - awardLabel
+      - categoryName
+      - disciplineName
+      - expectedJudges
+      - number
+      - organization
+      - score
+      - status
+      - submissionId
+      - submittedCount
+      - title
     _SchedulePosition:
       type: object
       properties:
@@ -24329,6 +25088,21 @@ components:
           type:
           - string
           - 'null'
+    _TallyApplication:
+      type: object
+      properties:
+        rowsChanged:
+          type: integer
+        protocolsCreated:
+          type: integer
+        missingProtocols:
+          type: array
+          items:
+            type: string
+      required:
+      - missingProtocols
+      - protocolsCreated
+      - rowsChanged
     _TallyGroup:
       type: object
       properties:
