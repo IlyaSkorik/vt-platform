@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 
@@ -89,6 +89,19 @@ describe("OrganizersPage", () => {
     expect(hrefs).toContain(CONTACT_PHONE_HREF);
     expect(hrefs).toContain(CONTACT_TELEGRAM_HREF);
     expect(hrefs).toContain(`mailto:${SUPPORT_EMAIL}`);
+  });
+
+  it("asks search engines to stay away while the phone number is on it", async () => {
+    // The page is handed out by link. Indexing it would put a personal mobile
+    // into search results, which is the one thing this page must not do by
+    // accident after somebody edits the block above.
+    renderPage();
+
+    await waitFor(() =>
+      expect(document.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe(
+        "noindex, nofollow",
+      ),
+    );
   });
 
   it("opens the telegram link safely in a new tab", () => {
