@@ -23,6 +23,10 @@ PublicProgramColumnSerializer = inline_serializer(
         "key": serializers.CharField(),
         "label": serializers.CharField(),
         "custom": serializers.BooleanField(),
+        #: Whether this column is about somebody who is not on stage - a phone number, a
+        #: comment. Advice to whoever draws the table, not a gate: the cells are sent
+        #: either way, and it is the host's screen that keeps them covered until asked.
+        "sensitive": serializers.BooleanField(),
     },
     many=True,
 )

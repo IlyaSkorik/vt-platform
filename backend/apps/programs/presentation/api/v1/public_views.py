@@ -93,7 +93,7 @@ def _public_json(view: PublicProgramView) -> dict[str, object]:
         "startsAt": view.starts_at,
         "totalSeconds": view.total_seconds,
         "controlsRunningOrder": view.controls_running_order,
-        "columns": [{"key": column.key, "label": column.label, "custom": column.custom} for column in view.columns],
+        "columns": [{"key": column.key, "label": column.label, "custom": column.custom, "sensitive": column.sensitive} for column in view.columns],
         "rows": [
             # ``id``, ``backstage`` and ``note`` are present only on the host's edition -
             # see PublicProgramRowView. On every other one they are null here because the

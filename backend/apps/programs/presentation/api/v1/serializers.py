@@ -248,6 +248,7 @@ def _column_schema(*, many: bool = False) -> serializers.BaseSerializer[dict[str
             "key": serializers.CharField(),
             "label": serializers.CharField(),
             "custom": serializers.BooleanField(),
+            "sensitive": serializers.BooleanField(),
         },
         many=many,
     )

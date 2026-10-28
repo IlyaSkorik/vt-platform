@@ -399,6 +399,26 @@ class TestTheHostsPrivateMarks:
         assert [row["note"] for row in moved.data["data"]["rows"]] == ["", "поёт вторым"]
         assert [row["backstage"] for row in moved.data["data"]["rows"]] == [False, True]
 
+    def test_the_columns_say_which_ones_are_about_somebody_off_the_stage(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        # Advice to whoever draws the table, not a gate: the cells are published either
+        # way. It is what lets the host's screen keep them covered until she asks.
+        slug, _program_id, _rows = _published_program(
+            staff_client,
+            scope,
+            name="Программа ведущего",
+            columns=["POSITION", "PARTICIPANT", "TEACHERS", "CONTACTS", "COMMENT"],
+            controls=True,
+        )
+        columns = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]["columns"]
+
+        assert {column["key"]: column["sensitive"] for column in columns} == {
+            "POSITION": False,
+            "PARTICIPANT": False,
+            "TEACHERS": False,
+            "CONTACTS": True,
+            "COMMENT": True,
+        }
+
 
 class TestPublicContent:
     def test_the_screen_is_a_table_of_the_published_columns(self, staff_client: APIClient, scope: tuple[str, str]) -> None:

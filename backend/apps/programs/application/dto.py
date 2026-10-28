@@ -36,11 +36,20 @@ class ColumnView:
 
     ``custom`` marks a column the organizer added themselves - the only ones that can be
     renamed, removed, or filled in by hand.
+
+    ``sensitive`` marks a column that is about somebody who is not on stage - a phone
+    number, a comment that in practice carries «аллергия», «опекун». It changes nothing
+    about who the cells are *sent* to: that was settled when the organizer chose this
+    edition's columns. It is advice to whoever draws the table, and the host's screen is
+    the one that takes it - she reads the programme backstage, in a corridor, with other
+    people's parents reading it over her shoulder, so those cells stay covered until she
+    asks for one.
     """
 
     key: str
     label: str
     custom: bool = False
+    sensitive: bool = False
 
 
 @dataclass(frozen=True, slots=True)

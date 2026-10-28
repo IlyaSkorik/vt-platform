@@ -38,6 +38,7 @@ __all__ = [
     "DURATION_MAX_SECONDS",
     "HOST_NOTE_MAX",
     "REPEAT_GAP_MAX",
+    "SENSITIVE_COLUMNS",
     "ArrangementBlock",
     "ArrangementSettings",
     "BreakRule",
@@ -157,6 +158,17 @@ DEFAULT_PUBLIC_COLUMNS: Final[tuple[ProgramColumn, ...]] = (
     ProgramColumn.PARTICIPANT,
     ProgramColumn.TITLE,
 )
+
+#: The columns whose cells are about somebody who is not on stage, and are nobody's
+#: business but the reader's: a teacher's phone number, and a comment that in practice
+#: carries «аллергия на», «опекун», «позвонить маме, не отцу».
+#:
+#: Everything else on a programme is announced out loud anyway — the act, the child's
+#: name, the studio — so marking those would be theatre. This is the honest short list,
+#: and it is advisory: the backend still renders the cells for whoever the organizer
+#: published them to. What it buys is the host's screen being able to keep them covered
+#: until she asks for them, backstage, in a corridor full of other people's parents.
+SENSITIVE_COLUMNS: Final[frozenset[ProgramColumn]] = frozenset({ProgramColumn.CONTACTS, ProgramColumn.COMMENT})
 
 
 @dataclass(frozen=True, slots=True)

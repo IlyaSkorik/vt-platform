@@ -91,6 +91,7 @@ from apps.programs.domain.value_objects import (
     DEFAULT_GROUPING,
     DEFAULT_OPENING_SECONDS,
     DEFAULT_OPENING_TITLE,
+    SENSITIVE_COLUMNS,
     ArrangementBlock,
     ArrangementSettings,
     BreakRule,
@@ -1118,7 +1119,16 @@ class ProgramService:
             if ref.is_custom and ref.custom_id is not None:
                 views.append(ColumnView(key=ref.key, label=titles.get(ref.custom_id, "—"), custom=True))
             elif ref.builtin is not None:
-                views.append(ColumnView(key=ref.key, label=COLUMN_LABELS[ref.builtin]))
+                # A custom column is never marked: the organizer named it and knows what
+                # they put in it, and covering «Микрофон» would train the host to tap
+                # through every cover on the screen, which is how a cover stops working.
+                views.append(
+                    ColumnView(
+                        key=ref.key,
+                        label=COLUMN_LABELS[ref.builtin],
+                        sensitive=ref.builtin in SENSITIVE_COLUMNS,
+                    )
+                )
         return tuple(views)
 
     def _cell(
