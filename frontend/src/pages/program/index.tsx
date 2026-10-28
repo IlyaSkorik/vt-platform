@@ -3,6 +3,7 @@ import {
   ArrowUp,
   Ban,
   Check,
+  EyeOff,
   MoreHorizontal,
   NotebookPen,
   Play,
@@ -337,10 +338,18 @@ function ProgramTableRow({
       : isPerformance
         ? ""
         : "bg-muted/40";
-  // Where this row's state is announced. Not the pinned column on the host's screen:
-  // «Номер отменён» beside a two-character «№» would set the width of the one column
-  // that is never allowed to scroll away.
-  const badgeAt = isHost && columns.length > 1 ? 1 : 0;
+  // Where this row's state is announced: the first column wide enough to hold a word.
+  //
+  // Not «№», which is pinned on the host's screen and must stay two characters wide, and
+  // not «Время», which is four: a «Номер отменён» dropped into either one overflows it,
+  // gets clipped by the column beside it, and takes the clock down with it. Both were
+  // tried on a real seven-column host edition, and both looked exactly as broken as that
+  // sounds. The participant's name is the first column with room, and it is also where a
+  // reader looking for *which* act this is already is.
+  const badgeAt = Math.max(
+    0,
+    columns.findIndex((column) => column.key !== "POSITION" && column.key !== "TIME"),
+  );
   const note = isHost ? (row.note ?? "") : "";
 
   const badges = (
@@ -552,19 +561,26 @@ function SensitiveCell({
       </Button>
     );
   }
+  // Revealed, the value is text and not a control: a button around it carries the
+  // button's own `shrink-0` and `inline-flex`, which in a column cut for a phone number
+  // makes the sentence wider than its column and lets the pinned column beside it eat
+  // the overflow. The cover goes back on from the icon next to it.
   return (
-    <Button
-      variant="ghost"
-      size="xs"
-      className={cn(
-        "-ml-1 h-auto whitespace-normal px-1 py-0.5 text-left font-normal text-sm",
-        struck && "line-through decoration-1",
-      )}
-      onClick={() => setShown(false)}
-    >
-      <span className="[overflow-wrap:anywhere]">{value}</span>
-      <span className="sr-only">— скрыть</span>
-    </Button>
+    <>
+      <span className={cn("[overflow-wrap:anywhere]", struck && "line-through decoration-1")}>
+        {value}
+      </span>
+      <Button
+        variant="ghost"
+        size="xs"
+        iconOnly
+        className="size-5 text-muted-foreground"
+        aria-label={`Скрыть «${label}»`}
+        onClick={() => setShown(false)}
+      >
+        <EyeOff className="size-3" />
+      </Button>
+    </>
   );
 }
 

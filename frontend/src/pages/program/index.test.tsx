@@ -528,6 +528,43 @@ describe("PublicProgramPage — what only the host sees", () => {
   });
 });
 
+describe("PublicProgramPage — where the state is announced", () => {
+  it("keeps the badge out of «№» and «Время», which have no room for it", async () => {
+    // Found on a real seven-column host edition rather than here: «Номер отменён»
+    // dropped into the four-character clock overflowed it, was clipped by the column
+    // beside it, and took the time itself out of view.
+    const base = aHostProgram();
+    stub({
+      ...base,
+      columns: [
+        { key: "POSITION", label: "№", custom: false, sensitive: false },
+        { key: "TIME", label: "Время", custom: false, sensitive: false },
+        { key: "PARTICIPANT", label: "Участник", custom: false, sensitive: false },
+      ],
+      rows: [
+        {
+          kind: "PERFORMANCE",
+          cells: ["1", "10:00", "Катюша"],
+          progress: "CANCELLED",
+          id: "item-1",
+          backstage: true,
+          note: "",
+        } as PublicProgramRow,
+      ],
+    });
+    renderPage();
+
+    const cells = within(screen.getAllByTestId("program-row")[0] as HTMLElement).getAllByRole(
+      "cell",
+    );
+    expect(cells[0]).toHaveTextContent("1");
+    expect(cells[1]).toHaveTextContent("10:00");
+    expect(cells[1]).not.toHaveTextContent("Номер отменён");
+    expect(cells[2]).toHaveTextContent("Номер отменён");
+    expect(cells[2]).toHaveTextContent("За сценой");
+  });
+});
+
 describe("PublicProgramPage — the columns that do not scroll away", () => {
   it("pins the first column and the controls on the host's edition", () => {
     // A programme cut for backstage is wider than any phone. Scrolled two columns to the
