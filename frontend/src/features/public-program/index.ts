@@ -9,6 +9,8 @@ export {
   publicProgramKeys,
   useHostReorder,
   usePublicProgram,
+  useSetRowBackstage,
+  useSetRowNote,
   useSetRowProgress,
 } from "./api";
 export {

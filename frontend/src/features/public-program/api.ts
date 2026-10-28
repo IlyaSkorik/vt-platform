@@ -31,10 +31,23 @@ export interface PublicProgramColumn {
   key: string;
   label: string;
   custom: boolean;
+  /**
+   * Whether this column is about somebody who is not on stage — a teacher's phone, a
+   * comment that carries «аллергия», «опекун». Advice from the backend rather than a
+   * gate: the cells arrive either way, and it is the host's screen that keeps them
+   * covered until she asks for one.
+   */
+  sensitive: boolean;
 }
 
-/** How far one row has got on the day. */
-export type PublicProgramProgress = "PENDING" | "ON_STAGE" | "PERFORMED" | "SKIPPED";
+/**
+ * How far one row has got on the day.
+ *
+ * `CANCELLED` is not a stronger `SKIPPED`: skipped is an act the host stepped over and
+ * may come back to, cancelled is one that is not happening today — ill, stuck on the
+ * road — and every screen reading the programme needs to be told which it was.
+ */
+export type PublicProgramProgress = "PENDING" | "ON_STAGE" | "PERFORMED" | "SKIPPED" | "CANCELLED";
 
 /**
  * One row of the table. `cells` is aligned with the programme's `columns`.
@@ -48,6 +61,13 @@ export interface PublicProgramRow {
   cells: string[];
   progress: PublicProgramProgress;
   id: string | null;
+  /**
+   * The host's own two marks, and `null` on every other edition — not hidden by this
+   * client, absent from the payload. Who is standing behind the stage and what the host
+   * wrote to herself about an act are not facts the festival publishes.
+   */
+  backstage: boolean | null;
+  note: string | null;
 }
 
 /** What a public link resolves to: a table cut to the columns the organizer chose. */
@@ -147,10 +167,10 @@ function isHidden(): boolean {
 }
 
 /**
- * Shared plumbing for the host's two writes.
+ * Shared plumbing for every write the host's link makes.
  *
- * Both answer with the whole programme, which is written straight into the cache: the
- * host's own screen is then exact immediately, without waiting for the next poll.
+ * All of them answer with the whole programme, which is written straight into the cache:
+ * the host's own screen is then exact immediately, without waiting for the next poll.
  */
 function useHostMutation<TVariables>(
   slug: string,
@@ -190,6 +210,32 @@ export function useSetRowProgress(
     apiClient(`public/programs/${encodeURIComponent(slug)}/rows/${itemId}/progress`, {
       method: "put",
       json: { progress },
+    }).json<{ data: PublicProgram }>(),
+  );
+}
+
+/** Mark one act as present behind the stage, or no longer present. Host's link only. */
+export function useSetRowBackstage(
+  slug: string,
+): UseMutationResult<PublicProgram, ApiError, { itemId: string; backstage: boolean }> {
+  return useHostMutation(slug, ({ itemId, backstage }) =>
+    apiClient(`public/programs/${encodeURIComponent(slug)}/rows/${itemId}/backstage`, {
+      method: "put",
+      // The whole answer rather than "toggle": the host may have this link open on two
+      // screens, and an inversion sent from both lands wherever the second one found it.
+      json: { backstage },
+    }).json<{ data: PublicProgram }>(),
+  );
+}
+
+/** Write the host's own note against one row (blank clears it). Host's link only. */
+export function useSetRowNote(
+  slug: string,
+): UseMutationResult<PublicProgram, ApiError, { itemId: string; note: string }> {
+  return useHostMutation(slug, ({ itemId, note }) =>
+    apiClient(`public/programs/${encodeURIComponent(slug)}/rows/${itemId}/note`, {
+      method: "put",
+      json: { note },
     }).json<{ data: PublicProgram }>(),
   );
 }

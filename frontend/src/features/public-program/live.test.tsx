@@ -20,9 +20,16 @@ const program = (progress: "PENDING" | "ON_STAGE"): PublicProgram => ({
   startsAt: null,
   totalSeconds: 0,
   controlsRunningOrder: true,
-  columns: [{ key: "TIME", label: "Время", custom: false }],
+  columns: [{ key: "TIME", label: "Время", custom: false, sensitive: false }],
   rows: [
-    { kind: "PERFORMANCE", cells: ["10:00"], progress, id: "11111111-1111-1111-1111-111111111111" },
+    {
+      kind: "PERFORMANCE",
+      cells: ["10:00"],
+      progress,
+      id: "11111111-1111-1111-1111-111111111111",
+      backstage: false,
+      note: "",
+    },
   ],
 });
 
