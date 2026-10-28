@@ -4775,9 +4775,9 @@
     "semantic_hash": "e950835ac402d9c3b6e07dad8efd25be"
   },
   "frontend/src/shared/config/app.ts": {
-    "mtime": 1785860601.0225651,
-    "ast_hash": "37b1999542c0943b6f36b347ac6d1d33",
-    "semantic_hash": "37b1999542c0943b6f36b347ac6d1d33"
+    "mtime": 1793186658.4887092,
+    "ast_hash": "b1c9ca47c6fe297b8edf4b936953bfcf",
+    "semantic_hash": ""
   },
   "frontend/src/shared/config/env.ts": {
     "mtime": 1788981332.1656177,
@@ -4785,8 +4785,8 @@
     "semantic_hash": ""
   },
   "frontend/src/shared/config/index.ts": {
-    "mtime": 1785917865.7306378,
-    "ast_hash": "525fa6a17ee1c85fbb4f753b9128b3e6",
+    "mtime": 1793186658.4894514,
+    "ast_hash": "c7805974d272fa09d13d48c934c62bbf",
     "semantic_hash": ""
   },
   "frontend/src/shared/config/navigation.ts": {
@@ -12110,13 +12110,13 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/organizers/index.test.tsx": {
-    "mtime": 1793185647.4268959,
-    "ast_hash": "4e37175b8a7dd44895b4e04fe17898f4",
+    "mtime": 1793186773.0073962,
+    "ast_hash": "cd4b6634943e73b3b6a40137a1e24d53",
     "semantic_hash": ""
   },
   "frontend/src/pages/organizers/index.tsx": {
-    "mtime": 1793185811.4997056,
-    "ast_hash": "0ed1fad6063e401a9424c6b700d5d92a",
+    "mtime": 1793186754.232013,
+    "ast_hash": "53950b9b49df01c1ea9e36c14379fcc9",
     "semantic_hash": ""
   },
   "frontend/public/organizers/applications.webp": {
