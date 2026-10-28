@@ -21,6 +21,7 @@ from apps.programs.domain.value_objects import (
     CellValue,
     ColumnTitle,
     GroupingAxis,
+    HostNote,
     ItemDuration,
     ItemTitle,
     PerformanceOrder,
@@ -115,6 +116,25 @@ class TestRoundTrip:
         assert [s.id for s in loaded.shares] == [share.id]
         assert loaded.shares[0].item_ids == (first, second)
         assert [ref.key for ref in loaded.shares[0].columns] == ["TIME", "TITLE", "COMMENT"]
+
+    def test_the_hosts_own_marks_come_back_with_their_rows(self) -> None:
+        # The one state on a programme that is written from a phone backstage at the
+        # worst possible moment, so it had better survive the reload that follows.
+        repository = DjangoProgramRepository()
+        program = _program()
+        first, second = _act(program), _act(program)
+        program.mark_item_backstage(first, True, now=NOW)
+        program.annotate_item(first, HostNote("Зовут Алиса, не Алла"), now=NOW)
+        program.set_item_progress(second, ProgramItemProgress.CANCELLED, now=NOW)
+        repository.save(program)
+
+        loaded = repository.get(program.id)
+        assert loaded is not None
+        assert loaded.item(first).backstage is True
+        assert str(loaded.item(first).host_note) == "Зовут Алиса, не Алла"
+        assert loaded.item(second).backstage is False
+        assert loaded.item(second).host_note.is_blank
+        assert loaded.item(second).progress is ProgramItemProgress.CANCELLED
 
     def test_the_order_is_the_order_that_comes_back(self) -> None:
         repository = DjangoProgramRepository()

@@ -15,6 +15,7 @@ __all__ = [
     "AddBlockCommand",
     "AddColumnCommand",
     "AddPerformanceCommand",
+    "AnnotateItemCommand",
     "AnnounceProgramCommand",
     "ArrangeProgramCommand",
     "ArrangementPayload",
@@ -23,6 +24,7 @@ __all__ = [
     "EditItemCommand",
     "FillCellsCommand",
     "HostReorderCommand",
+    "MarkBackstageCommand",
     "RenameColumnCommand",
     "ReorderItemsCommand",
     "SetItemProgressCommand",
@@ -232,6 +234,29 @@ class SetItemProgressCommand:
     slug: str
     item_id: str
     progress: str
+
+
+@dataclass(frozen=True, slots=True)
+class MarkBackstageCommand:
+    """Note that one act has turned up behind the stage, or has left again.
+
+    Carries the whole answer rather than "toggle": the host may have two phones open on
+    the same link, and a toggle sent twice from two screens lands on whichever state the
+    second request happened to invert.
+    """
+
+    slug: str
+    item_id: str
+    backstage: bool
+
+
+@dataclass(frozen=True, slots=True)
+class AnnotateItemCommand:
+    """Write the host's own note against one slot. An empty note clears it."""
+
+    slug: str
+    item_id: str
+    note: str
 
 
 @dataclass(frozen=True, slots=True)

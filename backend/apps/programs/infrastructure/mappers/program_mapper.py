@@ -20,6 +20,7 @@ from apps.programs.domain.value_objects import (
     CellValue,
     ColumnTitle,
     GroupingAxis,
+    HostNote,
     ItemDuration,
     ItemTitle,
     PerformanceOrder,
@@ -108,6 +109,8 @@ class ProgramMapper:
             "submission_id": item.submission_id,
             "custom_values": {str(column_id): str(value) for column_id, value in item.custom_values.items()},
             "progress": item.progress.value,
+            "backstage": item.backstage,
+            "host_note": str(item.host_note),
         }
 
     @staticmethod
@@ -190,6 +193,8 @@ class ProgramMapper:
         number = int(row.number) or int(row.position)
         values = {uuid.UUID(str(key)): CellValue(str(value)) for key, value in (row.custom_values or {}).items()}
         progress = ProgramItemProgress(row.progress or ProgramItemProgress.PENDING.value)
+        backstage = bool(row.backstage)
+        host_note = HostNote(row.host_note or "")
         if kind.binds_performance and row.submission_id is not None:
             return ProgramItem.performance(
                 item_id=row.id,
@@ -198,6 +203,8 @@ class ProgramMapper:
                 number=number,
                 custom_values=values,
                 progress=progress,
+                backstage=backstage,
+                host_note=host_note,
             )
         # A row that lost its submission (or was written as a block) rehydrates as a
         # titled block: the slot keeps its place rather than failing the whole load.
@@ -209,6 +216,8 @@ class ProgramMapper:
             number=number,
             custom_values=values,
             progress=progress,
+            backstage=backstage,
+            host_note=host_note,
         )
 
     @staticmethod

@@ -36,6 +36,7 @@ __all__ = [
     "DEFAULT_OPENING_TITLE",
     "DEFAULT_PUBLIC_COLUMNS",
     "DURATION_MAX_SECONDS",
+    "HOST_NOTE_MAX",
     "REPEAT_GAP_MAX",
     "ArrangementBlock",
     "ArrangementSettings",
@@ -44,6 +45,7 @@ __all__ = [
     "ColumnRef",
     "ColumnTitle",
     "GroupingAxis",
+    "HostNote",
     "ItemDuration",
     "ItemTitle",
     "PerformanceOrder",
@@ -65,6 +67,10 @@ _COLUMN_TITLE_MAX: Final = 120
 #: A hand-filled cell is a note, not a document: long enough for "фонограмма на флешке
 #: у звукорежиссёра", short enough that a table stays a table.
 CELL_VALUE_MAX: Final = 500
+
+#: A host's note is a reminder, not a document: long enough for «мама просит позвонить
+#: сразу после номера», short enough to be read at a glance with the next act walking on.
+HOST_NOTE_MAX: Final = 500
 
 #: How a custom column is named on the wire, distinguishing it from the built-in keys.
 CUSTOM_COLUMN_PREFIX: Final = "custom:"
@@ -241,6 +247,34 @@ class CellValue:
         stripped = self.value.strip()
         if len(stripped) > CELL_VALUE_MAX:
             raise InvalidProgramDataError(f"Значение в ячейке — не длиннее {CELL_VALUE_MAX} символов.")
+        object.__setattr__(self, "value", stripped)
+
+    @property
+    def is_blank(self) -> bool:
+        return not self.value
+
+    def __str__(self) -> str:
+        return self.value
+
+
+@dataclass(frozen=True, slots=True)
+class HostNote:
+    """A line the host wrote against one slot, for herself. Blank means none.
+
+    Not a cell: a custom column is the organizer's, published to whichever links they
+    chose, and this is the opposite — written on the day by the person running it, for
+    the next twenty minutes of it, and seen by nobody who was not handed the host's own
+    link. «Папа подойдёт к сцене», «поёт вторым номером, не первым», «зовут Алиса, не
+    Алла». The platform has nowhere else to put that, so it ends up on a paper programme
+    that is then left on a chair.
+    """
+
+    value: str = ""
+
+    def __post_init__(self) -> None:
+        stripped = self.value.strip()
+        if len(stripped) > HOST_NOTE_MAX:
+            raise InvalidProgramDataError(f"Пометка — не длиннее {HOST_NOTE_MAX} символов.")
         object.__setattr__(self, "value", stripped)
 
     @property

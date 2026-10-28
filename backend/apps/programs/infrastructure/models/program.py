@@ -156,6 +156,17 @@ class ProgramItemModel(BasePersistenceModel):
         choices=ProgramItemProgressChoices.choices,
         default=ProgramItemProgressChoices.PENDING,
     )
+    # The host's own bookkeeping, and the reason these two columns sit on the item rather
+    # than on the share: they are written from the host's link and read back on it, and
+    # the application layer renders them into *no other* edition's payload. A column on
+    # the share would mean one set of notes per link, which is wrong the moment an
+    # organizer re-cuts the host's edition and her notes do not follow.
+    #
+    # Whether this act has turned up backstage. Not a progress state - an act can be
+    # backstage and still pending, and that pair is precisely what the host is reading.
+    backstage = models.BooleanField(default=False)
+    # One line the host wrote against this slot, for herself. Never published.
+    host_note = models.CharField(max_length=500, blank=True, default="")
 
     class Meta(BasePersistenceModel.Meta):
         db_table = "programs_program_item"

@@ -32,13 +32,17 @@ class PublicProgramRowSerializer(serializers.Serializer[dict[str, object]]):
     """One row of the table. ``cells`` is aligned with ``columns``.
 
     ``progress`` is what makes a screen live; ``id`` is present only on the host's edition,
-    where it is the handle their controls act on.
+    where it is the handle their controls act on. ``backstage`` and ``note`` are the host's
+    own marks and are null everywhere else - not hidden by the client, absent from the
+    payload.
     """
 
     kind = serializers.CharField()
     cells = serializers.ListField(child=serializers.CharField(allow_blank=True))
     progress = serializers.CharField()
     id = serializers.UUIDField(allow_null=True)
+    backstage = serializers.BooleanField(allow_null=True)
+    note = serializers.CharField(allow_blank=True, allow_null=True)
 
 
 class PublicProgramSerializer(serializers.Serializer[dict[str, object]]):

@@ -25,6 +25,7 @@ from apps.programs.application.commands import (
     AddBlockCommand,
     AddColumnCommand,
     AddPerformanceCommand,
+    AnnotateItemCommand,
     AnnounceProgramCommand,
     ArrangementPayload,
     ArrangeProgramCommand,
@@ -33,6 +34,7 @@ from apps.programs.application.commands import (
     EditItemCommand,
     FillCellsCommand,
     HostReorderCommand,
+    MarkBackstageCommand,
     RenameColumnCommand,
     ReorderItemsCommand,
     SetItemProgressCommand,
@@ -96,6 +98,7 @@ from apps.programs.domain.value_objects import (
     ColumnRef,
     ColumnTitle,
     GroupingAxis,
+    HostNote,
     ItemDuration,
     ItemTitle,
     PerformanceOrder,
@@ -676,7 +679,7 @@ class ProgramService:
             starts_at=program.starts_at,
             total_seconds=total_duration_seconds(items=program.items, buffer=program.buffer),
             columns=self._column_views(program, chosen),
-            rows=tuple(cells for _kind, _item_id, _progress, cells in rows),
+            rows=tuple(cells for _item, cells in rows),
         )
 
     def export_pdf(self, *, program_id: str, columns: Sequence[str] = ()) -> bytes:
@@ -785,6 +788,29 @@ class ProgramService:
         except ValueError as exc:
             raise InvalidProgramDataError("Неизвестный статус хода программы.") from exc
         program.set_item_progress(_uuid(command.item_id, what="itemId"), progress, now=now)
+        self._programs.save(program)
+        return self._public_view(program, share)
+
+    def set_item_backstage(self, command: MarkBackstageCommand) -> PublicProgramView:
+        """Note that one act is behind the stage, from the host's own link.
+
+        The question the running order cannot answer. A host finds out that №14 is not in
+        the building thirty seconds before announcing it, and the only record of who *is*
+        there has until now been her memory and a biro on a printed page. This is that
+        page: hers, kept on the same screen as the order she will have to change because
+        of it, and rendered into no other edition's payload.
+        """
+        now = self._clock.utcnow()
+        program, share = self._host_program(command.slug)
+        program.mark_item_backstage(_uuid(command.item_id, what="itemId"), command.backstage, now=now)
+        self._programs.save(program)
+        return self._public_view(program, share)
+
+    def annotate_item(self, command: AnnotateItemCommand) -> PublicProgramView:
+        """Write the host's own note against one slot (an empty note clears it)."""
+        now = self._clock.utcnow()
+        program, share = self._host_program(command.slug)
+        program.annotate_item(_uuid(command.item_id, what="itemId"), HostNote(command.note), now=now)
         self._programs.save(program)
         return self._public_view(program, share)
 
@@ -940,14 +966,19 @@ class ProgramService:
             columns=self._column_views(program, columns),
             rows=tuple(
                 PublicProgramRowView(
-                    kind=kind,
+                    kind=item.kind.value,
                     cells=cells,
-                    progress=progress,
+                    progress=item.progress.value,
                     # Only the host needs a handle on a row, and only the host's link gets
-                    # one: a read-only edition carries no ids at all.
-                    id=item_id if share.controls_running_order else None,
+                    # one: a read-only edition carries no ids at all. Her two private marks
+                    # are gated on the same answer, and for a stronger reason - this is the
+                    # line past which «кто за сценой» and whatever she wrote to herself stop
+                    # existing, so there is nothing for another screen to reveal.
+                    id=str(item.id) if share.controls_running_order else None,
+                    backstage=item.backstage if share.controls_running_order else None,
+                    note=str(item.host_note) if share.controls_running_order else None,
                 )
-                for kind, item_id, progress, cells in rows
+                for item, cells in rows
             ),
             controls_running_order=share.controls_running_order,
         )
@@ -957,24 +988,27 @@ class ProgramService:
         program: Program,
         items: Sequence[ProgramItem],
         columns: Sequence[ColumnRef],
-    ) -> tuple[tuple[str, str, str, tuple[str, ...]], ...]:
-        """Render ``items`` into ``(kind, item id, progress, cells)`` tuples.
+    ) -> tuple[tuple[ProgramItem, tuple[str, ...]], ...]:
+        """Render ``items`` into ``(item, cells)`` pairs.
 
         The single place a programme becomes text, shared by the public screen and every
         export: one renderer means an exported table and a screen can never disagree about
         what a cell says.
+
+        The item travels back beside its own cells rather than a copy of a few of its
+        fields. A published row needs its kind, its progress and - on the host's edition -
+        two marks that are in no column of the table at all, and a tuple that grows a slot
+        each time a caller needs one more field is how a shared renderer stops being one.
         """
         schedule_by_item = {entry.item.id: entry for entry in build_schedule(items=program.items, buffer=program.buffer, starts_at=program.starts_at)}
         performances = self._resolve_performances(items)
-        rendered: list[tuple[str, str, str, tuple[str, ...]]] = []
+        rendered: list[tuple[ProgramItem, tuple[str, ...]]] = []
         for position, item in enumerate(items, start=1):
             entry = schedule_by_item[item.id]
             performance = performances.get(item.submission_id) if item.submission_id is not None else None
             rendered.append(
                 (
-                    item.kind.value,
-                    str(item.id),
-                    item.progress.value,
+                    item,
                     tuple(self._cell(column, item=item, performance=performance, position=position, starts_at=entry.starts_at) for column in columns),
                 )
             )
