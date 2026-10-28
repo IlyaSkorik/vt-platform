@@ -1291,7 +1291,8 @@ function ProgramItemRow({
   const isPerformance = item.kind === "PERFORMANCE";
   const format = { clock: formatClock, duration: formatDuration };
   const onStage = item.progress === "ON_STAGE";
-  const behindUs = item.progress === "PERFORMED" || item.progress === "SKIPPED";
+  const behindUs =
+    item.progress === "PERFORMED" || item.progress === "SKIPPED" || item.progress === "CANCELLED";
   return (
     <tr
       data-testid="program-item"
