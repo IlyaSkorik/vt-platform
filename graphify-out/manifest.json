@@ -12110,13 +12110,13 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/organizers/index.test.tsx": {
-    "mtime": 1793186773.0073962,
-    "ast_hash": "cd4b6634943e73b3b6a40137a1e24d53",
+    "mtime": 1793187793.7456958,
+    "ast_hash": "3cd3102ad08f0deb8ad7966ca6cc02ac",
     "semantic_hash": ""
   },
   "frontend/src/pages/organizers/index.tsx": {
-    "mtime": 1793186754.232013,
-    "ast_hash": "53950b9b49df01c1ea9e36c14379fcc9",
+    "mtime": 1793187828.7758453,
+    "ast_hash": "2905623793ba7b52ad367245b1904007",
     "semantic_hash": ""
   },
   "frontend/public/organizers/applications.webp": {
