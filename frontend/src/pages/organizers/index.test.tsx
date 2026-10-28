@@ -4,7 +4,14 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 
-import { ROUTES, SUPPORT_EMAIL } from "@/shared/config";
+import {
+  CONTACT_PHONE,
+  CONTACT_PHONE_HREF,
+  CONTACT_TELEGRAM,
+  CONTACT_TELEGRAM_HREF,
+  ROUTES,
+  SUPPORT_EMAIL,
+} from "@/shared/config";
 import { OrganizersPage } from "./index";
 
 /**
@@ -67,13 +74,30 @@ describe("OrganizersPage", () => {
     }
   });
 
-  it("points the call to action at the address the platform publishes", () => {
+  it("writes the contacts out instead of hiding them behind a button", () => {
+    // The point of this block: an organizer deciding whether to call should see
+    // the number, not a control that opens somebody's mail client. So the phone
+    // and the telegram handle are asserted as *text*, not only as hrefs.
     const container = renderPage();
-    const mailto = Array.from(container.querySelectorAll('a[href^="mailto:"]'));
 
-    expect(mailto.length).toBeGreaterThan(0);
-    for (const link of mailto) {
-      expect(link.getAttribute("href")).toContain(SUPPORT_EMAIL);
+    expect(screen.getAllByText(CONTACT_PHONE).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(CONTACT_TELEGRAM).length).toBeGreaterThan(0);
+
+    const hrefs = Array.from(container.querySelectorAll("a")).map((link) =>
+      link.getAttribute("href"),
+    );
+    expect(hrefs).toContain(CONTACT_PHONE_HREF);
+    expect(hrefs).toContain(CONTACT_TELEGRAM_HREF);
+    expect(hrefs).toContain(`mailto:${SUPPORT_EMAIL}`);
+  });
+
+  it("opens the telegram link safely in a new tab", () => {
+    const container = renderPage();
+
+    for (const link of Array.from(
+      container.querySelectorAll<HTMLAnchorElement>('a[target="_blank"]'),
+    )) {
+      expect(link.getAttribute("rel") ?? "").toContain("noreferrer");
     }
   });
 });

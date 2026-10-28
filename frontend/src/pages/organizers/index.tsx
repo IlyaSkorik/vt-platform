@@ -1,9 +1,16 @@
-import { Link } from "react-router";
-
-import { APP_NAME, ROUTES, SUPPORT_EMAIL } from "@/shared/config";
+import {
+  APP_NAME,
+  CONTACT_PERSON,
+  CONTACT_PHONE,
+  CONTACT_PHONE_HREF,
+  CONTACT_TELEGRAM,
+  CONTACT_TELEGRAM_HREF,
+  ROUTES,
+  SUPPORT_EMAIL,
+} from "@/shared/config";
 import { cn } from "@/shared/lib";
 import { absoluteUrl, useSeo } from "@/shared/seo";
-import { Button, PageContainer } from "@/shared/ui";
+import { PageContainer } from "@/shared/ui";
 
 /**
  * `/organizers` — what the platform does for the person running a festival.
@@ -49,18 +56,26 @@ export function OrganizersPage(): React.JSX.Element {
           знают друг о друге: номер из принятой заявки сам встаёт в программу, из программы попадает
           в протокол, из протокола — в диплом.
         </p>
-        <div className="flex flex-wrap gap-3 pt-1">
-          <Button asChild>
-            <a
-              href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("Демо платформы для фестиваля")}`}
-            >
-              Договориться о демо
-            </a>
-          </Button>
-          <Button asChild variant="outline">
-            <Link to={ROUTES.competitions}>Посмотреть фестивали на платформе</Link>
-          </Button>
-        </div>
+        {/* Written out rather than hidden behind a button: the reader is deciding
+            whether to call, and a «Связаться» that only opens a mail client
+            answers a question they did not ask. */}
+        <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 pt-1 text-sm">
+          <span className="text-muted-foreground">{CONTACT_PERSON}</span>
+          <a
+            href={CONTACT_PHONE_HREF}
+            className="font-semibold text-foreground tabular-nums hover:underline"
+          >
+            {CONTACT_PHONE}
+          </a>
+          <a
+            href={CONTACT_TELEGRAM_HREF}
+            className="font-semibold text-foreground hover:underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {CONTACT_TELEGRAM}
+          </a>
+        </p>
       </header>
 
       <Stage label="Приём заявок" title="У фестиваля появляется своя страница">
@@ -366,19 +381,52 @@ export function OrganizersPage(): React.JSX.Element {
           Полчаса на звонок: заведём ваш фестиваль с вашими жанрами и возрастными категориями,
           пройдём путь от заявки до диплома на ваших же данных и посмотрим, что из этого закрывает
           вашу работу, а чего не хватает. Условия обсудим там же — они зависят от размера фестиваля.
+          Звоните или пишите, в телеграме отвечаю быстрее.
         </p>
-        <div className="flex flex-wrap gap-3">
-          <Button asChild>
-            <a
-              href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("Демо платформы для фестиваля")}`}
-            >
-              Написать нам
-            </a>
-          </Button>
-          <Button asChild variant="outline">
-            <Link to={ROUTES.register}>Завести организацию</Link>
-          </Button>
-        </div>
+        <p className="font-semibold text-foreground text-sm">{CONTACT_PERSON}</p>
+        <dl className="-mt-2 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:gap-x-10">
+          <div className="flex flex-col gap-0.5">
+            <dt className="font-medium text-muted-foreground text-xs uppercase tracking-[0.14em]">
+              Телефон
+            </dt>
+            <dd>
+              <a
+                href={CONTACT_PHONE_HREF}
+                className="font-semibold text-base text-foreground tabular-nums hover:underline"
+              >
+                {CONTACT_PHONE}
+              </a>
+            </dd>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <dt className="font-medium text-muted-foreground text-xs uppercase tracking-[0.14em]">
+              Telegram
+            </dt>
+            <dd>
+              <a
+                href={CONTACT_TELEGRAM_HREF}
+                className="font-semibold text-base text-foreground hover:underline"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {CONTACT_TELEGRAM}
+              </a>
+            </dd>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <dt className="font-medium text-muted-foreground text-xs uppercase tracking-[0.14em]">
+              Почта
+            </dt>
+            <dd>
+              <a
+                href={`mailto:${SUPPORT_EMAIL}`}
+                className="font-semibold text-base text-foreground hover:underline"
+              >
+                {SUPPORT_EMAIL}
+              </a>
+            </dd>
+          </div>
+        </dl>
       </section>
 
       <p className="border-border border-t pt-5 text-muted-foreground text-xs leading-6">

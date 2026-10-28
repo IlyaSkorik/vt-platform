@@ -1,4 +1,12 @@
-export { APP_NAME, SUPPORT_EMAIL } from "./app";
+export {
+  APP_NAME,
+  CONTACT_PERSON,
+  CONTACT_PHONE,
+  CONTACT_PHONE_HREF,
+  CONTACT_TELEGRAM,
+  CONTACT_TELEGRAM_HREF,
+  SUPPORT_EMAIL,
+} from "./app";
 export { type Env, env } from "./env";
 export {
   NAVIGATION,
