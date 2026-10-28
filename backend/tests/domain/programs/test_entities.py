@@ -691,6 +691,28 @@ class TestTheDayItself:
         assert program.item(second.id).progress.is_finished
         assert program.on_stage is None
 
+    def test_a_cancelled_act_is_behind_us_too(self) -> None:
+        # «Не вышел» and «отменён» are both finished and are not the same fact: one the
+        # host stepped over and may come back to, the other is not happening today.
+        program = _program()
+        item = _add_act(program)
+        program.set_item_progress(item.id, ProgramItemProgress.CANCELLED, now=NOW)
+
+        assert program.item(item.id).progress is ProgramItemProgress.CANCELLED
+        assert program.item(item.id).progress.is_finished
+        assert program.on_stage is None
+
+    def test_cancelling_the_act_on_stage_cues_nobody(self) -> None:
+        # Pulling an act that had already been announced is a correction; what follows
+        # is the host's decision, not an inference from the running order.
+        program = _program()
+        first, second = _add_act(program), _add_act(program)
+        program.set_item_progress(first.id, ProgramItemProgress.ON_STAGE, now=NOW)
+        program.set_item_progress(first.id, ProgramItemProgress.CANCELLED, now=NOW)
+
+        assert program.item(second.id).progress is ProgramItemProgress.PENDING
+        assert program.on_stage is None
+
     def test_progress_can_be_reset_for_a_rehearsal(self) -> None:
         program = _program()
         item = _add_act(program)

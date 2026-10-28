@@ -268,6 +268,31 @@ class TestTheHostsEdition:
         response = APIClient().put(f"{_PUBLIC}/{slug}/order", {"itemIds": [rows[0]["id"]]}, format="json")
         assert response.status_code == 422
 
+    def test_a_cancelled_act_is_cancelled_on_every_screen(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        # The one the host finds out about on the morning: somebody is ill, the act is
+        # not happening, and that is a fact about the day rather than a note to herself.
+        # So it travels like «выступил» does - to the sound desk, to the screen beside
+        # the stage, to the hall.
+        slug, program_id, rows = self._host_link(staff_client, scope)
+        screen_slug = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран"}, format="json").data["data"]["share"]["slug"]
+
+        response = APIClient().put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/progress", {"progress": "CANCELLED"}, format="json")
+        assert response.status_code == 200, response.data
+        assert response.data["data"]["rows"][0]["progress"] == "CANCELLED"
+
+        screen = APIClient().get(f"{_PUBLIC}/{screen_slug}").data["data"]
+        assert screen["rows"][0]["progress"] == "CANCELLED"
+
+    def test_cancelling_an_act_that_is_on_stage_leaves_the_rest_alone(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        # Pulling an act that had already been announced is a correction, not a cue to
+        # the next one: nothing else moves, and the host decides what follows.
+        slug, _program_id, rows = self._host_link(staff_client, scope)
+        client = APIClient()
+        client.put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/progress", {"progress": "ON_STAGE"}, format="json")
+        cancelled = client.put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/progress", {"progress": "CANCELLED"}, format="json")
+
+        assert [row["progress"] for row in cancelled.data["data"]["rows"]] == ["CANCELLED", "PENDING"]
+
     def test_the_organizer_can_reset_the_day(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, program_id, rows = self._host_link(staff_client, scope)
         APIClient().put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/progress", {"progress": "PERFORMED"}, format="json")

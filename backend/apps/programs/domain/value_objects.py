@@ -257,17 +257,30 @@ class ProgramItemProgress(StrEnum):
     The host drives this from their own link, and every screen reading the programme sees
     it: ``ON_STAGE`` is what a display beside the stage highlights, ``PERFORMED`` is what
     it greys out, and ``SKIPPED`` is the act that did not appear.
+
+    ``CANCELLED`` is the one that is said out loud rather than merely greyed out. An act
+    withdrawn on the morning — illness, a coach stuck on the road — is not the same event
+    as one the host stepped over and may come back to, and the difference matters to
+    everybody reading the programme: the sound desk stops cueing a phonogram, the screen
+    beside the stage stops promising a number that is not coming, and the jury knows why
+    a protocol is one line short. So it is a state of the day, public like the rest, and
+    not a private note.
     """
 
     PENDING = "PENDING"
     ON_STAGE = "ON_STAGE"
     PERFORMED = "PERFORMED"
     SKIPPED = "SKIPPED"
+    CANCELLED = "CANCELLED"
 
     @property
     def is_finished(self) -> bool:
         """Whether this slot is behind us, one way or the other."""
-        return self in {ProgramItemProgress.PERFORMED, ProgramItemProgress.SKIPPED}
+        return self in {
+            ProgramItemProgress.PERFORMED,
+            ProgramItemProgress.SKIPPED,
+            ProgramItemProgress.CANCELLED,
+        }
 
 
 def parse_column_refs(values: Iterable[object] | None) -> tuple[ColumnRef, ...]:

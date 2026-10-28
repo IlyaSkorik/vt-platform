@@ -95,6 +95,7 @@ class ProgramItemProgressChoices(models.TextChoices):
     ON_STAGE = "ON_STAGE", "On stage"
     PERFORMED = "PERFORMED", "Performed"
     SKIPPED = "SKIPPED", "Skipped"
+    CANCELLED = "CANCELLED", "Cancelled"
 
 
 class ProgramColumnModel(BasePersistenceModel):
