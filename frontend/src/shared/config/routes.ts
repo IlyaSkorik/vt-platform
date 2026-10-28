@@ -32,6 +32,12 @@ export const ROUTES = {
   dashboard: "/dashboard",
   participants: "/participants",
   competitions: "/competitions",
+  /**
+   * What the platform does for an organizer, with screens from a demo festival.
+   * The link an organizer is sent after the first call, so it is public, indexed,
+   * and lives here rather than on somebody else's hosting.
+   */
+  organizers: "/organizers",
   /** Public diploma authenticity page — the target printed inside a diploma's QR. */
   verifyDiploma: "/verify/:verificationToken",
   /** Public programme screen — one unguessable slug per published edition. */
