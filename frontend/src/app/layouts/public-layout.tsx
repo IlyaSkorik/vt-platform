@@ -46,6 +46,13 @@ export function PublicLayout(): React.JSX.Element {
               <Button asChild variant="ghost" size="sm">
                 <Link to={ROUTES.competitions}>Фестивали</Link>
               </Button>
+              {/* The one entry here addressed to somebody who is not a participant.
+                  It stays in the bar rather than only in the footer because an
+                  organizer sent the link once will come back to the site, not to
+                  the message. */}
+              <Button asChild variant="ghost" size="sm">
+                <Link to={ROUTES.organizers}>Организаторам</Link>
+              </Button>
             </nav>
           </div>
 
