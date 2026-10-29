@@ -4,11 +4,12 @@ A dumb table printer: it is given a heading, column headers and rows of text, an
 nothing about programmes. Every decision about *what* a cell says was already made in the
 application layer, which is what keeps an exported table and a screen in agreement.
 
-Two things make this readable rather than merely correct. It is **landscape** with columns
+Three things make this readable rather than merely correct. It is **landscape** with columns
 sized to their own content, because a programme table is wide and a narrow column of times
-next to a wide column of names is what a person actually scans. And the header row
-**repeats on every page**, because a running order rarely fits on one and a second page of
-unlabelled columns is useless at the side of a stage.
+next to a wide column of names is what a person actually scans. The header row **repeats on
+every page**, because a running order rarely fits on one and a second page of unlabelled
+columns is useless at the side of a stage. And a row may **break across pages**, because an
+organizer who writes a paragraph of a comment should still get a programme out.
 
 Cyrillic needs a Unicode TrueType font registered with reportlab; DejaVu is bundled for
 exactly that reason.
@@ -113,6 +114,12 @@ class ReportLabTableRenderer:
                 colWidths=self._column_widths(table, available),
                 repeatRows=1,
                 hAlign="LEFT",
+                # One act with a long comment can be taller than the page on its own, and a
+                # table that may only break *between* rows has nowhere to break then - it
+                # raises rather than prints. Let a row split inside itself as well, so the
+                # comment carries over to the next page instead of losing the whole export.
+                splitByRow=1,
+                splitInRow=1,
             )
             grid.setStyle(
                 TableStyle(
