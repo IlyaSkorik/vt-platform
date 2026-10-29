@@ -138,11 +138,11 @@ interface FestivalCatalogToolbarProps {
  * component carries a border, a focus ring and a label slot, all of which fight
  * a field whose whole job is to be a hole in a coloured band.
  *
- * The placeholder is Noto Serif 12/16 on a desktop and 16/22 on a phone — the
- * field is 30px tall in both, and the desktop's longer band gives the label room
- * to be small without crowding. The typed text takes the same size as the
- * placeholder; a field whose hint and content are set differently reads as two
- * controls.
+ * The placeholder is Noto Serif 16/22 in both layouts. The desktop used to set
+ * it at 12/16 — the band is longer there and the label had room to be small —
+ * but the frame now prints the same size either side of the breakpoint. The
+ * typed text takes the same size as the placeholder; a field whose hint and
+ * content are set differently reads as two controls.
  *
  * The band's own insets are stated rather than left to `items-center`: 10px top
  * and bottom, 23 from the left edge to the field, 26 from the field across to the
@@ -151,12 +151,11 @@ interface FestivalCatalogToolbarProps {
  * its own, so the percentage had nothing to resolve against and collapsed to the
  * height of the text — a 16px strip where a field should be.
  *
- * The frame prints the placeholder the same
- * `#A9A9A8` in both themes — a mid grey that happens to sit over `свет` and over
- * the night page alike. It is reached from either side rather than frozen as a
- * hex: the page's own ink at 37% by day, `свет` at 65% by night. Both land on
- * that value over their own background, and both keep working if the background
- * is ever retuned, which a hex would not.
+ * The placeholder is «полупрозрачный текст» by day — the flat `#6E6A72` the
+ * frame paints, which `--muted-foreground` carries to within a point — and
+ * `свет` at 65% by night, which lands on the frame's own mid grey over the night
+ * page. Two tokens rather than one hex: each is read against the background it
+ * actually sits on, and both keep working if either background is retuned.
  *
  * Not `--muted-foreground`, which is `--neutral-500` — a violet-tinted grey built
  * for body copy, and markedly darker than this.
@@ -181,7 +180,7 @@ export function FestivalCatalogToolbar({
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder="Найти фестиваль"
-            className="h-7 w-full min-w-0 rounded-brand bg-background px-4 font-heading text-base text-foreground leading-snug outline-none transition-shadow placeholder:text-foreground/37 dark:placeholder:text-on-scrim/65 focus-visible:ring-2 focus-visible:ring-ring xl:max-w-[336px] xl:text-xs xl:leading-4 [&::-webkit-search-cancel-button]:hidden"
+            className="h-7 w-full min-w-0 rounded-brand bg-background px-4 font-heading text-base text-foreground leading-snug outline-none transition-shadow placeholder:text-muted-foreground dark:placeholder:text-on-scrim/65 focus-visible:ring-2 focus-visible:ring-ring xl:max-w-[336px] [&::-webkit-search-cancel-button]:hidden"
           />
           <SearchIcon className="size-7 shrink-0 text-brand-mark xl:h-[26px] xl:w-[25px]" />
         </label>

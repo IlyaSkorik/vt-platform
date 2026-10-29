@@ -9,6 +9,7 @@ export {
 } from "./filter-festivals";
 export {
   daysUntil,
+  formatAgeRange,
   formatDate,
   formatDeadline,
   formatPeriod,

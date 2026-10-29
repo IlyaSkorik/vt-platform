@@ -136,7 +136,7 @@ export function RegistrationBlock({
               className="rounded-[19px] border border-brand-line px-3 py-2.5 md:px-3.5 md:py-3"
             >
               <div className="flex items-start justify-between gap-3">
-                <h3 className="flex min-w-0 items-center gap-2 font-bold text-base leading-[22px] md:text-xl md:leading-[27px]">
+                <h3 className="flex min-w-0 items-center gap-2 font-semibold text-base leading-[22px] md:text-xl md:leading-[27px]">
                   {/* `h`/`w` rather than `size`: the glyph is 20×21, and the dial that
                       hangs below the calendar is what makes it read as a window
                       rather than as a date. */}
@@ -149,18 +149,22 @@ export function RegistrationBlock({
                 <IntakeChip state={state} />
               </div>
 
-              {/* 70% by day and full strength by night: at 70% over `#110B12`
-                  the dates stopped being readable, and the frame prints them in
-                  «свет» there. A `dark:` class rather than a token — this is one
-                  value at two opacities, not two colours from two ramps. */}
+              {/* 70% by day and full strength by night: at 70% over the night
+                  page the dates stopped being readable, and the frame prints
+                  them in «свет» there. A `dark:` class rather than a token —
+                  this is one value at two opacities, not two colours from two
+                  ramps. */}
               {/* The two facts swap places between the layouts, and the DOM
                   follows the desktop: the date sits right under the name there,
-                  dropped to 40% — a quiet caption on the heading — while the
-                  phone moves it to the last line and gives it full strength.
-                  `order-last` rather than two copies of the markup. */}
+                  a quiet caption on the heading, while the phone moves it to the
+                  last line. `order-last` rather than two copies of the markup.
+                  One colour in both layouts now — the frame gives the line a
+                  flat `#101010` at 60%, which is neither the page's ink let down
+                  (that one is violet-tinted and reads warmer) nor a step of any
+                  ramp here, hence the literal value. */}
               <div className="flex flex-col">
                 {held ? (
-                  <p className="order-last mt-3 text-foreground text-sm leading-[19px] md:order-none md:mt-0.5 md:text-foreground/40 dark:text-foreground/70 md:dark:text-foreground/70">
+                  <p className="order-last mt-3 text-[#101010]/60 text-sm leading-[19px] md:order-none md:mt-0.5 dark:text-foreground/70">
                     Дата проведения: {held}
                   </p>
                 ) : null}

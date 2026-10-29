@@ -1,28 +1,27 @@
 import { Link } from "react-router";
 import { useStableViewportHeight } from "@/shared/hooks";
 import { Button } from "@/shared/ui";
-import { HomeSteps } from "./home-steps";
 
 interface HomeHeroProps {
+  /** Where «Найти фестиваль» goes — the public catalogue. */
+  catalogPath: string;
   /** Where the secondary action goes — the cabinet when signed in, the login screen otherwise. */
   authPath: string;
 }
 
 /**
- * The landing's opening band: the brand artwork, the positioning copy over its
- * pale left half, and the four "how it works" cards resting on its bottom edge.
+ * The landing's opening band: the brand artwork and the positioning copy over
+ * its pale left half.
  *
- * **Why the steps live in here rather than beside it.** In the design they are
- * not a section of their own — they overlap the illustration, and the whole
- * point of them is that the artwork is still visible *through* them. Pulled out
- * into a sibling section they would need the band's height and background
- * duplicated to sit on, and the two would drift apart the first time either
- * changed.
+ * The four "how it works" cards used to rest on the bottom edge of this band,
+ * which is why the copy sits in a column a screenful tall rather than filling
+ * it. Without them the lower half is the artwork alone, as the design now has
+ * it.
  *
  * The band has no bottom border. The artwork fades into the page colour on its
  * own, and a hairline on top of that fade read as a cut rather than a hand-off.
  */
-export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
+export function HomeHero({ catalogPath, authPath }: HomeHeroProps): React.JSX.Element {
   // Measured once and held, rather than left to `svh`. See the note on the band
   // itself for what the units do in an in-app browser.
   const viewportHeight = useStableViewportHeight();
@@ -63,8 +62,8 @@ export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
 
       {/* The hand-off into the page below. A deep fade, not a hairline edge: in
           the design the artwork is already most of the way to the page colour by
-          the time the step cards sit on it, so the wash starts near the middle of
-          the band and only reaches full `background` at the very bottom. Kept on
+          the bottom third of the band, so the wash starts near its middle and
+          only reaches full `background` at the very bottom. Kept on
           its own layer so the stop positions can move without touching the
           artwork or the scrim above it. */}
       <div
@@ -100,11 +99,8 @@ export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
             <h1 className="text-balance font-heading font-bold text-[1.75rem] leading-snug tracking-tight sm:text-5xl sm:leading-tight md:text-display md:leading-[1.43]">
               Взлёт талантов
             </h1>
-            {/* An em dash opens it in the design, continuing the title as one
-                sentence rather than starting a second one. Kept, because that is
-                what makes the title read as a name and this as its definition. */}
             <p className="max-w-[303px] text-pretty font-heading text-sm leading-snug sm:max-w-none sm:text-2xl md:text-[2rem]">
-              — цифровая платформа для подбора творческих конкурсов и онлайн-регистрации.
+              цифровая платформа для подбора творческих конкурсов и онлайн-регистрации.
             </p>
             {/* Dropped on the phone, as the frame drops it: the artwork's
                 performers have to fit under the buttons, a third paragraph
@@ -147,28 +143,28 @@ export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
               size="lg"
               className="h-[30px] w-[186px] rounded-[10px] px-0 font-heading font-bold text-sm leading-snug hover:bg-brand-press md:h-[43px] md:w-52 md:rounded-brand md:text-lg dark:bg-brand dark:text-brand-mark dark:hover:bg-brand-press"
             >
-              <a href="#upcoming-festivals">Найти фестиваль</a>
+              <Link to={catalogPath}>Найти фестиваль</Link>
             </Button>
-            {/* Edge and label are both the frame's «Темный текст» `#211929`
-                through `--foreground`, which is what that token resolves to in
-                the light theme and what flips it in the dark one: a 1px border
-                at full strength, the label at 51%.
+            {/* The desktop frame draws it as three separate decisions: a 1px
+                «тёмный акцент» edge, the label in «Темный текст» `#211929` at
+                full strength and in the face's regular weight — not the bold
+                the primary beside it wears — and no fill at all at rest. The
+                `outline` variant's opaque page colour is dropped for that last
+                one: in the frame this button is a hairline over the
+                illustration and what shows through it is the artwork.
 
-                The phone keeps one thing constant across its two themes: the
-                edge is «тёмный акцент» in both, where the desktop swaps it for
-                the page's own ink. What changes with the theme there is the fill
-                — a solid plate of `свет` by day (`#F9F9F9`, which is what
+                Hover is the only change, and it is the fill alone: «светлый
+                акцент» at 10%. Edge and label stay exactly as they were, which
+                is what makes the press read as the surface responding rather
+                than the text.
+
+                The phone keeps the same edge in both themes and differs in the
+                fill — a solid plate of `свет` by day (`#F9F9F9`, which is what
                 `--background` resolves to), the same `свет` at 9% at night. The
                 copy sits on the artwork itself in that layout rather than on a
-                pale wash, so an unfilled outline disappeared into the sky.
-
-                On the desktop there is no fill at rest — the `outline` variant's
-                opaque page colour is dropped, because in the frame this button
-                is a hairline over the
-                illustration and what shows through it is the artwork. Hover
-                tints it 6% of the same ink and changes nothing else: the label
-                keeps its 51% rather than darkening, which is what makes the
-                press read as the surface responding rather than the text.
+                pale wash, so an unfilled outline disappeared into the sky. Its
+                label is the bolder, let-down one the small frame draws, hence
+                the `md:` on both weight and ink.
 
                 The night frame inverts all three. Over a dark sky a hairline
                 disappears, so there it is `свет` at full strength around a 16%
@@ -178,17 +174,12 @@ export function HomeHero({ authPath }: HomeHeroProps): React.JSX.Element {
               asChild
               size="lg"
               variant="outline"
-              className="h-[31px] w-[155px] rounded-[10px] border-brand-line bg-background px-0 font-heading font-bold text-sm leading-snug text-foreground/51 hover:bg-foreground/6 hover:text-foreground/51 md:h-[41px] md:w-[201px] md:rounded-brand md:border-foreground md:bg-transparent md:text-lg dark:bg-on-scrim/9 dark:text-on-scrim dark:hover:bg-on-scrim/25 dark:hover:text-on-scrim md:dark:border-on-scrim md:dark:bg-on-scrim/16"
+              className="h-[31px] w-[155px] rounded-[10px] border-brand-line bg-background px-0 font-heading font-bold text-sm leading-snug text-foreground/51 hover:bg-foreground/6 hover:text-foreground/51 md:h-[41px] md:w-[201px] md:rounded-brand md:bg-transparent md:font-normal md:text-foreground md:text-lg md:hover:bg-brand-surface/10 md:hover:text-foreground dark:bg-on-scrim/9 dark:text-on-scrim dark:hover:bg-on-scrim/25 dark:hover:text-on-scrim md:dark:border-on-scrim md:dark:bg-on-scrim/16"
             >
               <Link to={authPath}>Личный кабинет</Link>
             </Button>
           </div>
         </div>
-
-        {/* Not on the phone. Stacked one above another the four cards become a
-            list as long as the page they introduce, and they cover the artwork
-            they were drawn to float on. */}
-        <HomeSteps className="hidden md:mt-auto md:grid md:pt-16" />
       </div>
     </section>
   );

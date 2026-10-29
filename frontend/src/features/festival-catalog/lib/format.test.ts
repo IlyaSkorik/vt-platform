@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { makeFestival } from "./fixtures";
 import {
   daysUntil,
+  formatAgeRange,
   formatDeadline,
   formatPeriod,
   formatPrice,
@@ -96,5 +97,30 @@ describe("isClosingSoon", () => {
     });
     expect(isClosingSoon(festival, NOW)).toBe(true);
     expect(formatDeadline(festival)).not.toBeNull();
+  });
+});
+
+describe("formatAgeRange", () => {
+  it("renders the span the projection sends", () => {
+    expect(formatAgeRange(makeFestival({ ageMin: 12, ageMax: 18 }))).toBe("12–18 лет");
+  });
+
+  it("agrees the noun with the bound it follows", () => {
+    // «лет» would be wrong on 21 and right on 18 — the trailing number decides.
+    expect(formatAgeRange(makeFestival({ ageMin: 12, ageMax: 21 }))).toBe("12–21 год");
+    expect(formatAgeRange(makeFestival({ ageMin: 12, ageMax: 22 }))).toBe("12–22 года");
+  });
+
+  it("collapses a single-year band to one number", () => {
+    expect(formatAgeRange(makeFestival({ ageMin: 7, ageMax: 7 }))).toBe("7 лет");
+  });
+
+  it("still reads a half-open band", () => {
+    expect(formatAgeRange(makeFestival({ ageMin: 7, ageMax: null }))).toBe("от 7 лет");
+    expect(formatAgeRange(makeFestival({ ageMin: null, ageMax: 18 }))).toBe("до 18 лет");
+  });
+
+  it("is null when the festival declares no age categories", () => {
+    expect(formatAgeRange(makeFestival({ ageMin: null, ageMax: null }))).toBeNull();
   });
 });

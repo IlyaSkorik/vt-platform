@@ -44,6 +44,13 @@
    * translucent white lets it through and stays part of the same light. */
   --text-on-scrim-muted: rgb(255 255 255 / 0.7);
 
+  /* The hairline round a filter checkbox: «светлый база ночная» `#786191`, the
+   * same value in both themes. Theme-INVARIANT because the frame draws it that
+   * way — the box is the page colour in either light, and this one edge is what
+   * makes it a box at all, so it cannot be the page's own ink (invisible at
+   * night) or a white (invisible by day). */
+  --control-line: var(--night-400);
+
   /* --- shadcn/ui-compatible aliases --------------------------------------
    * Derived from the semantic layer so the in-repo component library keeps
    * working unchanged. Because var() is resolved late, these single

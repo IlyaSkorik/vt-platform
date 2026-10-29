@@ -16,18 +16,19 @@
 
   /* Backgrounds
    *
-   * The page is the frame's own `#110B12`, written as a hex because that is how
-   * the design gives it and a rounded `oklch()` would drift off the value. It
-   * sits between Tailwind's `neutral-950` and `neutral-900` — dark, but not the
-   * near-pure black this ramp used to open on (`oklch(0.095 …)`, well below
-   * `neutral-950`).
+   * The page is the frame's own `#18121F`, written as a hex because that is how
+   * the design gives it and a rounded `oklch()` would drift off the value. Dark,
+   * but a long way from the near-pure black this ramp used to open on
+   * (`oklch(0.095 …)`), and lighter and more violet than the `#110B12` it
+   * carried before.
    *
-   * Everything below it moved up with it. That is not decoration: the old
-   * surfaces were lighter than the old page by design, and against `#110B12`
-   * they would have been *darker* than it — a card sunk into the page instead of
-   * laid on it, in every dark screen of the product. The steps between the rungs
-   * are the ones the ramp already had. */
-  --background-primary: #110b12;
+   * The surfaces below it are *not* yet moved up to match: at `oklch(0.196)`
+   * the new page is level with `--background-secondary` and a hair under
+   * `--surface-primary`, where the old one left each a clear step of air. Every
+   * rung above the page wants lifting by about the same 0.035 the page itself
+   * rose; until the frame says by how much, they are left where the design put
+   * them rather than guessed at. */
+  --background-primary: #18121f;
   --background-secondary: oklch(0.195 0.012 316);
   --background-tertiary: oklch(0.225 0.016 316);
 
@@ -70,7 +71,7 @@
      near-black one would be invisible. */
   /* The two accents do **not** shift with the theme, unlike everything above
    * them. The frame paints «тёмный акцент» `#7D529B` and «светлый акцент»
-   * `#B196D0` at full strength on the night plate too — every outline on the
+   * `#B89CD8` at full strength on the night plate too — every outline on the
    * landing, the glow around a lit card, the rule under the footer. These used
    * to be lightened for the dark theme (`oklch(0.6 …)` / `oklch(0.72 …)`), which
    * put a different violet on screen from the one the design names. */
@@ -81,8 +82,17 @@
    * `--brand-line`, because the two are different published variables with
    * near-identical names — see the note in `primitive.css`. */
   --brand-line-vivid: var(--violet-550);
+  /* Accent ink at night: a lit violet of the frame's own, `#B76CD8`. Neither
+   * «тёмный акцент» nor `--violet-550` survives as type on a near-black page —
+   * both are structural violets drawn to sit *under* light — and the theme's own
+   * primary (`oklch(0.72 …)`, about `#D07AF5`) overshoots it. */
+  --brand-accent-ink: #b76cd8;
 
   --brand-surface: var(--night-800);
+  /* The light theme's header has a violet of its own; at night the bar stays
+   * what it always was — «тёмный база ночная» at 90%, written out because the
+   * opacity now lives in the token rather than on the class. */
+  --brand-header: rgb(54 34 69 / 0.9);
   --brand-control: var(--night-400);
   --brand-track: var(--night-800);
   --brand-band: rgb(67 40 96 / 0.5);

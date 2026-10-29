@@ -19271,6 +19271,14 @@ components:
           type: array
           items:
             type: string
+        ageMin:
+          type:
+          - integer
+          - 'null'
+        ageMax:
+          type:
+          - integer
+          - 'null'
         createdAt:
           type:
           - string
@@ -19282,6 +19290,8 @@ components:
           - 'null'
           format: date-time
       required:
+      - ageMax
+      - ageMin
       - applicationDeadline
       - categories
       - city
@@ -19437,6 +19447,14 @@ components:
           type: array
           items:
             type: string
+        ageMin:
+          type:
+          - integer
+          - 'null'
+        ageMax:
+          type:
+          - integer
+          - 'null'
         createdAt:
           type:
           - string
@@ -19460,6 +19478,8 @@ components:
           items:
             $ref: '#/components/schemas/PublicFestivalDocument'
       required:
+      - ageMax
+      - ageMin
       - applicationDeadline
       - categories
       - city

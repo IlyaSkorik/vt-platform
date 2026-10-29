@@ -224,3 +224,60 @@ class TestPublicFestivalDetailEndpoint:
         response = APIClient().get("/api/v1/public/festivals/not-a-uuid")
 
         assert response.status_code == 404
+
+
+def _age_category(
+    competition: CompetitionModel,
+    *,
+    name: str,
+    min_age: int,
+    max_age: int,
+    group: uuid.UUID | None = None,
+) -> None:
+    from apps.competitions.infrastructure.models import AgeCategoryModel
+
+    AgeCategoryModel.objects.create(
+        competition=competition,
+        participant_group_id=group or uuid.uuid4(),
+        name=name,
+        min_age=min_age,
+        max_age=max_age,
+    )
+
+
+class TestPublicFestivalAgeSpan:
+    """The age band the catalog card prints under the genres."""
+
+    def test_the_card_spans_every_band_the_festival_declares(self) -> None:
+        """One span, not the list.
+
+        The card answers "is this for my child at all"; which band they enter is
+        decided in the application form, once the genre and the group are chosen.
+        So the youngest year of the youngest band and the oldest of the oldest —
+        across participant groups, which have their own bands each.
+        """
+        org = _organization()
+        competition = _competition(organizer_id=org.id, status="PUBLISHED", title="Весенний вокал")
+        _open_nomination(competition)
+        soloists, ensembles = uuid.uuid4(), uuid.uuid4()
+        _age_category(competition, name="Младшая", min_age=7, max_age=10, group=soloists)
+        _age_category(competition, name="Старшая", min_age=12, max_age=18, group=soloists)
+        _age_category(competition, name="Смешанная", min_age=9, max_age=16, group=ensembles)
+
+        card = next(row for row in APIClient().get("/api/v1/public/festivals").data["data"] if row["id"] == str(competition.id))
+        detail = APIClient().get(f"/api/v1/public/festivals/{competition.id}").data["data"]
+
+        assert (card["ageMin"], card["ageMax"]) == (7, 18)
+        # The landing's own view is a superset of the card's and must agree with it.
+        assert (detail["ageMin"], detail["ageMax"]) == (7, 18)
+
+    def test_a_festival_without_bands_says_nothing_about_age(self) -> None:
+        """Null rather than a zero or an open-ended range — the card drops the line."""
+        org = _organization()
+        competition = _competition(organizer_id=org.id, status="PUBLISHED", title="Весенний вокал")
+        _open_nomination(competition)
+
+        card = next(row for row in APIClient().get("/api/v1/public/festivals").data["data"] if row["id"] == str(competition.id))
+
+        assert card["ageMin"] is None
+        assert card["ageMax"] is None

@@ -287,6 +287,12 @@ function CarouselArrow({
       // than `--inverse`: that token flips to near-black in the dark theme,
       // where this plate is a deep violet and the arrow would have vanished.
       //
+      // `светлый акцент` at 70% at rest and at full strength under the pointer,
+      // as the frame draws the pair — the paddle brightens towards the reader
+      // rather than darkening away from them. The night theme keeps solid at
+      // rest and `--brand-press` on hover: 70% of the night base over a
+      // near-black page is a paddle that half disappears.
+      //
       // Spent, it says so: `cursor-not-allowed` and no hover colour. Note what
       // is *not* here — `disabled:pointer-events-none`, which used to be. With
       // pointer events off the element is invisible to the cursor and the
@@ -297,7 +303,7 @@ function CarouselArrow({
       // this button's edge: without it the scroll container can win the hit test
       // along the inner border and swallow the click.
       className={cn(
-        "relative z-10 size-[54px] shrink-0 cursor-pointer md:size-[70px] select-none items-center justify-center self-center rounded-brand bg-brand-control text-brand-mark outline-none transition-[opacity,background-color] duration-[var(--duration-fast)] hover:bg-brand-press focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-control",
+        "relative z-10 size-[54px] shrink-0 cursor-pointer md:size-[70px] select-none items-center justify-center self-center rounded-brand bg-brand-control/70 text-brand-mark outline-none transition-[opacity,background-color] duration-[var(--duration-fast)] hover:bg-brand-control focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-control/70 dark:bg-brand-control dark:hover:bg-brand-press dark:disabled:hover:bg-brand-control",
         className,
       )}
     >

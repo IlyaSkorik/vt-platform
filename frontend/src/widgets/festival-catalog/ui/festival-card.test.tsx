@@ -50,6 +50,16 @@ describe("FestivalCard", () => {
     expect(screen.getByText("Вокал")).toBeInTheDocument();
   });
 
+  it("prints the age band the festival admits", () => {
+    renderCard(makeFestival({ ageMin: 12, ageMax: 18 }));
+    expect(screen.getByText("Возрастная категория: 12–18 лет")).toBeInTheDocument();
+  });
+
+  it("says nothing about age when no age categories are declared", () => {
+    renderCard(makeFestival({ ageMin: null, ageMax: null }));
+    expect(screen.queryByText(/Возрастная категория/)).not.toBeInTheDocument();
+  });
+
   it("drops the comma when the festival has no city", () => {
     renderCard(makeFestival({ city: null, modes: ["ONLINE"] }));
     expect(screen.getByText("Онлайн")).toBeInTheDocument();

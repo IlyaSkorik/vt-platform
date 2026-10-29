@@ -355,6 +355,14 @@ class PublicFestivalView:
     formats: list[PublicFestivalFormatView] = field(default_factory=list)
     modes: list[str] = field(default_factory=list)
     categories: list[str] = field(default_factory=list)
+    #: The widest age band the competition admits: the youngest year any of its
+    #: age categories starts at and the oldest any of them ends at. A span rather
+    #: than the list, because the card answers "is this for my child at all" —
+    #: which band they would enter is a question for the application form, where
+    #: the genre and the group are already chosen. ``None`` on both when the
+    #: organizer has declared no age categories at all.
+    age_min: int | None = None
+    age_max: int | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -879,6 +887,10 @@ class PublicFestivalDetailView:
     categories: tuple[str, ...]
     landing: PublicFestivalLandingView
     contacts: PublicFestivalContactsView
+    #: The same age span the card view carries — the detail view is a superset of
+    #: it, and the serializer that renders the landing inherits the card's.
+    age_min: int | None = None
+    age_max: int | None = None
     regulation: PublicFestivalRegulationView | None = None
     documents: tuple[PublicFestivalDocumentView, ...] = ()
     created_at: datetime | None = None

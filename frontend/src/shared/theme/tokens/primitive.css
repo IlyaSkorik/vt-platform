@@ -16,9 +16,9 @@
  * step is interpolated from them so the ramps stay usable for hover, focus and
  * disabled states that the mockups do not draw:
  *
- *   Акцентище .............. #9400D3  →  --violet-500
+ *   Акцент светлая ......... #8A2BCE  →  --violet-500
  *   тёмный акцент .......... #7D529B  →  --mauve-500
- *   светлый акцент ......... #B196D0  →  --mauve-300
+ *   светлый акцент ......... #B89CD8  →  --mauve-300
  *   Темный текст ........... #211929  →  --neutral-900
  *   свет ................... #F9F9F9  →  --neutral-50
  *
@@ -29,10 +29,15 @@
  * sit at similar lightness, so a single ramp could not hold both.
  */
 :root {
-  /* --- Accent Violet (the action colour, «Акцентище») ---------------------- */
+  /* --- Accent Violet (the action colour) ----------------------------------- */
   --violet-300: #c77cec;
   --violet-400: #ab2ddd;
-  --violet-500: #9400d3;
+  /* «Акцент светлая» — what the frame now fills a primary button with, and what
+   * `--primary` resolves to in the light theme. It replaced «Акцентище»
+   * `#9400D3` here rather than taking a step of its own: the two are the same
+   * swatch re-cut, not two colours, and leaving the old one in place would have
+   * split every action surface in the app between them. */
+  --violet-500: #8a2bce;
   /* «Акцент темный» — a published Figma variable, and not to be confused with
    * «тёмный акцент» `#7D529B` in the mauve ramp below, which is the structural
    * line the whole landing is drawn with. This one is the saturated cousin and
@@ -49,7 +54,7 @@
   --mauve-50: #faf7fd;
   --mauve-100: #f3eef8;
   --mauve-200: #e3d9ee;
-  --mauve-300: #b196d0;
+  --mauve-300: #b89cd8;
   --mauve-400: #9a76b8;
   --mauve-500: #7d529b;
 
@@ -86,7 +91,7 @@
 
   /* --- Neutrals (violet-tinted grey ramp, tuned to the brand violets) ------
    * Tinted towards the brand rather than neutral grey: a pure grey beside
-   * #9400D3 reads green. The two ends are Figma variables — `свет` and
+   * the action violet reads green. The two ends are Figma variables — `свет` and
    * `Темный текст` — and the ramp is built between them. */
   --neutral-0: #ffffff;
   --neutral-50: #f9f9f9;

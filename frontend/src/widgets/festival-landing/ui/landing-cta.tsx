@@ -27,7 +27,7 @@ export function LandingCtaButton({
   className,
 }: LandingCtaButtonProps): React.JSX.Element {
   // `dark:bg-brand`, because `--primary` drifts lighter at night and the frame
-  // keeps «Акцентище» `#9400D3` on both plates — the same pairing every primary
+  // keeps «Акцент светлая» `#8A2BCE` on both plates — the same pairing every primary
   // button on the public surfaces uses. `hover:bg-brand-press` rather than the
   // variant's own fade of the primary.
   // 189×37 and centred on a phone, a full-width 61px bar from `md` up. The bar

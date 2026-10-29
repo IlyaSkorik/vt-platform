@@ -89,7 +89,7 @@ export function HomeFestivalCard({ festival, to }: HomeFestivalCardProps): React
           )}
         </div>
 
-        <h3 className="line-clamp-2 font-heading font-bold text-foreground text-sm leading-snug md:text-base">
+        <h3 className="line-clamp-2 font-heading font-semibold text-foreground text-sm leading-snug md:text-base">
           {festival.title}
         </h3>
 
@@ -100,9 +100,15 @@ export function HomeFestivalCard({ festival, to }: HomeFestivalCardProps): React
           The two glyphs are the frame's own, 18×22, not Lucide's near-misses.
           Colour lives on the row rather than inside the paths, so icon and value
           are always the same ink and one token moves both: «полупрозрачный
-          текст» by day — `#211929` at 40% — and «свет полупрозрачный» at night,
-          which is white at 70% over a dark tile rather than a dimmed black. */}
-        <dl className="space-y-1 font-heading text-foreground/40 text-sm leading-snug md:space-y-1.5 md:text-base dark:text-on-scrim-muted">
+          текст» by day and «свет полупрозрачный» at night, which is white at 70%
+          over a dark tile rather than a dimmed black.
+
+          «полупрозрачный текст» is a flat `#6E6A72` in the frame, not the ink
+          let down — it was read as `--foreground` at 40% at first, which over
+          the page colour lands much paler than the design. `--muted-foreground`
+          is that grey to within a point (`#6F6479`), so the row stays on the
+          token rather than carrying a hex of its own. */}
+        <dl className="space-y-1 font-heading text-muted-foreground text-sm leading-snug md:space-y-1.5 md:text-base dark:text-on-scrim-muted">
           {place ? (
             <div className="flex items-center gap-2">
               <dt className="shrink-0">
@@ -138,7 +144,7 @@ export function HomeFestivalCard({ festival, to }: HomeFestivalCardProps): React
                     desktop. Shape and weight are the `brand` variant's:
                     a 2px outline on the brand's 15px corner, transparent, label
                     in the page's own ink. Only the outline colour is overridden,
-                    and only at night — «светлый акцент» `#B196D0` by day,
+                    and only at night — «светлый акцент» `#B89CD8` by day,
                     «светлый база ночная» `#88779B` after dark, which is the one
                     place the chip parts company with the glow it shares a token
                     with in the light theme. */}

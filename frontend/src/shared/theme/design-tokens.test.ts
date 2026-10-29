@@ -21,7 +21,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 const FIXTURE = `
   :root {
     /* Tier 1 — primitives */
-    --violet-500: #9400d3;
+    --violet-500: #8a2bce;
     --neutral-0: #ffffff;
     --neutral-950: #14101a;
     /* Tier 2 — theme-variant (light default). Raw values so jsdom can read
@@ -31,7 +31,7 @@ const FIXTURE = `
     /* Tier 2 — semantic aliases (theme-invariant references) */
     --background: var(--background-primary);
     --foreground: var(--text-primary);
-    --brand-primary: #9400d3;
+    --brand-primary: #8a2bce;
   }
   .dark {
     --background-primary: #110b12;
@@ -58,7 +58,7 @@ function cssVar(name: string): string {
 
 describe("design tokens — loading", () => {
   it("resolves primitive tokens to raw values", () => {
-    expect(cssVar("--violet-500")).toBe("#9400d3");
+    expect(cssVar("--violet-500")).toBe("#8a2bce");
     expect(cssVar("--neutral-0")).toBe("#ffffff");
   });
 });
@@ -72,7 +72,7 @@ describe("design tokens — CSS variable availability", () => {
 
   it("keeps brand tokens theme-invariant by reference", () => {
     // brand-primary points at a primitive directly, so it never changes.
-    expect(cssVar("--brand-primary")).toBe("#9400d3");
+    expect(cssVar("--brand-primary")).toBe("#8a2bce");
   });
 });
 

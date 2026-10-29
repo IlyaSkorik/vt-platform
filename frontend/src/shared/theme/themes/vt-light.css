@@ -70,11 +70,27 @@
    * `--brand-line`, because the two are different published variables with
    * near-identical names — see the note in `primitive.css`. */
   --brand-line-vivid: var(--violet-550);
+  /* The accent used as *ink* rather than as a line — the jury card's role line
+   * is the whole of it today. By day that is «тёмный акцент», the same value
+   * `--brand-line` carries; a token of its own because the two part company
+   * after dark, where a line stays structural and this has to read as type. */
+  --brand-accent-ink: var(--mauve-500);
 
   --brand-surface: var(--mauve-300);
+  /* The public header's band, and only that: a violet of its own — #9876BE at
+   * 90% — rather than `светлый акцент` let down, which is what the bar wore
+   * until the frame gave it this colour. Deeper and greyer than `--brand-surface`,
+   * so the white mark and labels on it sit a step further from the page behind.
+   * Raw rather than a primitive step, like `--brand-band` beside it: the ramp
+   * has no stop here and one invented for a single band would be a step nothing
+   * else ever lands on. */
+  --brand-header: rgb(152 118 190 / 0.9);
   --brand-control: var(--mauve-300);
   --brand-track: var(--mauve-300);
-  --brand-band: rgb(177 150 208 / 0.53);
+  /* The public footer's wash, and the one place the frame still paints the
+   * older `#B196D0` rather than the re-cut «светлый акцент» — written out
+   * rather than taken from `--mauve-300` for exactly that reason. */
+  --brand-band: rgb(177 150 208 / 0.2);
   /* What a brand-filled control takes under the pointer: the bottom of the
    * mauve ramp, well past `тёмный акцент`. Stopping at `тёмный акцент` — the
    * value `--brand-line` carries — left the hover too near the resting fill to

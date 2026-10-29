@@ -40,7 +40,7 @@
    * would read as a cut-out pasted on top.
    *
    * Geometry is literal (blur 26.8, spread 5, 53% alpha); the colour is mixed from
-   * `--brand-line-soft` rather than frozen at #B196D0 so the dark theme gets a glow
+   * `--brand-line-soft` rather than frozen at #B89CD8 so the dark theme gets a glow
    * bright enough to show against a near-black page. */
   --shadow-glow-soft: 0 0 26.8px 5px color-mix(in srgb, var(--brand-line-soft) 53%, transparent);
 

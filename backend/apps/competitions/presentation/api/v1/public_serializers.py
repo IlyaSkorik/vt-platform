@@ -79,6 +79,11 @@ class PublicFestivalSerializer(serializers.Serializer[object]):
     formats = PublicFestivalFormatSerializer(many=True)
     modes = serializers.ListField(child=serializers.CharField())
     categories = serializers.ListField(child=serializers.CharField())
+    # The widest age band the festival admits, as one span. Both null together
+    # when it declares no age categories — the card then says nothing about age
+    # rather than printing an open-ended range.
+    ageMin = serializers.IntegerField(source="age_min", allow_null=True)
+    ageMax = serializers.IntegerField(source="age_max", allow_null=True)
     createdAt = serializers.DateTimeField(source="created_at", allow_null=True)
     updatedAt = serializers.DateTimeField(source="updated_at", allow_null=True)
 

@@ -3,6 +3,7 @@ import { useAuth } from "@/app/providers";
 import {
   catalogStatusConfig,
   type Festival,
+  formatAgeRange,
   formatPeriod,
   participationModeLabel,
   resolveMediaUrl,
@@ -52,6 +53,7 @@ export function FestivalCard({
   const cover = resolveMediaUrl(festival.coverImage);
   const place = placeLine(festival);
   const period = formatPeriod(festival.competitionStart, festival.competitionEnd);
+  const ageRange = formatAgeRange(festival);
 
   const detailPath = festivalPath(festival, detailBasePath);
   const cabinetApplyPath = `${festivalPath(festival, ROUTES.cabinetCompetitions)}/apply`;
@@ -96,7 +98,7 @@ export function FestivalCard({
         </div>
       </Link>
 
-      <h3 className="line-clamp-2 font-heading font-bold text-foreground text-sm leading-snug xl:text-lg">
+      <h3 className="line-clamp-2 font-heading font-semibold text-foreground text-sm leading-snug xl:text-lg">
         <Link
           to={detailPath}
           className="rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
@@ -107,8 +109,13 @@ export function FestivalCard({
 
       {/* A description list, because each row is a labelled fact rather than a
           sentence. The icon is the label, so it carries the text the `dt` would
-          have — otherwise a screen reader reads out two bare values. */}
-      <dl className="space-y-1 font-heading text-foreground/40 text-sm leading-snug xl:text-lg dark:text-on-scrim-muted">
+          have — otherwise a screen reader reads out two bare values.
+
+          «полупрозрачный текст» by day — a flat `#6E6A72`, which
+          `--muted-foreground` carries to within a point, not the card's ink let
+          down — and «свет полупрозрачный» at night. The same pair the landing's
+          own festival card wears. */}
+      <dl className="space-y-1 font-heading text-muted-foreground text-sm leading-snug xl:text-lg dark:text-on-scrim-muted">
         {place ? (
           <div className="flex items-center gap-1.5">
             <dt className="shrink-0">
@@ -153,6 +160,25 @@ export function FestivalCard({
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {/* Between the nominations and the actions, which is where the frame puts
+          it: the last thing read before deciding whether to apply, and the one
+          fact on the card that can rule the festival out outright.
+
+          Set in the card's own ink at full strength rather than the let-down
+          grey the place and dates wear — it is a condition of entry, not a
+          caption. Dropped entirely when the organizer has declared no age
+          categories: an empty «Возрастная категория: » reads as a bug, and a
+          made-up «для всех» would be a claim nobody made.
+
+          Outside the `my-auto` chip row on purpose, so the card's spare height
+          still splits around the nominations and this line stays put above the
+          buttons. */}
+      {ageRange ? (
+        <p className="font-heading text-foreground text-sm leading-snug xl:text-lg">
+          Возрастная категория: {ageRange}
+        </p>
       ) : null}
 
       {/* The actions sit further in than everything above them — the frame insets

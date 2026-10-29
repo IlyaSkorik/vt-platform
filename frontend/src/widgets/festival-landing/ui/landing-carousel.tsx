@@ -412,6 +412,12 @@ interface CarouselPaddleProps {
  * different parents and faking that with `order` costs more than a second
  * button that is `display: none` half the time.
  *
+ * `светлый акцент` at 70% at rest and at full strength under the pointer, as
+ * the frame draws the pair — the paddle brightens towards the reader rather
+ * than darkening away from them. The night theme keeps solid at rest and
+ * `--brand-press` on hover: 70% of the night base over a near-black page is a
+ * paddle that half disappears.
+ *
  * Spent, it says so — `cursor-not-allowed` and no hover colour, and
  * deliberately no `disabled:pointer-events-none`: with pointer events off the
  * cursor stays an arrow over something that plainly looks like a button, and
@@ -432,7 +438,7 @@ function CarouselPaddle({
       disabled={disabled}
       aria-label={`${direction === "prev" ? "Назад" : "Вперёд"}: ${label}`}
       className={cn(
-        "size-[58px] shrink-0 cursor-pointer select-none items-center justify-center self-center rounded-brand bg-brand-control text-brand-mark outline-none transition-[opacity,background-color] duration-[var(--duration-fast)] hover:bg-brand-press focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-control md:size-[69px]",
+        "size-[58px] shrink-0 cursor-pointer select-none items-center justify-center self-center rounded-brand bg-brand-control/70 text-brand-mark outline-none transition-[opacity,background-color] duration-[var(--duration-fast)] hover:bg-brand-control focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-brand-control/70 dark:bg-brand-control dark:hover:bg-brand-press dark:disabled:hover:bg-brand-control md:size-[69px]",
         className,
       )}
     >

@@ -92,6 +92,8 @@ export function makeFestivalDetail(overrides: Partial<FestivalDetail> = {}): Fes
     modes: ["IN_PERSON"],
     formats: [{ name: "Очно", mode: "IN_PERSON" }],
     categories: ["Вокал"],
+    ageMin: 7,
+    ageMax: 18,
     createdAt: "2026-05-01T10:00:00Z",
     updatedAt: "2026-05-01T10:00:00Z",
     regulation: {

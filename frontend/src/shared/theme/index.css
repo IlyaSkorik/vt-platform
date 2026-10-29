@@ -96,7 +96,10 @@
   --color-brand-line: var(--brand-line);
   --color-brand-line-soft: var(--brand-line-soft);
   --color-brand-line-vivid: var(--brand-line-vivid);
+  --color-brand-accent-ink: var(--brand-accent-ink);
+  --color-control-line: var(--control-line);
   --color-brand-surface: var(--brand-surface);
+  --color-brand-header: var(--brand-header);
   --color-brand-control: var(--brand-control);
   --color-brand-track: var(--brand-track);
   --color-brand-band: var(--brand-band);

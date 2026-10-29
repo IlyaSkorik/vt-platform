@@ -75,11 +75,12 @@ function JuryMemberCard({ card }: { card: JuryCard }): React.JSX.Element {
           {card.name}
         </p>
         {card.position ? (
-          /* «тёмный акцент» by day and «Акцент темный» by night: the desaturated
-             violet disappears into the plate after dark, so the frame swaps in
-             the saturated one — the same colour the partner tiles are outlined
-             with in the light theme. */
-          <p className="break-words font-bold text-brand-line text-sm leading-[19px] md:text-base md:leading-[22px] dark:text-brand-line-vivid">
+          /* «тёмный акцент» by day and a lit `#B76CD8` by night, through
+             `--brand-accent-ink`: the structural violets are drawn to sit under
+             light and neither survives as type on a near-black page. One token
+             rather than a `dark:` class, because the swap is the theme's
+             business and not this card's. */
+          <p className="break-words font-bold text-brand-accent-ink text-sm leading-[19px] md:text-base md:leading-[22px]">
             {card.position}
           </p>
         ) : null}

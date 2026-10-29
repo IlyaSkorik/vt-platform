@@ -5,8 +5,8 @@ import { cn } from "@/shared/lib/cn";
 
 interface SiteFooterProps {
   /**
-   * `brand` is the public site's closing band — a solid `светлый акцент` plate,
-   * the bookend to the header. `default` is the strip of fine print the three
+   * `brand` is the public site's closing band — a wash of `светлый акцент`, the
+   * bookend to the header. `default` is the strip of fine print the three
    * workspace shells end on, which the Figma file does not draw and which should
    * not suddenly become a brand gesture at the bottom of a working screen.
    */
@@ -25,21 +25,25 @@ export function SiteFooter({
 
   // The band is drawn empty in the frame, so the type on it is not designed and
   // these are chosen rather than transcribed. They are the page's own ink, not
-  // the white the header uses: the plate here is `светлый акцент` at just over
-  // half strength, paler than the header's solid band, and white on it would set
-  // well under 2:1. Three columns of legal text is the one place on the site
-  // where that is not a trade worth making. `--foreground` clears AA on this
-  // plate in both themes, because it flips with the surface.
+  // the white the header uses: the plate here is a fifth of `светлый акцент`,
+  // far paler than the header's band, and white on it would set well under 2:1.
+  // Three columns of legal text is the one place on the site where that is not
+  // a trade worth making. `--foreground` clears AA on this plate in both
+  // themes, because it flips with the surface.
   const brand = variant === "brand";
-  // `--brand-band` is the plate: `светлый акцент` at 53% by day, a deep violet
+  // `--brand-band` is the plate: `светлый акцент` at 20% by day, a deep violet
   // at half strength at night — one token because it is the same gesture in
-  // two lights, and neither value is a tint of the other. Ruled off with
-  // `тёмный акцент` in both, and
-  // set in the display face — the public side is Noto Serif throughout, and a
+  // two lights, and neither value is a tint of the other.
+  //
+  // No rule along the top. At 53% the plate needed one to part from the page;
+  // at 20% the wash is quiet enough to be its own edge, and the frame draws
+  // none — the line only made the footer look bolted on.
+  //
+  // Set in the display face — the public side is Noto Serif throughout, and a
   // footer that drops into Inter reads as a different site's. The workspace
   // shells keep the product face, which is what the rest of their screen is in.
   const plate = brand
-    ? "flex flex-col border-brand-line border-t-2 bg-brand-band font-heading"
+    ? "flex flex-col bg-brand-band font-heading"
     : "border-border/70 border-t bg-background/80";
   const bodyTone = brand ? "text-foreground/75" : "text-muted-foreground";
   // Set as a heading, not as a slightly heavier line of body copy: Noto Serif

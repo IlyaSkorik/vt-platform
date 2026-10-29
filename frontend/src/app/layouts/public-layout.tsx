@@ -19,25 +19,28 @@ const NAV_ITEMS = [
  * PublicLayout — chrome for unauthenticated, public-facing pages (landing,
  * public competition listings).
  *
- * The bar is the brand's, not the application's: a solid `светлый акцент` band
+ * The bar is the brand's, not the application's: a band in `--brand-header`
  * carrying the mark and three links, set in the display face like everything
- * else on the public side. It does **not** float over the hero — the design
- * butts the artwork directly under it, and a translucent bar over an
- * illustration this pale only muddies both.
+ * else on the public side. That token is the bar's own violet — the frame gives
+ * it one rather than reusing `светлый акцент`, which the bar wore until it did.
+ * It does **not** float over the hero: the design butts the artwork directly
+ * under it, and the 10% the band lets through is the page colour behind it, not
+ * the illustration.
  *
  * Everything on the band — labels and both icons — is `--brand-mark`, the same
  * white the comet is drawn in, as the Figma frame has it. Noted once so it is
- * not "fixed" later: white on `светлый акцент` measures about 2.6:1 in the light
- * theme, under the 4.5:1 of WCAG 2.1 AA (ARCH-001 §8.3). This is the design's
- * call, kept deliberately; the dark theme's band is deep enough that the same
- * white clears AA there comfortably.
+ * not "fixed" later: white on this band measures about 3.2:1 in the light theme,
+ * under the 4.5:1 of WCAG 2.1 AA (ARCH-001 §8.3) — better than the 2.6:1 the
+ * old `светлый акцент` band gave, still short of it. This is the design's call,
+ * kept deliberately; the dark theme's band is deep enough that the same white
+ * clears AA there comfortably.
  */
 export function PublicLayout(): React.JSX.Element {
   const { isAuthenticated } = useAuth();
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
-      <header className="fixed inset-x-0 top-0 z-[var(--z-sticky)] bg-brand-surface/90 font-heading text-brand-mark md:sticky">
+      <header className="fixed inset-x-0 top-0 z-[var(--z-sticky)] bg-brand-header font-heading text-brand-mark md:sticky">
         <div className="mx-auto flex h-[38px] w-full max-w-336 items-center justify-between gap-3 px-4 md:h-15 md:px-8">
           <div className="flex min-w-0 items-center gap-6 md:gap-10">
             <Link

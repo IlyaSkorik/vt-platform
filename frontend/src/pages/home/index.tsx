@@ -43,7 +43,10 @@ export function HomePage(): React.JSX.Element {
       <JsonLd id="organization" data={organizationSchema()} />
       <JsonLd id="website" data={webSiteSchema()} />
 
-      <HomeHero authPath={isAuthenticated ? ROUTES.cabinet : ROUTES.login} />
+      <HomeHero
+        catalogPath={ROUTES.competitions}
+        authPath={isAuthenticated ? ROUTES.cabinet : ROUTES.login}
+      />
 
       {/* The public layout does not pad its outlet the way the staff and cabinet
           shells do — the hero above is deliberately full-bleed — so the page

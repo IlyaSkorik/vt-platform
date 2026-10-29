@@ -71,6 +71,45 @@ export function formatPeriod(
   return null;
 }
 
+const yearPlurals = new Intl.PluralRules("ru-RU");
+
+/** «год» / «года» / «лет», agreeing with the number in front of it. */
+function years(value: number): string {
+  switch (yearPlurals.select(value)) {
+    case "one":
+      return "год";
+    case "few":
+      return "года";
+    default:
+      return "лет";
+  }
+}
+
+/**
+ * The age band a festival admits, as one line: «12–18 лет».
+ *
+ * The projection sends the widest span across every age category the organizer
+ * declared, and sends both bounds or neither — the card asks "is this for my
+ * child at all", not which band they would enter. A half-filled pair is still
+ * read rather than dropped, because a festival that says only "от 7 лет" is
+ * telling the reader something true.
+ *
+ * The noun agrees with the bound it follows, so «12–21 год» comes out right.
+ */
+export function formatAgeRange(festival: Festival): string | null {
+  const { ageMin, ageMax } = festival;
+  if (ageMin == null) {
+    return ageMax == null ? null : `до ${ageMax} ${years(ageMax)}`;
+  }
+  if (ageMax == null) {
+    return `от ${ageMin} ${years(ageMin)}`;
+  }
+  if (ageMin === ageMax) {
+    return `${ageMin} ${years(ageMin)}`;
+  }
+  return `${ageMin}–${ageMax} ${years(ageMax)}`;
+}
+
 /** Format the "from X" price summary, or `null` when no price is configured. */
 export function formatPrice(festival: Festival): string | null {
   const { amountFrom, currency, multiple } = festival.pricing;

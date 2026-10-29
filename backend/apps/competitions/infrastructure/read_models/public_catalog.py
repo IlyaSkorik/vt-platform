@@ -74,7 +74,7 @@ class DjangoPublicCatalogReader:
                 status__in=PUBLIC_CATALOG_DOMAIN_STATUSES,
                 deleted_at__isnull=True,
             )
-            .prefetch_related("participation_formats", "pricing_rules", "categories")
+            .prefetch_related("participation_formats", "pricing_rules", "categories", "age_categories")
             .order_by("-created_at", "-id")
         )
 
@@ -87,7 +87,7 @@ class DjangoPublicCatalogReader:
         visible = CompetitionModel.objects.filter(
             status__in=PUBLIC_CATALOG_DOMAIN_STATUSES,
             deleted_at__isnull=True,
-        ).prefetch_related("participation_formats", "pricing_rules", "categories", "documents")
+        ).prefetch_related("participation_formats", "pricing_rules", "categories", "age_categories", "documents")
 
         # A slug *or* a uuid: the readable address is what the site links and what
         # search indexes, while every uuid link already handed out — an emailed
@@ -147,6 +147,8 @@ class DjangoPublicCatalogReader:
         )
         assert public_status is not None
 
+        age_min, age_max = self._age_span(competition)
+
         return PublicFestivalView(
             id=str(competition.id),
             slug=competition.slug,
@@ -169,6 +171,8 @@ class DjangoPublicCatalogReader:
             formats=formats,
             modes=self._modes(formats),
             categories=self._categories(competition),
+            age_min=age_min,
+            age_max=age_max,
             created_at=competition.created_at,
             updated_at=competition.updated_at,
         )
@@ -199,6 +203,7 @@ class DjangoPublicCatalogReader:
             venue_name=competition.venue_name,
             venue_address=competition.venue_address,
         )
+        age_min, age_max = self._age_span(competition)
 
         return PublicFestivalDetailView(
             id=str(competition.id),
@@ -222,6 +227,8 @@ class DjangoPublicCatalogReader:
             formats=tuple(formats),
             modes=tuple(self._modes(formats)),
             categories=tuple(self._categories(competition)),
+            age_min=age_min,
+            age_max=age_max,
             landing=landing,
             contacts=contacts,
             regulation=regulation,
@@ -341,6 +348,22 @@ class DjangoPublicCatalogReader:
                 key=lambda category: (category.sort_order, category.name),
             )
         ]
+
+    @staticmethod
+    def _age_span(competition: CompetitionModel) -> tuple[int | None, int | None]:
+        """The youngest and oldest year the competition's age categories cover.
+
+        Read across every band of every participant group rather than per group:
+        the catalog card asks whether a child is in range at all, and the group a
+        soloist or an ensemble enters is decided later, in the application form.
+
+        Taxonomy rows are replaced wholesale on save rather than soft-deleted, so
+        there is nothing to filter out here — unlike the competition itself.
+        """
+        bands = list(competition.age_categories.all())
+        if not bands:
+            return None, None
+        return min(band.min_age for band in bands), max(band.max_age for band in bands)
 
     @staticmethod
     def _registration_flags(competition: CompetitionModel) -> tuple[bool, bool]:

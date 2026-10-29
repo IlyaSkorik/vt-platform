@@ -53,17 +53,18 @@ function FilterOption({ checked, onToggle, children }: FilterOptionProps): React
         checked={checked}
         onCheckedChange={onToggle}
         label={children}
-        // The box is the frame's: 20px, the page colour on a 42%-strength
-        // hairline, 3px corner — the one place on the public side that is not the
-        // brand's 15. Ticked it fills with «Акцентище» through `--brand` rather
-        // than `--primary`, which drifts lighter at night; the frame paints the
-        // same violet in both themes.
+        // The box is the frame's: 20px, the page colour on a «светлый база
+        // ночная» hairline, 3px corner — the one place on the public side that is
+        // not the brand's 15. Ticked it fills with the action violet through
+        // `--brand` rather than `--primary`, which drifts lighter at night; the
+        // frame paints the same violet in both themes.
         //
-        // The hairline is `--foreground` at 42% by day and gone entirely at
-        // night. The frame repeats `rgba(33, 24, 41, 0.42)` unchanged in the dark
-        // export, where it would be near-black on near-black; rather than invent a
-        // light edge the box simply loses it there, which is what the night plate
-        // behind it already does for every other control on the panel.
+        // The edge is `--control-line` in both themes, not the page's own ink let
+        // down. It used to be `--foreground` at 42% and nothing at all at night,
+        // because the dark export repeated the light theme's near-black — which
+        // on a near-black page is no edge. The frame answers that with a violet
+        // grey light enough to show on either plate, so the box keeps its outline
+        // in both.
         //
         // The tick is `свет` by day and the page's own near-black by night —
         // the colour the box had before it was ticked, so the mark reads as cut
@@ -73,7 +74,7 @@ function FilterOption({ checked, onToggle, children }: FilterOptionProps): React
         // `text-current`, so a colour set on the root reaches it only by
         // inheritance, and `--primary-foreground` from the variant got there
         // first. A descendant selector outranks both and lands on the glyph.
-        className="size-[25px] shrink-0 rounded-[3px] border-foreground/42 bg-background data-[state=checked]:border-brand data-[state=checked]:bg-brand xl:size-5 dark:border-transparent [&_svg]:text-brand-mark dark:[&_svg]:text-background"
+        className="size-[25px] shrink-0 rounded-[3px] border-control-line bg-background data-[state=checked]:border-brand data-[state=checked]:bg-brand xl:size-5 [&_svg]:text-brand-mark dark:[&_svg]:text-background"
         containerClassName="gap-0 [&>div]:gap-3.5 [&_label]:font-heading [&_label]:text-base [&_label]:leading-snug [&_label]:text-foreground"
       />
     </li>
@@ -162,10 +163,13 @@ export function FestivalFiltersSidebar({
 
       {/* Regular weight, not bold: the frame sets the panel's own name lighter
           than the group titles under it, so it reads as a label for the column
-          rather than as the first of its headings. Let down to 40% by day and run
-          at full `свет` by night, where the plate behind it is dark enough that a
-          40% label would have disappeared into it. */}
-      <p className="-ml-2 hidden items-center gap-1.5 font-heading text-[1.75rem] text-foreground/40 leading-snug xl:flex dark:xl:text-on-scrim">
+          rather than as the first of its headings. «полупрозрачный текст» by day
+          — the flat `#6E6A72` the frame paints, which `--muted-foreground`
+          carries to within a point — and «свет полупрозрачный», white at 70%, by
+          night. Neither is the page's ink let down: a 40% near-black vanished
+          into the night plate, and full white overshot what the frame draws. The
+          icon takes the same colour by inheritance, as it does in the export. */}
+      <p className="-ml-2 hidden items-center gap-1.5 font-heading text-[1.75rem] text-muted-foreground leading-snug xl:flex dark:xl:text-on-scrim-muted">
         <FiltersIcon className="h-[30px] w-[42px] shrink-0" />
         Фильтры
       </p>

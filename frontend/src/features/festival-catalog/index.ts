@@ -24,6 +24,7 @@ export {
   type FestivalFormat,
   type FilterOption,
   filterFestivals,
+  formatAgeRange,
   formatDate,
   formatDeadline,
   formatPeriod,
