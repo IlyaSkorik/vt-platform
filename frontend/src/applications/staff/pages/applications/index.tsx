@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, FileArchive, Pencil } from "lucide-react";
+import { ChevronDown, ChevronUp, FileArchive, Pencil, Sheet } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { resolveMediaUrl } from "@/features/competitions/lib/media-url";
@@ -391,42 +391,103 @@ function statusPriority(status: string): number {
   return map[status] ?? 100;
 }
 
-/**
- * Download the orders' paperwork — receipts and benefit certificates — as one ZIP.
- *
- * Kept apart from the programme's backing-track archive on purpose: this is the
- * bundle somebody reconciles payments against, and it must not drag a festival's
- * audio along with it. Follows the competition filter above, so what is downloaded
- * is what is on screen.
- *
- * Fetched rather than linked because the endpoint is staff-gated and a plain
- * `<a href>` would arrive without the token.
- */
-function DocumentsArchiveButton({ competitionId }: { competitionId: string }): React.JSX.Element {
-  const [busy, setBusy] = useState(false);
+/** Что сейчас отобрано на экране — тем же набором, что понимает бэкенд. */
+type ExportScope = { competitionId: string; queue: string; q: string; nomination: string };
 
-  const download = async () => {
-    setBusy(true);
+/** Отбор как строка запроса: пустое поле не сужает и в адрес не попадает. */
+function exportQuery(scope: ExportScope): string {
+  const params = new URLSearchParams();
+  if (scope.competitionId) params.set("competitionId", scope.competitionId);
+  if (scope.queue) params.set("queue", scope.queue);
+  if (scope.q.trim()) params.set("q", scope.q.trim());
+  if (scope.nomination) params.set("nomination", scope.nomination);
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
+/**
+ * Имя файла из ответа, если сервер его назвал.
+ *
+ * Имена здесь русские, и `filename*` по RFC 5987 — единственная форма, которая
+ * доносит их без искажений; заголовок несёт и ASCII-запаску, но она для старых
+ * клиентов, а не для нас. Заголовка может не быть вовсе (за прокси, который его
+ * не пропустил), поэтому у вызывающего всегда есть своё имя.
+ */
+function filenameFrom(response: Response, fallback: string): string {
+  const header = response.headers.get("content-disposition") ?? "";
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(header)?.[1];
+  if (!encoded) return fallback;
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Скачать то, что отдаёт staff-ручка.
+ *
+ * Запросом, а не ссылкой: ручка закрыта правами организатора, и обычный `<a href>`
+ * пришёл бы туда без токена.
+ */
+async function downloadFrom(path: string, fallbackName: string): Promise<void> {
+  const response = await apiClient.get(path);
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filenameFrom(response, fallbackName);
+  document.body.append(link);
+  link.click();
+  link.remove();
+  // Revoking immediately can cancel the download in some browsers; a tick is enough.
+  setTimeout(() => URL.revokeObjectURL(url), 1_000);
+}
+
+/**
+ * Две выгрузки отобранного: таблица заявок и папка с бумагами.
+ *
+ * Обе идут по тому же отбору, что стоит на экране, — фестиваль, очередь, поиск,
+ * жанр. Организатор ставит «назначены на фестиваль» и жмёт «Скачать»: прийти
+ * должны эти заявки, а не весь сезон.
+ *
+ * Таблица — для работы со всеми сразу: обзвонить неоплативших, свести льготников,
+ * отдать список в бухгалтерию. Архив — для бумаг, которые этот список объясняют;
+ * он нарочно отделён от фонограмм программы, чтобы ради четырёх PDF не качать
+ * гигабайты аудио.
+ */
+function ExportButtons({ scope }: { scope: ExportScope }): React.JSX.Element {
+  const [busy, setBusy] = useState<"table" | "documents" | null>(null);
+
+  const download = async (kind: "table" | "documents") => {
+    setBusy(kind);
     try {
-      const query = competitionId ? `?competitionId=${encodeURIComponent(competitionId)}` : "";
-      const response = await apiClient.get(`staff/applications/documents.zip${query}`);
-      const url = URL.createObjectURL(await response.blob());
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "Документы заявок.zip";
-      document.body.append(link);
-      link.click();
-      link.remove();
-      // Revoking immediately can cancel the download in some browsers; a tick is enough.
-      setTimeout(() => URL.revokeObjectURL(url), 1_000);
+      const query = exportQuery(scope);
+      await (kind === "table"
+        ? downloadFrom(`staff/applications/export${query}`, "Заявки.xlsx")
+        : downloadFrom(`staff/applications/documents.zip${query}`, "Документы заявок.zip"));
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   };
 
   return (
-    <div className="flex justify-end">
-      <Button variant="outline" size="sm" loading={busy} onClick={() => void download()}>
+    <div className="flex justify-end gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        loading={busy === "table"}
+        disabled={busy !== null}
+        onClick={() => void download("table")}
+      >
+        <Sheet className="size-4" /> Выгрузить в Excel
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        loading={busy === "documents"}
+        disabled={busy !== null}
+        onClick={() => void download("documents")}
+      >
         <FileArchive className="size-4" /> Скачать документы
       </Button>
     </div>
@@ -698,7 +759,7 @@ export function StaffApplicationsProcessingPage(): React.JSX.Element {
                   {durationLabel(filteredTotals.durationSeconds)}
                 </span>
               </p>
-              <DocumentsArchiveButton competitionId={competitionId} />
+              <ExportButtons scope={{ competitionId, queue, q, nomination }} />
             </CardContent>
           </Card>
         </div>

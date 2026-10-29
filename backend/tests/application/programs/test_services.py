@@ -43,7 +43,13 @@ from apps.programs.domain.exceptions import (
     SlugUnavailableError,
 )
 
-from .fakes import FixedClock, InMemoryProgramRepository, ScriptedSlugFactory, StubPerformanceCatalog
+from .fakes import (
+    FixedClock,
+    InMemoryProgramRepository,
+    RecordingPerformanceSchedule,
+    ScriptedSlugFactory,
+    StubPerformanceCatalog,
+)
 
 COMPETITION_ID = uuid.uuid4()
 NOMINATION_ID = uuid.uuid4()
@@ -84,11 +90,13 @@ class Env:
         self.repository = InMemoryProgramRepository()
         self.catalog = StubPerformanceCatalog(*performances, music=music, media=media)
         self.slugs = ScriptedSlugFactory(*slugs)
+        self.schedule = RecordingPerformanceSchedule()
         self.service = ProgramService(
             programs=self.repository,
             catalog=self.catalog,
             clock=FixedClock(),
             slugs=self.slugs,
+            schedule=self.schedule,
         )
 
     def program(self, *, starts_at: datetime | None = TEN_AM, buffer_seconds: int = 0) -> str:
@@ -1094,3 +1102,146 @@ class TestUndoingARebuild:
         restored = env.service.undo_arrange(program_id)
 
         assert restored.items == ()
+
+
+class TestTellingApplicationsWhoIsScheduled:
+    """`SCHEDULED` значит «стоит в программе», и ставит его теперь программа.
+
+    Раньше статус выставляла кнопка «Одобрить» в ту же миллисекунду, что и
+    `ACCEPTED`, поэтому он не значил ничего: одобренный номер читался как
+    назначенный, даже если его никто никуда не ставил. Здесь закреплено, что
+    статус ходит за программой — в обе стороны и ровно по тем номерам, которые
+    действительно сменили место.
+    """
+
+    def test_adding_an_act_schedules_it(self) -> None:
+        act = _candidate("Катюша", 200)
+        env = Env(act)
+        program_id = env.program()
+
+        env.service.add_performance(AddPerformanceCommand(program_id=program_id, submission_id=str(act.submission_id)))
+
+        assert env.schedule.scheduled == [act.submission_id]
+        assert env.schedule.unscheduled == []
+
+    def test_filling_the_scope_schedules_everything_it_pulled_in(self) -> None:
+        first, second = _candidate("Катюша", 200), _candidate("Смуглянка", 180)
+        env = Env(first, second)
+        program_id = env.program()
+
+        env.service.fill_from_scope(program_id)
+
+        assert set(env.schedule.scheduled) == {first.submission_id, second.submission_id}
+
+    def test_a_second_fill_schedules_nobody_twice(self) -> None:
+        # Заполнение дважды ничего не добавляет в программу, значит и наружу
+        # говорить нечего: diff пуст, и порт не трогается вовсе.
+        act = _candidate("Катюша", 200)
+        env = Env(act)
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        env.service.fill_from_scope(program_id)
+
+        assert env.schedule.scheduled == [act.submission_id]
+
+    def test_pulling_a_slot_unschedules_the_act(self) -> None:
+        act = _candidate("Катюша", 200)
+        env = Env(act)
+        program_id = env.program()
+        program = env.service.fill_from_scope(program_id)
+        item_id = program.items[0].id
+
+        env.service.remove_item(program_id=program_id, item_id=item_id)
+
+        assert env.schedule.unscheduled == [act.submission_id]
+
+    def test_removing_a_break_tells_applications_nothing(self) -> None:
+        # Блок — не номер, за ним нет заявки, и трогать чей-то статус тут нечего.
+        env = Env()
+        program_id = env.program()
+        program = env.service.add_block(AddBlockCommand(program_id=program_id, kind="BREAK", title="Обед", duration_seconds=600))
+
+        env.service.remove_item(program_id=program_id, item_id=program.items[0].id)
+
+        assert env.schedule.scheduled == []
+        assert env.schedule.unscheduled == []
+
+    def test_an_act_standing_in_another_programme_stays_scheduled(self) -> None:
+        # Главный случай, который ломает наивный diff: на конкурсе несколько
+        # программ, и номер, вынутый из одной, может по-прежнему стоять в другой.
+        # Снять с него статус на основании одной программы значит соврать.
+        act = _candidate("Катюша", 200)
+        env = Env(act)
+        first = env.program()
+        second = env.program()
+        env.service.add_performance(AddPerformanceCommand(program_id=first, submission_id=str(act.submission_id)))
+        in_second = env.service.add_performance(AddPerformanceCommand(program_id=second, submission_id=str(act.submission_id)))
+
+        env.service.remove_item(program_id=second, item_id=in_second.items[0].id)
+
+        assert env.schedule.unscheduled == []
+
+    def test_deleting_a_programme_unschedules_everyone_in_it(self) -> None:
+        first, second = _candidate("Катюша", 200), _candidate("Смуглянка", 180)
+        env = Env(first, second)
+        program_id = env.program()
+        env.service.fill_from_scope(program_id)
+
+        env.service.delete_program(program_id)
+
+        assert set(env.schedule.unscheduled) == {first.submission_id, second.submission_id}
+
+    def test_a_rebuild_schedules_what_it_pulled_in(self) -> None:
+        first, second = _candidate("Катюша", 200), _candidate("Смуглянка", 180)
+        env = Env(first, second)
+        program_id = env.program()
+
+        env.service.arrange_program(ArrangeProgramCommand(program_id=program_id))
+
+        assert set(env.schedule.scheduled) == {first.submission_id, second.submission_id}
+
+    def test_undoing_a_rebuild_puts_the_statuses_back_too(self) -> None:
+        # Отмена пересборки возвращает прежний состав программы, и статусы обязаны
+        # вернуться вместе с ним — иначе отменённая пересборка оставляет за собой
+        # номера, которые считаются стоящими в программе, где их больше нет.
+        act = _candidate("Катюша", 200)
+        env = Env(act)
+        program_id = env.program()
+        env.service.arrange_program(ArrangeProgramCommand(program_id=program_id))
+        env.catalog.performances.clear()
+        env.service.arrange_program(ArrangeProgramCommand(program_id=program_id))
+        assert env.schedule.unscheduled == [act.submission_id]
+
+        env.service.undo_arrange(program_id)
+
+        assert env.schedule.scheduled == [act.submission_id, act.submission_id]
+
+    def test_reordering_moves_nobody_in_or_out(self) -> None:
+        first, second = _candidate("Катюша", 200), _candidate("Смуглянка", 180)
+        env = Env(first, second)
+        program_id = env.program()
+        program = env.service.fill_from_scope(program_id)
+        env.schedule.scheduled.clear()
+
+        env.service.reorder_items(ReorderItemsCommand(program_id=program_id, item_ids=(program.items[1].id, program.items[0].id)))
+
+        assert env.schedule.scheduled == []
+        assert env.schedule.unscheduled == []
+
+    def test_a_service_without_the_port_still_builds_programmes(self) -> None:
+        # Собранный без порта сервис — это юнит-тест бегущего порядка, и он не
+        # должен падать оттого, что некому рассказать про статусы.
+        act = _candidate("Катюша", 200)
+        repository = InMemoryProgramRepository()
+        service = ProgramService(
+            programs=repository,
+            catalog=StubPerformanceCatalog(act),
+            clock=FixedClock(),
+            slugs=ScriptedSlugFactory("Sound2345"),
+        )
+        created = service.create_program(CreateProgramCommand(competition_id=str(COMPETITION_ID), name="Вокал", nomination_id=str(NOMINATION_ID)))
+
+        filled = service.fill_from_scope(created.id)
+
+        assert len(filled.items) == 1

@@ -8,6 +8,8 @@ import {
   type PublicProgramRow,
   useHostReorder,
   usePublicProgram,
+  useSetRowBackstage,
+  useSetRowNote,
   useSetRowProgress,
 } from "@/features/public-program";
 
@@ -25,10 +27,14 @@ vi.mock("@/features/public-program", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/public-program")>()),
   usePublicProgram: vi.fn(),
   useSetRowProgress: vi.fn(),
+  useSetRowBackstage: vi.fn(),
+  useSetRowNote: vi.fn(),
   useHostReorder: vi.fn(),
 }));
 
 const setProgress = vi.fn();
+const setBackstage = vi.fn();
+const setNote = vi.fn();
 const hostReorder = vi.fn();
 
 /** The sound engineer's cut: time, act, length, notes — and nothing else. */
@@ -42,10 +48,10 @@ function anEngineerProgram(): PublicProgram {
     totalSeconds: 460,
     controlsRunningOrder: false,
     columns: [
-      { key: "TIME", label: "Время", custom: false },
-      { key: "TITLE", label: "Номер", custom: false },
-      { key: "DURATION", label: "Длительность", custom: false },
-      { key: "COMMENT", label: "Комментарий", custom: false },
+      { key: "TIME", label: "Время", custom: false, sensitive: false },
+      { key: "TITLE", label: "Номер", custom: false, sensitive: false },
+      { key: "DURATION", label: "Длительность", custom: false, sensitive: false },
+      { key: "COMMENT", label: "Комментарий", custom: false, sensitive: false },
     ],
     rows: [
       {
@@ -53,8 +59,17 @@ function anEngineerProgram(): PublicProgram {
         cells: ["10:00", "Катюша", "3:20", "Выход с точки 3"],
         progress: "PENDING",
         id: null,
+        backstage: null,
+        note: null,
       },
-      { kind: "BREAK", cells: ["10:04", "Перерыв", "15:00", ""], progress: "PENDING", id: null },
+      {
+        kind: "BREAK",
+        cells: ["10:04", "Перерыв", "15:00", ""],
+        progress: "PENDING",
+        id: null,
+        backstage: null,
+        note: null,
+      },
     ],
   };
 }
@@ -70,6 +85,9 @@ function aHostProgram(): PublicProgram {
       ...row,
       id: `item-${index + 1}`,
       progress: index === 0 ? "ON_STAGE" : "PENDING",
+      // The host's edition is the one the two private marks exist on at all.
+      backstage: false,
+      note: "",
     })),
   };
 }
@@ -80,8 +98,21 @@ function stub(program: PublicProgram | null, options: { isError?: boolean } = {}
     isLoading: false,
     isError: options.isError ?? false,
   } as never);
-  const idle = { mutate: setProgress, mutateAsync: setProgress, isPending: false };
-  vi.mocked(useSetRowProgress).mockReturnValue(idle as never);
+  vi.mocked(useSetRowProgress).mockReturnValue({
+    mutate: setProgress,
+    mutateAsync: setProgress,
+    isPending: false,
+  } as never);
+  vi.mocked(useSetRowBackstage).mockReturnValue({
+    mutate: setBackstage,
+    mutateAsync: setBackstage,
+    isPending: false,
+  } as never);
+  vi.mocked(useSetRowNote).mockReturnValue({
+    mutate: setNote,
+    mutateAsync: setNote,
+    isPending: false,
+  } as never);
   vi.mocked(useHostReorder).mockReturnValue({
     mutate: hostReorder,
     mutateAsync: hostReorder,
@@ -101,6 +132,8 @@ function renderPage(): void {
 
 beforeEach(() => {
   setProgress.mockReset();
+  setBackstage.mockReset();
+  setNote.mockReset();
   hostReorder.mockReset();
 });
 
@@ -265,25 +298,31 @@ describe("PublicProgramPage — the host's edition", () => {
     const base = aHostProgram();
     return {
       ...base,
-      columns: [{ key: "POSITION", label: "№", custom: false }, ...base.columns],
+      columns: [{ key: "POSITION", label: "№", custom: false, sensitive: false }, ...base.columns],
       rows: [
         {
           kind: "PERFORMANCE",
           cells: ["4", "10:00", "Катюша", "3:20", ""],
           progress: "PENDING",
           id: "item-1",
+          backstage: false,
+          note: "",
         },
         {
           kind: "PERFORMANCE",
           cells: ["9", "10:04", "Калинка", "3:20", ""],
           progress: "PENDING",
           id: "item-2",
+          backstage: false,
+          note: "",
         },
         {
           kind: "PERFORMANCE",
           cells: ["7", "10:08", "Барыня", "3:20", ""],
           progress: "PENDING",
           id: "item-3",
+          backstage: false,
+          note: "",
         },
       ],
     };
@@ -344,5 +383,209 @@ describe("PublicProgramPage — the host's edition", () => {
 
     expect(screen.getByRole("button", { name: "Вверх: 10:00" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Вниз: 10:04" })).toBeDisabled();
+  });
+});
+
+describe("PublicProgramPage — an act that is not happening", () => {
+  it("cancels a number, and says so in words on every screen", async () => {
+    stub(aHostProgram());
+    renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Отменить номер: 10:04" }));
+
+    expect(setProgress.mock.calls[0]?.[0]).toEqual({ itemId: "item-2", progress: "CANCELLED" });
+  });
+
+  it("writes «Номер отменён» rather than leaving it to a strikethrough", () => {
+    // Somebody is ill and the hall has to be told. A line through the name reads the
+    // same as an act that merely has not happened yet.
+    const base = anEngineerProgram();
+    stub({
+      ...base,
+      rows: [{ ...base.rows[0], progress: "CANCELLED" } as PublicProgramRow],
+    });
+    renderPage();
+
+    const row = screen.getAllByTestId("program-row")[0] as HTMLElement;
+    expect(row).toHaveAttribute("data-progress", "CANCELLED");
+    expect(within(row).getByText("Номер отменён")).toBeInTheDocument();
+  });
+
+  it("puts a cancelled act back when it turns out to be coming after all", async () => {
+    const base = aHostProgram();
+    stub({
+      ...base,
+      rows: base.rows.map((row) => ({ ...row, progress: "CANCELLED" }) as PublicProgramRow),
+    });
+    renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Вернуть в программу: 10:00" }));
+
+    expect(setProgress.mock.calls[0]?.[0]).toEqual({ itemId: "item-1", progress: "PENDING" });
+  });
+});
+
+describe("PublicProgramPage — what only the host sees", () => {
+  it("marks who is standing behind the stage", async () => {
+    stub(aHostProgram());
+    renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "За сценой: 10:00" }));
+
+    expect(setBackstage.mock.calls[0]?.[0]).toEqual({ itemId: "item-1", backstage: true });
+  });
+
+  it("shows the mark on the row it belongs to, and takes it back off", async () => {
+    const base = aHostProgram();
+    stub({
+      ...base,
+      rows: base.rows.map((row, index) => ({ ...row, backstage: index === 0 })),
+    });
+    renderPage();
+
+    const rows = screen.getAllByTestId("program-row");
+    expect(within(rows[0] as HTMLElement).getByText("За сценой")).toBeInTheDocument();
+    expect(within(rows[1] as HTMLElement).queryByText("За сценой")).toBeNull();
+
+    await userEvent.click(screen.getByRole("button", { name: "Снять «за сценой»: 10:00" }));
+    expect(setBackstage.mock.calls[0]?.[0]).toEqual({ itemId: "item-1", backstage: false });
+  });
+
+  it("offers nothing of the kind on a read-only link", () => {
+    stub(anEngineerProgram());
+    renderPage();
+
+    expect(screen.queryByRole("button", { name: /За сценой/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Пометка/ })).toBeNull();
+  });
+
+  it("writes a note against one act, and reads it back under the row", async () => {
+    stub(aHostProgram());
+    renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Пометка: 10:00" }));
+    await userEvent.type(await screen.findByLabelText("Пометка для себя"), "Зовут Алиса");
+    await userEvent.click(screen.getByRole("button", { name: "Сохранить" }));
+
+    expect(setNote.mock.calls[0]?.[0]).toEqual({ itemId: "item-1", note: "Зовут Алиса" });
+  });
+
+  it("draws an existing note on its own line rather than inside a narrow cell", () => {
+    const base = aHostProgram();
+    stub({
+      ...base,
+      rows: base.rows.map((row, index) => ({ ...row, note: index === 0 ? "Поёт вторым" : "" })),
+    });
+    renderPage();
+
+    const notes = screen.getAllByTestId("program-note");
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toHaveTextContent("Поёт вторым");
+  });
+
+  it("clears a note it already has", async () => {
+    const base = aHostProgram();
+    stub({ ...base, rows: base.rows.map((row) => ({ ...row, note: "Папа подойдёт" })) });
+    renderPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Изменить пометку: 10:00" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Очистить" }));
+
+    expect(setNote.mock.calls[0]?.[0]).toEqual({ itemId: "item-1", note: "" });
+  });
+
+  it("keeps a column about somebody off the stage covered until it is asked for", async () => {
+    // Backstage is a corridor. The organizer published «Комментарий» to the host because
+    // she needs it; the people behind her in the queue are not who it was published to.
+    const base = aHostProgram();
+    stub({
+      ...base,
+      columns: base.columns.map((column) =>
+        column.key === "COMMENT" ? { ...column, sensitive: true } : column,
+      ),
+    });
+    renderPage();
+
+    expect(screen.queryByText("Выход с точки 3")).toBeNull();
+
+    await userEvent.click(screen.getByRole("button", { name: "Показать «Комментарий»" }));
+    expect(screen.getByText("Выход с точки 3")).toBeInTheDocument();
+  });
+
+  it("leaves the same column alone on a screen nobody taps", () => {
+    // A display beside the stage has no fingers on it: covering a cell there would hide
+    // it for the rest of the festival.
+    const base = anEngineerProgram();
+    stub({
+      ...base,
+      columns: base.columns.map((column) =>
+        column.key === "COMMENT" ? { ...column, sensitive: true } : column,
+      ),
+    });
+    renderPage();
+
+    expect(screen.getByText("Выход с точки 3")).toBeInTheDocument();
+  });
+});
+
+describe("PublicProgramPage — where the state is announced", () => {
+  it("keeps the badge out of «№» and «Время», which have no room for it", async () => {
+    // Found on a real seven-column host edition rather than here: «Номер отменён»
+    // dropped into the four-character clock overflowed it, was clipped by the column
+    // beside it, and took the time itself out of view.
+    const base = aHostProgram();
+    stub({
+      ...base,
+      columns: [
+        { key: "POSITION", label: "№", custom: false, sensitive: false },
+        { key: "TIME", label: "Время", custom: false, sensitive: false },
+        { key: "PARTICIPANT", label: "Участник", custom: false, sensitive: false },
+      ],
+      rows: [
+        {
+          kind: "PERFORMANCE",
+          cells: ["1", "10:00", "Катюша"],
+          progress: "CANCELLED",
+          id: "item-1",
+          backstage: true,
+          note: "",
+        } as PublicProgramRow,
+      ],
+    });
+    renderPage();
+
+    const cells = within(screen.getAllByTestId("program-row")[0] as HTMLElement).getAllByRole(
+      "cell",
+    );
+    expect(cells[0]).toHaveTextContent("1");
+    expect(cells[1]).toHaveTextContent("10:00");
+    expect(cells[1]).not.toHaveTextContent("Номер отменён");
+    expect(cells[2]).toHaveTextContent("Номер отменён");
+    expect(cells[2]).toHaveTextContent("За сценой");
+  });
+});
+
+describe("PublicProgramPage — the columns that do not scroll away", () => {
+  it("pins the first column and the controls on the host's edition", () => {
+    // A programme cut for backstage is wider than any phone. Scrolled two columns to the
+    // right, an unpinned row is one the host can neither name nor act on.
+    stub(aHostProgram());
+    renderPage();
+
+    const cells = within(screen.getAllByTestId("program-row")[0] as HTMLElement).getAllByRole(
+      "cell",
+    );
+    expect(cells[0]).toHaveClass("sticky");
+    expect(cells.at(-1)).toHaveClass("sticky");
+  });
+
+  it("leaves a read-only table as it was", () => {
+    stub(anEngineerProgram());
+    renderPage();
+
+    const cells = within(screen.getAllByTestId("program-row")[0] as HTMLElement).getAllByRole(
+      "cell",
+    );
+    expect(cells[0]).not.toHaveClass("sticky");
   });
 });

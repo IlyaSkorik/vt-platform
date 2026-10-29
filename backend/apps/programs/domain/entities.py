@@ -47,6 +47,7 @@ from .value_objects import (
     CellValue,
     ColumnRef,
     ColumnTitle,
+    HostNote,
     ItemDuration,
     ItemTitle,
     ProgramColumn,
@@ -100,6 +101,11 @@ class ProgramItem:
     _custom_values: dict[uuid.UUID, CellValue] = field(default_factory=dict)
     #: How far this slot has got on the day itself (the host drives it).
     _progress: ProgramItemProgress = ProgramItemProgress.PENDING
+    #: Whether the host has seen this act arrive backstage. Hers alone - see
+    #: :meth:`mark_backstage`.
+    _backstage: bool = False
+    #: What the host wrote against this slot, for herself. Blank means nothing.
+    _host_note: HostNote = field(default_factory=HostNote)
 
     @classmethod
     def performance(
@@ -111,6 +117,8 @@ class ProgramItem:
         number: int = 0,
         custom_values: dict[uuid.UUID, CellValue] | None = None,
         progress: ProgramItemProgress = ProgramItemProgress.PENDING,
+        backstage: bool = False,
+        host_note: HostNote | None = None,
     ) -> ProgramItem:
         """Build a slot for one competing act."""
         return cls(
@@ -121,6 +129,8 @@ class ProgramItem:
             _submission_id=submission_id,
             _custom_values=dict(custom_values or {}),
             _progress=progress,
+            _backstage=backstage,
+            _host_note=host_note or HostNote(),
         )
 
     @classmethod
@@ -134,6 +144,8 @@ class ProgramItem:
         number: int = 0,
         custom_values: dict[uuid.UUID, CellValue] | None = None,
         progress: ProgramItemProgress = ProgramItemProgress.PENDING,
+        backstage: bool = False,
+        host_note: HostNote | None = None,
     ) -> ProgramItem:
         """Build a standalone block (a break, and later an opening or an award)."""
         if kind.binds_performance:
@@ -146,6 +158,8 @@ class ProgramItem:
             _title=title,
             _custom_values=dict(custom_values or {}),
             _progress=progress,
+            _backstage=backstage,
+            _host_note=host_note or HostNote(),
         )
 
     @property
@@ -202,9 +216,27 @@ class ProgramItem:
         """Drop the value for a column that no longer exists."""
         self._custom_values.pop(column_id, None)
 
+    @property
+    def backstage(self) -> bool:
+        """Whether the host has marked this act as arrived backstage."""
+        return self._backstage
+
+    @property
+    def host_note(self) -> HostNote:
+        """What the host wrote against this slot, for herself."""
+        return self._host_note
+
     def set_progress(self, progress: ProgramItemProgress) -> None:
         """Record how far this slot has got. Only the aggregate may call this."""
         self._progress = progress
+
+    def mark_backstage(self, backstage: bool) -> None:
+        """Note that this act is (or is no longer) backstage. Only the aggregate may call this."""
+        self._backstage = backstage
+
+    def annotate(self, note: HostNote) -> None:
+        """Set the host's own note on this slot (blank clears it). Aggregate only."""
+        self._host_note = note
 
     def assign_number(self, number: int) -> None:
         """Set this slot's number. Only the aggregate may call this."""
@@ -722,6 +754,27 @@ class Program:
                 if other.id != item_id and other.progress is ProgramItemProgress.ON_STAGE:
                     other.set_progress(ProgramItemProgress.PERFORMED)
         item.set_progress(progress)
+        self._touch(now)
+        return item
+
+    def mark_item_backstage(self, item_id: uuid.UUID, backstage: bool, *, now: datetime) -> ProgramItem:
+        """Note that one act has arrived backstage, or has left again.
+
+        The host's own bookkeeping and nobody else's: it answers "who is actually here",
+        which on the day is a different question from "who is next" and is the one that
+        decides whether the running order has to change. It is deliberately *not* a
+        progress state - an act can be backstage and still be pending, performed, or the
+        one being moved up because the act before it is nowhere to be found.
+        """
+        item = self.item(item_id)
+        item.mark_backstage(backstage)
+        self._touch(now)
+        return item
+
+    def annotate_item(self, item_id: uuid.UUID, note: HostNote, *, now: datetime) -> ProgramItem:
+        """Write the host's own note against one slot (blank clears it)."""
+        item = self.item(item_id)
+        item.annotate(note)
         self._touch(now)
         return item
 

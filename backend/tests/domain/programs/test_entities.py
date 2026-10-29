@@ -28,10 +28,12 @@ from apps.programs.domain.exceptions import (
 from apps.programs.domain.value_objects import (
     COLUMN_LABELS,
     DEFAULT_PUBLIC_COLUMNS,
+    HOST_NOTE_MAX,
     ArrangementSettings,
     CellValue,
     ColumnRef,
     ColumnTitle,
+    HostNote,
     ItemDuration,
     ItemTitle,
     ProgramColumn,
@@ -690,6 +692,57 @@ class TestTheDayItself:
         assert program.item(first.id).progress.is_finished
         assert program.item(second.id).progress.is_finished
         assert program.on_stage is None
+
+    def test_a_cancelled_act_is_behind_us_too(self) -> None:
+        # «Не вышел» and «отменён» are both finished and are not the same fact: one the
+        # host stepped over and may come back to, the other is not happening today.
+        program = _program()
+        item = _add_act(program)
+        program.set_item_progress(item.id, ProgramItemProgress.CANCELLED, now=NOW)
+
+        assert program.item(item.id).progress is ProgramItemProgress.CANCELLED
+        assert program.item(item.id).progress.is_finished
+        assert program.on_stage is None
+
+    def test_cancelling_the_act_on_stage_cues_nobody(self) -> None:
+        # Pulling an act that had already been announced is a correction; what follows
+        # is the host's decision, not an inference from the running order.
+        program = _program()
+        first, second = _add_act(program), _add_act(program)
+        program.set_item_progress(first.id, ProgramItemProgress.ON_STAGE, now=NOW)
+        program.set_item_progress(first.id, ProgramItemProgress.CANCELLED, now=NOW)
+
+        assert program.item(second.id).progress is ProgramItemProgress.PENDING
+        assert program.on_stage is None
+
+    def test_the_host_marks_who_has_turned_up_backstage(self) -> None:
+        program = _program()
+        item = _add_act(program)
+        assert item.backstage is False
+
+        program.mark_item_backstage(item.id, True, now=NOW)
+        assert program.item(item.id).backstage is True
+        # Still pending: being in the building and having performed are different
+        # questions, which is why this is not a progress state.
+        assert program.item(item.id).progress is ProgramItemProgress.PENDING
+
+        program.mark_item_backstage(item.id, False, now=NOW)
+        assert program.item(item.id).backstage is False
+
+    def test_the_host_writes_a_note_against_a_slot(self) -> None:
+        program = _program()
+        item = _add_act(program)
+        assert item.host_note.is_blank
+
+        program.annotate_item(item.id, HostNote("Зовут Алиса, не Алла"), now=NOW)
+        assert str(program.item(item.id).host_note) == "Зовут Алиса, не Алла"
+
+        program.annotate_item(item.id, HostNote(""), now=NOW)
+        assert program.item(item.id).host_note.is_blank
+
+    def test_a_note_longer_than_the_limit_is_refused(self) -> None:
+        with pytest.raises(InvalidProgramDataError):
+            HostNote("я" * (HOST_NOTE_MAX + 1))
 
     def test_progress_can_be_reset_for_a_rehearsal(self) -> None:
         program = _program()

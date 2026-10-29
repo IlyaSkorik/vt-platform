@@ -78,6 +78,12 @@ export function SiteFooter({
         <div className="space-y-2">
           <p className={headingTone}>{APP_NAME}</p>
           <p>Платформа фестивалей и онлайн-подачи заявок.</p>
+          <Link
+            to={ROUTES.organizers}
+            className="inline-block hover:text-foreground hover:underline"
+          >
+            Организаторам фестивалей
+          </Link>
         </div>
 
         <div className="space-y-2">

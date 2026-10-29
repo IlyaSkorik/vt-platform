@@ -163,8 +163,11 @@ class DiplomaAwardService:
             individual_assets = assets_for(individual, DocumentType.INDIVIDUAL_DIPLOMA)
             diploma = self._repository.get_by_submission(submission_id)
             created = False
-            # Built lazily and at most once per entry: an existing diploma needs no
-            # snapshot, but the roster of a collective is only on the live submission.
+            # Built at most once per entry, and now for every entry rather than only
+            # for the ones without a diploma: publishing has to print what the entry
+            # says *today*. An organizer who corrected an institution after the print
+            # package was made would otherwise see the correction nowhere — awarding
+            # re-renders the PDF, but from the snapshot it already had.
             built = None
             if diploma is None:
                 if assigned is None:
@@ -186,6 +189,13 @@ class DiplomaAwardService:
                 )
                 self._repository.add(diploma)
                 created = True
+            else:
+                built = self._snapshots.build(submission_id)
+                # Nothing is rewritten when nothing moved: an issued document that
+                # changes for no reason is one nobody can vouch for afterwards. The
+                # degree and the member are carried over by the aggregate.
+                if built is not None and diploma.differs_from(built.snapshot):
+                    diploma = diploma.with_refreshed_snapshot(built.snapshot, now=now)
 
             diploma = diploma.with_degree(degree, now=now)
             file_url: str | None = None
@@ -283,6 +293,11 @@ class DiplomaAwardService:
                     recipient=name,
                 )
                 self._repository.add(member)
+            elif member.differs_from(collective.snapshot):
+                # The collective's snapshot may have been rebuilt above; a member's
+                # sheet is that snapshot plus one name, so it follows along. Their own
+                # name and degree are kept by the aggregate.
+                member = member.with_refreshed_snapshot(collective.snapshot, now=now)
             member = member.with_degree(degree, now=now)
             data = self._workspace.render(
                 assets=assets,

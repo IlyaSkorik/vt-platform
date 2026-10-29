@@ -15,6 +15,7 @@ from apps.programs.domain.value_objects import (
     BUFFER_MAX_SECONDS,
     CELL_VALUE_MAX,
     DURATION_MAX_SECONDS,
+    HOST_NOTE_MAX,
     REPEAT_GAP_MAX,
     BreakRule,
     GroupingAxis,
@@ -41,6 +42,8 @@ __all__ = [
     "ProgramShareResourceSerializer",
     "ProgramSummarySerializer",
     "ReorderItemsRequestSerializer",
+    "SetBackstageRequestSerializer",
+    "SetHostNoteRequestSerializer",
     "SetProgressRequestSerializer",
     "UpdateProgramRequestSerializer",
     "UpdateShareRequestSerializer",
@@ -207,6 +210,23 @@ class SetProgressRequestSerializer(serializers.Serializer[dict[str, object]]):
     progress = serializers.ChoiceField(choices=[state.value for state in ProgramItemProgress])
 
 
+class SetBackstageRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Validate the host's backstage mark.
+
+    The whole answer, not a toggle: the host may have the same link open on two screens,
+    and "invert whatever is there" sent from both lands wherever the second request
+    happened to find it.
+    """
+
+    backstage = serializers.BooleanField()
+
+
+class SetHostNoteRequestSerializer(serializers.Serializer[dict[str, object]]):
+    """Validate the host's own note on one row. Blank clears it."""
+
+    note = serializers.CharField(allow_blank=True, max_length=HOST_NOTE_MAX, trim_whitespace=True)
+
+
 class _SchedulePositionSerializer(serializers.Serializer[dict[str, object]]):
     position = serializers.IntegerField()
     offsetSeconds = serializers.IntegerField()
@@ -228,6 +248,7 @@ def _column_schema(*, many: bool = False) -> serializers.BaseSerializer[dict[str
             "key": serializers.CharField(),
             "label": serializers.CharField(),
             "custom": serializers.BooleanField(),
+            "sensitive": serializers.BooleanField(),
         },
         many=many,
     )

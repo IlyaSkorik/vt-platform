@@ -87,6 +87,13 @@ export const routes: RouteObject[] = [
             ],
           },
           {
+            // The organizer-facing page: what the platform does and what it looks
+            // like doing it. Public and indexed — it is the link an organizer is
+            // sent after the first call, and it has to be findable afterwards.
+            path: ROUTES.organizers.slice(1),
+            lazy: lazyPage(() => import("@/pages/organizers"), "OrganizersPage"),
+          },
+          {
             // Public and unauthenticated: reached by scanning a printed diploma.
             path: ROUTES.verifyDiploma.slice(1),
             lazy: lazyPage(() => import("@/pages/verify"), "DiplomaVerifyPage"),
@@ -554,6 +561,13 @@ export const routes: RouteObject[] = [
                 lazy: lazyPage(
                   () => import("@/applications/platform/pages/finance"),
                   "PlatformFinancePage",
+                ),
+              },
+              {
+                path: ROUTES.platformCommission.slice(1),
+                lazy: lazyPage(
+                  () => import("@/applications/platform/pages/commission"),
+                  "PlatformCommissionPage",
                 ),
               },
               {

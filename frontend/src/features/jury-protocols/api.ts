@@ -6,9 +6,10 @@
  * published and whether what is public is stale, and this way the screen can never show a
  * result it did not save.
  *
- * Publication is the exception, and deliberately so: it answers with the protocol *plus*
- * what it issued and sent, because pressing that button has three effects and an organizer
- * needs to see all three land.
+ * Publication is the exception, and deliberately so. Pressing that button has three
+ * effects and only one of them is quick, so it answers with the published protocol *and*
+ * a job: the page is public by the time the response arrives, while the diplomas and the
+ * letters are issued by a worker and reported on that job ({@link usePublicationJob}).
  */
 import {
   type UseMutationResult,
@@ -26,10 +27,12 @@ import type {
   Protocol,
   ProtocolCandidate,
   ProtocolSummary,
-  PublicationResult,
+  PublicationJob,
+  PublicationStarted,
   PublishProtocolInput,
   UpdateProtocolInput,
 } from "./model";
+import { isPublicationRunning } from "./model";
 
 interface Envelope<T> {
   data: T;
@@ -49,6 +52,7 @@ export const protocolKeys = {
   list: (competitionId: string) => [...protocolKeys.all, "list", competitionId] as const,
   detail: (protocolId: string) => [...protocolKeys.all, "detail", protocolId] as const,
   candidates: (protocolId: string) => [...protocolKeys.all, "candidates", protocolId] as const,
+  publication: (protocolId: string) => [...protocolKeys.all, "publication", protocolId] as const,
 };
 
 export async function fetchProtocols(competitionId: string): Promise<ProtocolSummary[]> {
@@ -243,28 +247,62 @@ export function useClearProtocolAwards(
 }
 
 /**
- * Publish the results: the public page, the diplomas, the letters.
+ * Publish the results: the public page first, the diplomas and the letters after.
  *
- * Answers with all three outcomes rather than just the protocol, so the confirmation can say
- * what actually happened — including how many awarded rows got no diploma, which normally
- * means the nomination has no template assigned yet.
+ * Answers as soon as the page is public — which is what the organizer pressed the button
+ * for — with the protocol in its final published state and a job to follow. The rest is a
+ * worker's: a diploma is rendered per awarded row (and per named member of a collective on
+ * top of that), so a nomination of a hundred and fifty acts outlasts anything between the
+ * browser and the backend willing to hold a connection open. It used to be done inside the
+ * request, and a real festival was shown «Не удалось опубликовать протокол» on a protocol
+ * the server had published.
+ *
+ * The detail cache is seeded from the response and the publication query is primed with the
+ * job, so {@link usePublicationJob} starts polling an already-known run rather than a blank.
  */
 export function usePublishProtocol(
   protocolId: string,
-): UseMutationResult<PublicationResult, ApiError, PublishProtocolInput> {
+): UseMutationResult<PublicationStarted, ApiError, PublishProtocolInput> {
   const queryClient = useQueryClient();
-  return useMutation<PublicationResult, ApiError, PublishProtocolInput>({
+  return useMutation<PublicationStarted, ApiError, PublishProtocolInput>({
     mutationFn: async (input) =>
       (
-        await request<Envelope<PublicationResult>>(`staff/protocols/${protocolId}/publication`, {
+        await request<Envelope<PublicationStarted>>(`staff/protocols/${protocolId}/publication`, {
           method: "post",
           json: input,
         })
       ).data,
-    onSuccess: (result) => {
-      queryClient.setQueryData(protocolKeys.detail(result.protocol.id), result.protocol);
+    onSuccess: (started) => {
+      queryClient.setQueryData(protocolKeys.detail(started.protocol.id), started.protocol);
+      queryClient.setQueryData(protocolKeys.publication(started.protocol.id), started.job);
       void queryClient.invalidateQueries({ queryKey: [...protocolKeys.all, "list"] });
     },
+  });
+}
+
+async function fetchPublicationJob(protocolId: string): Promise<PublicationJob | null> {
+  const body = await request<Envelope<PublicationJob | null>>(
+    `staff/protocols/${protocolId}/publication`,
+  );
+  return body.data;
+}
+
+/**
+ * Follow the publication a protocol last started: the diplomas, the letters, a failure.
+ *
+ * Polled while the run is unfinished and left alone once it settles. Keyed by protocol
+ * rather than by job id on purpose — the screen always has the protocol, so an organizer
+ * who reloads the page mid-run picks the run back up instead of losing it. `null` means
+ * this protocol has never been published, which is a normal answer, not a missing one.
+ */
+export function usePublicationJob(
+  protocolId: string | null,
+): UseQueryResult<PublicationJob | null, ApiError> {
+  return useQuery<PublicationJob | null, ApiError>({
+    enabled: protocolId != null,
+    queryKey: protocolKeys.publication(protocolId ?? ""),
+    queryFn: () => fetchPublicationJob(protocolId ?? ""),
+    refetchInterval: (query) => (isPublicationRunning(query.state.data) ? 2500 : false),
   });
 }
 

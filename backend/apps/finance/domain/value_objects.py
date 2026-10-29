@@ -19,15 +19,18 @@ from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from enum import StrEnum
 from typing import Final
 
-from .exceptions import InvalidExpenseDataError
+from .exceptions import InvalidCommissionPaymentDataError, InvalidExpenseDataError
 
 __all__ = [
     "EXPENSE_NOTE_MAX",
     "EXPENSE_PURPOSE_MAX",
+    "PAYMENT_NOTE_MAX",
     "ExpenseAmount",
     "ExpenseCategory",
     "ExpenseNote",
     "ExpensePurpose",
+    "PaymentAmount",
+    "PaymentNote",
 ]
 
 #: The line that says what the money went on — the one thing an expense may not be
@@ -157,6 +160,88 @@ class ExpenseNote:
         text = "\n".join(lines).strip()
         if len(text) > EXPENSE_NOTE_MAX:
             raise InvalidExpenseDataError(f"Комментарий — не длиннее {EXPENSE_NOTE_MAX} символов.")
+        object.__setattr__(self, "value", text)
+
+    @property
+    def empty(self) -> bool:
+        return not self.value
+
+    def __str__(self) -> str:
+        return self.value
+
+
+# ---------------------------------------------------------------------------
+# The other direction: money the platform received
+# ---------------------------------------------------------------------------
+
+#: Room for what a receipt needs beside its sum: a payment order number, the period
+#: it closes, why it is short of what was invoiced. Optional, and usually empty.
+PAYMENT_NOTE_MAX: Final = 2000
+
+
+@dataclass(frozen=True, slots=True)
+class PaymentAmount:
+    """A sum an organization paid the platform, always positive and to the kopeck.
+
+    Deliberately not :class:`ExpenseAmount` under another name. The two happen to
+    validate alike today, but they sit on opposite sides of the books, and the day
+    one of them needs a rule the other must not have — a refund, a ceiling tied to
+    what was invoiced — a shared class would have to grow a flag to tell them
+    apart. Separate types cost a few lines and make that day a non-event.
+
+    Positive only: a receipt for nothing is a mistake, and money going the other
+    way is an expense, which has its own ledger.
+    """
+
+    value: Decimal
+
+    def __post_init__(self) -> None:
+        try:
+            amount = Decimal(str(self.value)).quantize(_MONEY_QUANTUM, rounding=ROUND_HALF_UP)
+        except (InvalidOperation, TypeError, ValueError) as exc:
+            raise InvalidCommissionPaymentDataError("Сумма поступления должна быть числом.") from exc
+        if amount <= 0:
+            raise InvalidCommissionPaymentDataError("Сумма поступления должна быть больше нуля.")
+        if amount > _AMOUNT_MAX:
+            raise InvalidCommissionPaymentDataError("Слишком большая сумма — проверьте, не лишние ли это нули.")
+        object.__setattr__(self, "value", amount)
+
+    @classmethod
+    def parse(cls, value: str) -> PaymentAmount:
+        """Build an amount from what somebody typed.
+
+        Same spellings :class:`ExpenseAmount` accepts, and for the same reason: the
+        figure is read off a Russian payment order, where "1 200,50" is how it is
+        written.
+        """
+        cleaned = str(value).replace("\u00a0", "").replace(" ", "").replace(",", ".").strip()
+        if not cleaned:
+            raise InvalidCommissionPaymentDataError("Укажите сумму поступления.")
+        try:
+            return cls(Decimal(cleaned))
+        except (InvalidOperation, TypeError, ValueError) as exc:
+            raise InvalidCommissionPaymentDataError("Сумма поступления должна быть числом.") from exc
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+
+@dataclass(frozen=True, slots=True)
+class PaymentNote:
+    """The detail under a receipt: a payment order number, the period it closes.
+
+    Blank is the ordinary case. Unlike an expense, a receipt needs no "what for" —
+    what it is for is the commission, and which organization paid is a field of its
+    own. Newlines survive, so two payment orders settled together each get a line.
+    """
+
+    value: str = ""
+
+    def __post_init__(self) -> None:
+        lines = [" ".join(line.split()) for line in str(self.value).splitlines()]
+        text = "\n".join(lines).strip()
+        if len(text) > PAYMENT_NOTE_MAX:
+            raise InvalidCommissionPaymentDataError(f"Комментарий — не длиннее {PAYMENT_NOTE_MAX} символов.")
         object.__setattr__(self, "value", text)
 
     @property

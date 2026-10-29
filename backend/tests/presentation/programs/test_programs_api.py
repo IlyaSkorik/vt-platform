@@ -19,6 +19,7 @@ from openpyxl import load_workbook
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
+from apps.applications.infrastructure.models.base import uuid7
 from apps.applications.infrastructure.models.submission import SubmissionModel
 from apps.competitions.infrastructure.models.competition import CompetitionModel
 from apps.competitions.infrastructure.models.taxonomy import CategoryModel
@@ -89,20 +90,35 @@ def _act(
     """Seed one competing act in the Applications context."""
     submission = SubmissionModel.objects.create(
         competition_id=competition_id,
-        applicant_id=uuid.uuid4(),
+        # v7 и не иначе: ``UserId`` отказывает любой другой версии, а программа
+        # теперь не только читает заявку, но и пишет в неё статус — через агрегат,
+        # который этот идентификатор разбирает.
+        applicant_id=uuid7(),
         status=status,
         performance={
             "title": title,
             "duration_seconds": seconds,
             "nomination_id": nomination_id,
-            "discipline_id": str(uuid.uuid4()),
-            "age_category_id": str(uuid.uuid4()),
-            "participant_group_id": str(uuid.uuid4()),
-            "participation_format_id": str(uuid.uuid4()),
+            "discipline_id": str(uuid7()),
+            "age_category_id": str(uuid7()),
+            "participant_group_id": str(uuid7()),
+            "participation_format_id": str(uuid7()),
             "comment": comment,
         },
-        participants=[{"id": str(uuid.uuid4()), "display_name": performer, "member_count": 1}],
-        teachers=[{"first_name": "Мария", "last_name": "Иванова", "middle_name": None, "role": "COACH"}],
+        participants=[{"id": str(uuid7()), "display_name": performer, "member_count": 1}],
+        # Полная форма, какую пишет ``SubmissionMapper``: программа теперь не только
+        # читает заявку, но и грузит её агрегатом, чтобы проставить статус, — а он
+        # разбирает каждое вложенное поле.
+        teachers=[
+            {
+                "id": str(uuid7()),
+                "first_name": "Мария",
+                "last_name": "Иванова",
+                "middle_name": None,
+                "role": "COACH",
+                "directory_teacher_id": None,
+            }
+        ],
     )
     return str(submission.id)
 
@@ -1184,3 +1200,90 @@ class TestUndoArrangeEndpoint:
         assert response.status_code == 409, response.data
         reloaded = staff_client.get(f"{_PROGRAMS}/{program['id']}")
         assert reloaded.data["data"]["canUndoArrange"] is False
+
+
+class TestTheRunningOrderDrivesTheStatus:
+    """`SCHEDULED` ставится, когда номер действительно попал в программу.
+
+    Через настоящую БД, а не через фейки: здесь проверяется связка двух контекстов
+    целиком — конструктор программы пишет в Applications через ACL, и только так
+    видно, что статус доехал до строки заявки.
+    """
+
+    def test_adding_an_act_marks_it_scheduled(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        program_id = _create_program(staff_client, scope)["id"]
+
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items", {"submissionId": submission_id}, format="json")
+
+        assert SubmissionModel.objects.get(id=submission_id).status == "SCHEDULED"
+
+    def test_an_act_nobody_placed_stays_merely_accepted(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        # Собственно то, ради чего правка: одобренный номер больше не выглядит
+        # назначенным только потому, что его одобрили.
+        competition_id, nomination_id = scope
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Смуглянка", seconds=180)
+        _create_program(staff_client, scope)
+
+        assert SubmissionModel.objects.get(id=submission_id).status == "ACCEPTED"
+
+    def test_pulling_the_slot_puts_the_act_back_to_accepted(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        program_id = _create_program(staff_client, scope)["id"]
+        added = staff_client.post(f"{_PROGRAMS}/{program_id}/items", {"submissionId": submission_id}, format="json")
+        item_id = added.data["data"]["items"][0]["id"]
+
+        staff_client.delete(f"{_PROGRAMS}/{program_id}/items/{item_id}")
+
+        assert SubmissionModel.objects.get(id=submission_id).status == "ACCEPTED"
+
+    def test_filling_the_scope_marks_everything_it_pulled_in(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        first = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        second = _act(competition_id=competition_id, nomination_id=nomination_id, title="Смуглянка", seconds=180)
+        program_id = _create_program(staff_client, scope)["id"]
+
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+
+        assert SubmissionModel.objects.get(id=first).status == "SCHEDULED"
+        assert SubmissionModel.objects.get(id=second).status == "SCHEDULED"
+
+    def test_deleting_the_programme_releases_its_acts(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        competition_id, nomination_id = scope
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        program_id = _create_program(staff_client, scope)["id"]
+        staff_client.post(f"{_PROGRAMS}/{program_id}/items/fill")
+
+        assert staff_client.delete(f"{_PROGRAMS}/{program_id}").status_code == 204
+
+        assert SubmissionModel.objects.get(id=submission_id).status == "ACCEPTED"
+
+    def test_an_act_in_a_second_programme_keeps_its_status(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        # Конкурс ведёт несколько программ. Номер, вынутый из одной, может стоять в
+        # другой — снимать статус по одной программе значит соврать про вторую.
+        competition_id, nomination_id = scope
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200)
+        first = _create_program(staff_client, scope, name="Вокал, 1 отделение")["id"]
+        second = _create_program(staff_client, scope, name="Вокал, 2 отделение")["id"]
+        staff_client.post(f"{_PROGRAMS}/{first}/items", {"submissionId": submission_id}, format="json")
+        in_second = staff_client.post(f"{_PROGRAMS}/{second}/items", {"submissionId": submission_id}, format="json")
+        item_id = in_second.data["data"]["items"][0]["id"]
+
+        staff_client.delete(f"{_PROGRAMS}/{second}/items/{item_id}")
+
+        assert SubmissionModel.objects.get(id=submission_id).status == "SCHEDULED"
+
+    def test_an_already_performed_act_is_not_dragged_back(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        # COMPLETED — это состоявшееся выступление, а не место в расписании: вынутая
+        # строка не должна его отменять.
+        competition_id, nomination_id = scope
+        submission_id = _act(competition_id=competition_id, nomination_id=nomination_id, title="Катюша", seconds=200, status="COMPLETED")
+        program_id = _create_program(staff_client, scope)["id"]
+        added = staff_client.post(f"{_PROGRAMS}/{program_id}/items", {"submissionId": submission_id}, format="json")
+        item_id = added.data["data"]["items"][0]["id"]
+
+        staff_client.delete(f"{_PROGRAMS}/{program_id}/items/{item_id}")
+
+        assert SubmissionModel.objects.get(id=submission_id).status == "COMPLETED"

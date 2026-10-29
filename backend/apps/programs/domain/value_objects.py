@@ -36,7 +36,9 @@ __all__ = [
     "DEFAULT_OPENING_TITLE",
     "DEFAULT_PUBLIC_COLUMNS",
     "DURATION_MAX_SECONDS",
+    "HOST_NOTE_MAX",
     "REPEAT_GAP_MAX",
+    "SENSITIVE_COLUMNS",
     "ArrangementBlock",
     "ArrangementSettings",
     "BreakRule",
@@ -44,6 +46,7 @@ __all__ = [
     "ColumnRef",
     "ColumnTitle",
     "GroupingAxis",
+    "HostNote",
     "ItemDuration",
     "ItemTitle",
     "PerformanceOrder",
@@ -65,6 +68,10 @@ _COLUMN_TITLE_MAX: Final = 120
 #: A hand-filled cell is a note, not a document: long enough for "фонограмма на флешке
 #: у звукорежиссёра", short enough that a table stays a table.
 CELL_VALUE_MAX: Final = 500
+
+#: A host's note is a reminder, not a document: long enough for «мама просит позвонить
+#: сразу после номера», short enough to be read at a glance with the next act walking on.
+HOST_NOTE_MAX: Final = 500
 
 #: How a custom column is named on the wire, distinguishing it from the built-in keys.
 CUSTOM_COLUMN_PREFIX: Final = "custom:"
@@ -151,6 +158,17 @@ DEFAULT_PUBLIC_COLUMNS: Final[tuple[ProgramColumn, ...]] = (
     ProgramColumn.PARTICIPANT,
     ProgramColumn.TITLE,
 )
+
+#: The columns whose cells are about somebody who is not on stage, and are nobody's
+#: business but the reader's: a teacher's phone number, and a comment that in practice
+#: carries «аллергия на», «опекун», «позвонить маме, не отцу».
+#:
+#: Everything else on a programme is announced out loud anyway — the act, the child's
+#: name, the studio — so marking those would be theatre. This is the honest short list,
+#: and it is advisory: the backend still renders the cells for whoever the organizer
+#: published them to. What it buys is the host's screen being able to keep them covered
+#: until she asks for them, backstage, in a corridor full of other people's parents.
+SENSITIVE_COLUMNS: Final[frozenset[ProgramColumn]] = frozenset({ProgramColumn.CONTACTS, ProgramColumn.COMMENT})
 
 
 @dataclass(frozen=True, slots=True)
@@ -251,23 +269,64 @@ class CellValue:
         return self.value
 
 
+@dataclass(frozen=True, slots=True)
+class HostNote:
+    """A line the host wrote against one slot, for herself. Blank means none.
+
+    Not a cell: a custom column is the organizer's, published to whichever links they
+    chose, and this is the opposite — written on the day by the person running it, for
+    the next twenty minutes of it, and seen by nobody who was not handed the host's own
+    link. «Папа подойдёт к сцене», «поёт вторым номером, не первым», «зовут Алиса, не
+    Алла». The platform has nowhere else to put that, so it ends up on a paper programme
+    that is then left on a chair.
+    """
+
+    value: str = ""
+
+    def __post_init__(self) -> None:
+        stripped = self.value.strip()
+        if len(stripped) > HOST_NOTE_MAX:
+            raise InvalidProgramDataError(f"Пометка — не длиннее {HOST_NOTE_MAX} символов.")
+        object.__setattr__(self, "value", stripped)
+
+    @property
+    def is_blank(self) -> bool:
+        return not self.value
+
+    def __str__(self) -> str:
+        return self.value
+
+
 class ProgramItemProgress(StrEnum):
     """How far one slot has got on the day itself.
 
     The host drives this from their own link, and every screen reading the programme sees
     it: ``ON_STAGE`` is what a display beside the stage highlights, ``PERFORMED`` is what
     it greys out, and ``SKIPPED`` is the act that did not appear.
+
+    ``CANCELLED`` is the one that is said out loud rather than merely greyed out. An act
+    withdrawn on the morning — illness, a coach stuck on the road — is not the same event
+    as one the host stepped over and may come back to, and the difference matters to
+    everybody reading the programme: the sound desk stops cueing a phonogram, the screen
+    beside the stage stops promising a number that is not coming, and the jury knows why
+    a protocol is one line short. So it is a state of the day, public like the rest, and
+    not a private note.
     """
 
     PENDING = "PENDING"
     ON_STAGE = "ON_STAGE"
     PERFORMED = "PERFORMED"
     SKIPPED = "SKIPPED"
+    CANCELLED = "CANCELLED"
 
     @property
     def is_finished(self) -> bool:
         """Whether this slot is behind us, one way or the other."""
-        return self in {ProgramItemProgress.PERFORMED, ProgramItemProgress.SKIPPED}
+        return self in {
+            ProgramItemProgress.PERFORMED,
+            ProgramItemProgress.SKIPPED,
+            ProgramItemProgress.CANCELLED,
+        }
 
 
 def parse_column_refs(values: Iterable[object] | None) -> tuple[ColumnRef, ...]:

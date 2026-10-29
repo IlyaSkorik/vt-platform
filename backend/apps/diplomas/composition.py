@@ -18,6 +18,7 @@ from apps.diplomas.application.awarding import DiplomaAwardService
 from apps.diplomas.application.font_library import FontLibraryService
 from apps.diplomas.application.issued_documents import IssuedDocumentGenerationService
 from apps.diplomas.application.numbering import DiplomaNumberService
+from apps.diplomas.application.refresh import DiplomaSnapshotRefreshService
 from apps.diplomas.domain.fonts import FAMILY_ALIASES
 from apps.diplomas.infrastructure.acl import DjangoDiplomaSnapshotSource
 from apps.diplomas.infrastructure.fonts import (
@@ -40,6 +41,7 @@ from apps.diplomas.infrastructure.repositories import (
 
 __all__ = [
     "build_diploma_award_service",
+    "build_diploma_snapshot_refresh_service",
     "build_diploma_verification_read_service",
     "build_font_library_service",
     "build_issued_document_generation_service",
@@ -105,4 +107,19 @@ def build_issued_document_generation_service() -> IssuedDocumentGenerationServic
         snapshots=DjangoDiplomaSnapshotSource(),
         workspace=DjangoPrintPackageWorkspace(),
         assignments=DjangoTemplateAssignments(),
+    )
+
+
+def build_diploma_snapshot_refresh_service() -> DiplomaSnapshotRefreshService:
+    """Assemble the service that rebuilds the snapshot of a diploma whose data has moved.
+
+    The same snapshot ACL and render/store workspace the print package and awarding use:
+    a refreshed diploma has to be built from a submission exactly as it would have been
+    had the correction come first, and land on the same storage key so the participant's
+    link keeps working.
+    """
+    return DiplomaSnapshotRefreshService(
+        repository=DjangoDiplomaRepository(),
+        snapshots=DjangoDiplomaSnapshotSource(),
+        workspace=DjangoPrintPackageWorkspace(),
     )

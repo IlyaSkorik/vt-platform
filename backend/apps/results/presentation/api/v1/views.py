@@ -12,6 +12,7 @@ and the HTTP views keep the name here.
 
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -36,6 +37,12 @@ from apps.results.application.interfaces import CatalogPerformance
 from apps.results.composition import build_protocol_service
 from apps.results.domain.exceptions import ProtocolError
 from apps.results.presentation.api.v1 import problems
+from apps.results.presentation.api.v1.publication_jobs import (
+    job_json,
+    latest_publication_job,
+    start_publication,
+    unfinished_publication_job,
+)
 from apps.results.presentation.api.v1.serializers import (
     AddRowRequestSerializer,
     AwardRowsRequestSerializer,
@@ -44,7 +51,8 @@ from apps.results.presentation.api.v1.serializers import (
     ProtocolDetailSerializer,
     ProtocolProblemDetailSerializer,
     ProtocolSummarySerializer,
-    PublicationResultSerializer,
+    PublicationJobSerializer,
+    PublicationStartedSerializer,
     PublishProtocolRequestSerializer,
     ReorderRowsRequestSerializer,
     UpdateProtocolRequestSerializer,
@@ -147,17 +155,6 @@ def _summary_json(view: dto.ProtocolSummaryView) -> dict[str, Any]:
     }
 
 
-def _publication_json(view: dto.PublicationResultView) -> dict[str, Any]:
-    return {
-        "protocol": _protocol_json(view.protocol),
-        "diplomasAwarded": view.diplomas_awarded,
-        "diplomasCreated": view.diplomas_created,
-        "diplomasMissing": view.diplomas_missing,
-        "lettersSent": view.letters_sent,
-        "lettersSkipped": view.letters_skipped,
-    }
-
-
 def _candidate_json(performance: CatalogPerformance) -> dict[str, Any]:
     return {
         "submissionId": str(performance.submission_id),
@@ -171,6 +168,20 @@ def _candidate_json(performance: CatalogPerformance) -> dict[str, Any]:
         "teachers": list(performance.teachers),
         "organization": performance.organization,
     }
+
+
+def _parse_uuid(value: str) -> uuid.UUID | None:
+    """The id as a UUID, or ``None`` when it is not one."""
+    try:
+        return uuid.UUID(str(value))
+    except (ValueError, TypeError, AttributeError):
+        return None
+
+
+def _actor_id(request: Request) -> uuid.UUID | None:
+    """Кто нажал «Опубликовать». Запрос это знает, воркер — нет."""
+    raw = getattr(getattr(request, "user", None), "id", None)
+    return _parse_uuid(str(raw)) if raw is not None else None
 
 
 class _StaffView(APIView):
@@ -423,17 +434,20 @@ class ProtocolAwardsView(_StaffView):
 
 
 class ProtocolPublicationView(_StaffView):
-    """``POST`` to publish the results, ``DELETE`` to take them back off the page.
+    """``POST`` to publish the results, ``GET`` to follow what publishing set off,
+    ``DELETE`` to take them back off the page.
 
     Publishing is three effects in one action - the public page, the diplomas, the letters -
-    so the response carries what each of them did rather than just the protocol's new status.
+    and only the first of them is quick. So ``POST`` answers once the page is public, with
+    the protocol and a job to follow; the other two are issued by a worker and reported on
+    that job, which ``GET`` returns.
     """
 
     @extend_schema(
         tags=[_TAG],
         operation_id="protocolsPublish",
         request=PublishProtocolRequestSerializer,
-        responses={200: PublicationResultSerializer, **_PROBLEM_RESPONSES},
+        responses={202: PublicationStartedSerializer, **_PROBLEM_RESPONSES},
     )
     def post(self, request: Request, protocol_id: str) -> Response:
         serializer = PublishProtocolRequestSerializer(data=request.data or {})
@@ -441,16 +455,62 @@ class ProtocolPublicationView(_StaffView):
             return problems.validation_problem(serializer.errors, instance=request.get_full_path(), request=request)
         data = serializer.validated_data
         sent_columns = "columns" in request.data if isinstance(request.data, dict) else False
+        notify = bool(data.get("notify", True))
         command = PublishProtocolCommand(
             protocol_id=protocol_id,
             columns=tuple(data.get("columns") or ()) if sent_columns else None,
-            notify=bool(data.get("notify", True)),
+            notify=notify,
         )
+        parsed = _parse_uuid(protocol_id)
+        if parsed is not None and unfinished_publication_job(parsed) is not None:
+            # Не публикуем поверх идущей доводки: два воркера, перевыпускающие одни и те
+            # же дипломы, пишут один и тот же файл с двух сторон, а организатор всё равно
+            # получил бы два ответа про одну номинацию. Прошлая джоба вот-вот кончится.
+            return problems.problem_response(
+                status=409,
+                type_suffix="conflict",
+                title="A publication of this protocol is still running",
+                detail="Предыдущая публикация ещё доводится: дипломы и письма выпускаются. Дождитесь её окончания.",
+                instance=request.get_full_path(),
+                correlation_id=problems.request_id(request),
+            )
         try:
-            result = build_protocol_service().publish(command)
+            protocol = build_protocol_service().publish(command)
         except ProtocolError as exc:
             return self._problem(exc, request)
-        return problems.envelope(request, _publication_json(result))
+        job = start_publication(
+            protocol_id=uuid.UUID(protocol.id),
+            competition_id=uuid.UUID(protocol.competition_id),
+            revision=protocol.revision,
+            notify=notify,
+            actor_id=_actor_id(request),
+        )
+        # 202: страница уже публична, а дипломы и письма - приняты к исполнению.
+        return problems.envelope(request, {"protocol": _protocol_json(protocol), "job": job}, status=202)
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="protocolsPublicationJob",
+        responses={200: PublicationJobSerializer, **_PROBLEM_RESPONSES},
+    )
+    def get(self, request: Request, protocol_id: str) -> Response:
+        """The last publication of this protocol: its status, its counts, its failure.
+
+        Read by protocol rather than by job id on purpose: the screen that wants it
+        always has the protocol, and an organizer who reloaded the page mid-run would
+        otherwise have lost the only handle on the work still going on.
+        """
+        parsed = _parse_uuid(protocol_id)
+        if parsed is None:
+            return problems.validation_problem(
+                {"protocolId": ["Must be a UUID."]},
+                instance=request.get_full_path(),
+                request=request,
+            )
+        job = latest_publication_job(parsed)
+        # ``null``, а не 404: «этот протокол ещё не публиковали» - нормальный ответ на
+        # нормальный вопрос, а не отсутствие ресурса.
+        return problems.envelope(request, job_json(job) if job is not None else None)
 
     @extend_schema(tags=[_TAG], operation_id="protocolsUnpublish", responses={200: ProtocolDetailSerializer, **_PROBLEM_RESPONSES})
     def delete(self, request: Request, protocol_id: str) -> Response:

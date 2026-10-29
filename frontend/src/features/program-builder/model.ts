@@ -53,14 +53,21 @@ export interface ProgramColumn {
 }
 
 /** How far one slot has got on the day itself. */
-export type ProgramItemProgress = "PENDING" | "ON_STAGE" | "PERFORMED" | "SKIPPED";
+export type ProgramItemProgress = "PENDING" | "ON_STAGE" | "PERFORMED" | "SKIPPED" | "CANCELLED";
 
-/** What each progress state is called on screen. */
+/**
+ * What each progress state is called on screen.
+ *
+ * «Пропущен» and «Отменён» are kept apart because the day keeps them apart: the first is
+ * an act the host stepped over and may come back to, the second is one that is not
+ * happening — and the organizer reading this table needs to know which.
+ */
 export const PROGRESS_LABELS: Record<ProgramItemProgress, string> = {
   PENDING: "Ожидает",
   ON_STAGE: "На сцене",
   PERFORMED: "Выступил",
   SKIPPED: "Пропущен",
+  CANCELLED: "Отменён",
 };
 
 /**

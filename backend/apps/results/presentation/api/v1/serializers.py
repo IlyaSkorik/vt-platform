@@ -17,11 +17,13 @@ from drf_spectacular.utils import inline_serializer
 from rest_framework import serializers
 
 from apps.results.domain.value_objects import AwardKind, ProtocolColumn, ProtocolStatus
+from apps.results.infrastructure.models import PublicationJobStatusChoices
 
 __all__ = [
     "AWARD_VALUES",
     "COLUMN_KEYS",
     "PROTOCOL_STATUS_VALUES",
+    "PUBLICATION_JOB_STATUS_VALUES",
     "AddRowRequestSerializer",
     "AwardRowsRequestSerializer",
     "CreateProtocolRequestSerializer",
@@ -29,7 +31,9 @@ __all__ = [
     "ProtocolDetailSerializer",
     "ProtocolProblemDetailSerializer",
     "ProtocolSummarySerializer",
+    "PublicationJobSerializer",
     "PublicationResultSerializer",
+    "PublicationStartedSerializer",
     "PublishProtocolRequestSerializer",
     "ReorderRowsRequestSerializer",
     "UpdateProtocolRequestSerializer",
@@ -50,6 +54,11 @@ COLUMN_KEYS = [column.value for column in ProtocolColumn]
 #: Whether a protocol's results are public. Named (and exported) rather than kept private
 #: because ``ENUM_NAME_OVERRIDES`` pins the generated client's type to this very list.
 PROTOCOL_STATUS_VALUES = [status.value for status in ProtocolStatus]
+
+#: Жизненный цикл фоновой доводки публикации. Берётся из модели персистентности, потому
+#: что это её столбец, а не понятие домена: протокол либо опубликован, либо нет, а джоба
+#: — это про то, доделана ли работа, которую публикация запустила.
+PUBLICATION_JOB_STATUS_VALUES = [status.value for status in PublicationJobStatusChoices]
 
 
 class CreateProtocolRequestSerializer(serializers.Serializer[dict[str, object]]):
@@ -229,19 +238,49 @@ class ProtocolSummarySerializer(serializers.Serializer[dict[str, object]]):
 
 
 class PublicationResultSerializer(serializers.Serializer[dict[str, object]]):
-    """What one publication did: the protocol, plus what it issued and sent.
+    """What the worker half of a publication issued and sent.
 
-    The counts are what the confirmation shows. ``diplomasMissing`` is the one an organizer
-    must not miss: those participants have a result and no document, which normally means
-    the nomination has no diploma template assigned yet.
+    The counts are what the confirmation shows once the run finishes. ``diplomasMissing``
+    is the one an organizer must not miss: those participants have a result and no
+    document, which normally means the nomination has no diploma template assigned yet.
     """
 
-    protocol = ProtocolDetailSerializer()
     diplomasAwarded = serializers.IntegerField()
     diplomasCreated = serializers.IntegerField()
     diplomasMissing = serializers.IntegerField()
     lettersSent = serializers.IntegerField()
     lettersSkipped = serializers.IntegerField()
+
+
+class PublicationJobSerializer(serializers.Serializer[dict[str, object]]):
+    """One publication being carried out, as the client polls it.
+
+    ``result`` is absent while the run is unfinished and stays absent when it fails -
+    there ``error`` carries what went wrong instead. The whole object is ``null`` for a
+    protocol that has never been published.
+    """
+
+    jobId = serializers.UUIDField()
+    protocolId = serializers.UUIDField()
+    revision = serializers.IntegerField()
+    notify = serializers.BooleanField()
+    status = serializers.ChoiceField(choices=PUBLICATION_JOB_STATUS_VALUES)
+    result = PublicationResultSerializer(allow_null=True)
+    error = serializers.CharField(allow_null=True)
+    createdAt = serializers.DateTimeField()
+    updatedAt = serializers.DateTimeField()
+
+
+class PublicationStartedSerializer(serializers.Serializer[dict[str, object]]):
+    """The answer to pressing «Опубликовать»: the page is public, the rest is queued.
+
+    Both halves, because both are news: the protocol is already published (its status,
+    revision and public link are final), and the job is the handle on the diplomas and
+    the letters, which a worker is issuing by the time this is read.
+    """
+
+    protocol = ProtocolDetailSerializer()
+    job = PublicationJobSerializer()
 
 
 class ProtocolCandidateSerializer(serializers.Serializer[dict[str, object]]):

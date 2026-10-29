@@ -25,6 +25,7 @@ from apps.programs.application.commands import (
     AddBlockCommand,
     AddColumnCommand,
     AddPerformanceCommand,
+    AnnotateItemCommand,
     AnnounceProgramCommand,
     ArrangementPayload,
     ArrangeProgramCommand,
@@ -33,6 +34,7 @@ from apps.programs.application.commands import (
     EditItemCommand,
     FillCellsCommand,
     HostReorderCommand,
+    MarkBackstageCommand,
     RenameColumnCommand,
     ReorderItemsCommand,
     SetItemProgressCommand,
@@ -59,6 +61,7 @@ from apps.programs.application.interfaces import (
     CatalogPerformance,
     Clock,
     PerformanceCatalog,
+    PerformanceSchedule,
     ProgramNotifier,
     ProgramRepository,
     SlugFactory,
@@ -88,6 +91,7 @@ from apps.programs.domain.value_objects import (
     DEFAULT_GROUPING,
     DEFAULT_OPENING_SECONDS,
     DEFAULT_OPENING_TITLE,
+    SENSITIVE_COLUMNS,
     ArrangementBlock,
     ArrangementSettings,
     BreakRule,
@@ -95,6 +99,7 @@ from apps.programs.domain.value_objects import (
     ColumnRef,
     ColumnTitle,
     GroupingAxis,
+    HostNote,
     ItemDuration,
     ItemTitle,
     PerformanceOrder,
@@ -312,6 +317,7 @@ class ProgramService:
         slugs: SlugFactory,
         tables: TableRenderer | None = None,
         notifier: ProgramNotifier | None = None,
+        schedule: PerformanceSchedule | None = None,
     ) -> None:
         self._programs = programs
         self._catalog = catalog
@@ -322,6 +328,11 @@ class ProgramService:
         # announcement.
         self._tables = tables
         self._notifier = notifier
+        # Optional for the same reason, and with one extra consequence worth naming: a
+        # service assembled without it builds programmes that never tell Applications an
+        # act was scheduled. That is the right default for a unit test of the running
+        # order and the wrong one in production, where `composition` always supplies it.
+        self._schedule = schedule
 
     # ------------------------------------------------------------------
     # Programs
@@ -391,8 +402,12 @@ class ProgramService:
         whoever asks; this edge only has to carry the refusal back out.
         """
         program = self._load(program_id)
+        before = self._slots_of(program)
         program.delete(now=self._clock.utcnow())
         self._programs.save(program)
+        # A deleted programme holds nothing, whatever its items still say in memory:
+        # the rows went down with it, which is what `submission_ids_with_slots` reads.
+        self._sync_schedule(before, frozenset())
 
     # ------------------------------------------------------------------
     # Items
@@ -416,6 +431,7 @@ class ProgramService:
         """Give one act a slot, seeding the slot's length from the act."""
         now = self._clock.utcnow()
         program = self._load(command.program_id)
+        before = self._slots_of(program)
         submission_id = _uuid(command.submission_id, what="submissionId")
         performance = self._require_available(program, submission_id)
         duration = ItemDuration(int(command.duration_seconds)) if command.duration_seconds is not None else ItemDuration(performance.duration_seconds)
@@ -427,6 +443,7 @@ class ProgramService:
             position=command.position,
         )
         self._programs.save(program)
+        self._sync_schedule(before, self._slots_of(program))
         return self._detail(program)
 
     def fill_from_scope(self, program_id: str) -> ProgramDetailView:
@@ -438,6 +455,7 @@ class ProgramService:
         """
         now = self._clock.utcnow()
         program = self._load(program_id)
+        before = self._slots_of(program)
         taken = set(program.performance_submission_ids)
         for performance in self._catalog.competing_performances(
             competition_id=program.competition_id,
@@ -452,6 +470,7 @@ class ProgramService:
                 now=now,
             )
         self._programs.save(program)
+        self._sync_schedule(before, self._slots_of(program))
         return self._detail(program)
 
     def arrange_program(self, command: ArrangeProgramCommand) -> ProgramDetailView:
@@ -468,6 +487,7 @@ class ProgramService:
         """
         now = self._clock.utcnow()
         program = self._load(command.program_id)
+        before = self._slots_of(program)
         settings = _arrangement_settings(command.settings, saved=program.arrangement)
         candidates = tuple(
             _candidate(performance)
@@ -479,6 +499,7 @@ class ProgramService:
         plan = arrange(candidates=candidates, settings=settings, buffer=program.buffer)
         program.rebuild([_arranged_to_item(entry) for entry in plan], settings=settings, now=now)
         self._programs.save(program)
+        self._sync_schedule(before, self._slots_of(program))
         return self._detail(program)
 
     def undo_arrange(self, program_id: str) -> ProgramDetailView:
@@ -495,10 +516,12 @@ class ProgramService:
         """
         now = self._clock.utcnow()
         program = self._load(program_id)
+        before = self._slots_of(program)
         if program.rebuilt_at is None:
             raise NoRestorePointError("Отменять нечего: программу не пересобирали, либо отмену уже применили.")
         program.restore_order(self._programs.items_retired_at(program.id, program.rebuilt_at), now=now)
         self._programs.save(program)
+        self._sync_schedule(before, self._slots_of(program))
         return self._detail(program)
 
     def add_block(self, command: AddBlockCommand) -> ProgramDetailView:
@@ -533,8 +556,10 @@ class ProgramService:
         """Remove one slot - a cancelled break, an act pulled from the running order."""
         now = self._clock.utcnow()
         program = self._load(program_id)
+        before = self._slots_of(program)
         program.remove_item(_uuid(item_id, what="itemId"), now=now)
         self._programs.save(program)
+        self._sync_schedule(before, self._slots_of(program))
         return self._detail(program)
 
     def reorder_items(self, command: ReorderItemsCommand) -> ProgramDetailView:
@@ -655,7 +680,7 @@ class ProgramService:
             starts_at=program.starts_at,
             total_seconds=total_duration_seconds(items=program.items, buffer=program.buffer),
             columns=self._column_views(program, chosen),
-            rows=tuple(cells for _kind, _item_id, _progress, cells in rows),
+            rows=tuple(cells for _item, cells in rows),
         )
 
     def export_pdf(self, *, program_id: str, columns: Sequence[str] = ()) -> bytes:
@@ -764,6 +789,29 @@ class ProgramService:
         except ValueError as exc:
             raise InvalidProgramDataError("Неизвестный статус хода программы.") from exc
         program.set_item_progress(_uuid(command.item_id, what="itemId"), progress, now=now)
+        self._programs.save(program)
+        return self._public_view(program, share)
+
+    def set_item_backstage(self, command: MarkBackstageCommand) -> PublicProgramView:
+        """Note that one act is behind the stage, from the host's own link.
+
+        The question the running order cannot answer. A host finds out that №14 is not in
+        the building thirty seconds before announcing it, and the only record of who *is*
+        there has until now been her memory and a biro on a printed page. This is that
+        page: hers, kept on the same screen as the order she will have to change because
+        of it, and rendered into no other edition's payload.
+        """
+        now = self._clock.utcnow()
+        program, share = self._host_program(command.slug)
+        program.mark_item_backstage(_uuid(command.item_id, what="itemId"), command.backstage, now=now)
+        self._programs.save(program)
+        return self._public_view(program, share)
+
+    def annotate_item(self, command: AnnotateItemCommand) -> PublicProgramView:
+        """Write the host's own note against one slot (an empty note clears it)."""
+        now = self._clock.utcnow()
+        program, share = self._host_program(command.slug)
+        program.annotate_item(_uuid(command.item_id, what="itemId"), HostNote(command.note), now=now)
         self._programs.save(program)
         return self._public_view(program, share)
 
@@ -919,14 +967,19 @@ class ProgramService:
             columns=self._column_views(program, columns),
             rows=tuple(
                 PublicProgramRowView(
-                    kind=kind,
+                    kind=item.kind.value,
                     cells=cells,
-                    progress=progress,
+                    progress=item.progress.value,
                     # Only the host needs a handle on a row, and only the host's link gets
-                    # one: a read-only edition carries no ids at all.
-                    id=item_id if share.controls_running_order else None,
+                    # one: a read-only edition carries no ids at all. Her two private marks
+                    # are gated on the same answer, and for a stronger reason - this is the
+                    # line past which «кто за сценой» and whatever she wrote to herself stop
+                    # existing, so there is nothing for another screen to reveal.
+                    id=str(item.id) if share.controls_running_order else None,
+                    backstage=item.backstage if share.controls_running_order else None,
+                    note=str(item.host_note) if share.controls_running_order else None,
                 )
-                for kind, item_id, progress, cells in rows
+                for item, cells in rows
             ),
             controls_running_order=share.controls_running_order,
         )
@@ -936,24 +989,27 @@ class ProgramService:
         program: Program,
         items: Sequence[ProgramItem],
         columns: Sequence[ColumnRef],
-    ) -> tuple[tuple[str, str, str, tuple[str, ...]], ...]:
-        """Render ``items`` into ``(kind, item id, progress, cells)`` tuples.
+    ) -> tuple[tuple[ProgramItem, tuple[str, ...]], ...]:
+        """Render ``items`` into ``(item, cells)`` pairs.
 
         The single place a programme becomes text, shared by the public screen and every
         export: one renderer means an exported table and a screen can never disagree about
         what a cell says.
+
+        The item travels back beside its own cells rather than a copy of a few of its
+        fields. A published row needs its kind, its progress and - on the host's edition -
+        two marks that are in no column of the table at all, and a tuple that grows a slot
+        each time a caller needs one more field is how a shared renderer stops being one.
         """
         schedule_by_item = {entry.item.id: entry for entry in build_schedule(items=program.items, buffer=program.buffer, starts_at=program.starts_at)}
         performances = self._resolve_performances(items)
-        rendered: list[tuple[str, str, str, tuple[str, ...]]] = []
+        rendered: list[tuple[ProgramItem, tuple[str, ...]]] = []
         for position, item in enumerate(items, start=1):
             entry = schedule_by_item[item.id]
             performance = performances.get(item.submission_id) if item.submission_id is not None else None
             rendered.append(
                 (
-                    item.kind.value,
-                    str(item.id),
-                    item.progress.value,
+                    item,
                     tuple(self._cell(column, item=item, performance=performance, position=position, starts_at=entry.starts_at) for column in columns),
                 )
             )
@@ -987,6 +1043,36 @@ class ProgramService:
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
+
+    def _slots_of(self, program: Program) -> frozenset[uuid.UUID]:
+        """Which acts this programme holds — the input to the schedule diff."""
+        return frozenset(program.performance_submission_ids)
+
+    def _sync_schedule(self, before: frozenset[uuid.UUID], after: frozenset[uuid.UUID]) -> None:
+        """Tell Applications which acts gained a slot and which lost their last one.
+
+        Driven from a diff rather than hooked onto each use case: a programme is
+        mutated six different ways — one act added, the whole scope filled, a slot
+        pulled, the order rebuilt from rules, a rebuild undone, the programme deleted
+        — and every one of them ends in the same ``save``. Six hooks would be six
+        chances to forget one, and the one forgotten is a status that silently
+        disagrees with the programme beside it.
+
+        Losing a slot here is not the same as losing every slot. A competition runs
+        several programmes and an act pulled from one may still stand in another, so
+        the departed ids are checked against the rest before anything is unscheduled.
+        """
+        if self._schedule is None:
+            return
+        gained = after - before
+        if gained:
+            self._schedule.mark_scheduled(tuple(gained))
+        lost = before - after
+        if lost:
+            still_seated = self._programs.submission_ids_with_slots(tuple(lost))
+            orphaned = tuple(submission_id for submission_id in lost if submission_id not in still_seated)
+            if orphaned:
+                self._schedule.mark_unscheduled(orphaned)
 
     def _load(self, program_id: str) -> Program:
         program = self._programs.get(_uuid(program_id, what="programId"))
@@ -1033,7 +1119,16 @@ class ProgramService:
             if ref.is_custom and ref.custom_id is not None:
                 views.append(ColumnView(key=ref.key, label=titles.get(ref.custom_id, "—"), custom=True))
             elif ref.builtin is not None:
-                views.append(ColumnView(key=ref.key, label=COLUMN_LABELS[ref.builtin]))
+                # A custom column is never marked: the organizer named it and knows what
+                # they put in it, and covering «Микрофон» would train the host to tap
+                # through every cover on the screen, which is how a cover stops working.
+                views.append(
+                    ColumnView(
+                        key=ref.key,
+                        label=COLUMN_LABELS[ref.builtin],
+                        sensitive=ref.builtin in SENSITIVE_COLUMNS,
+                    )
+                )
         return tuple(views)
 
     def _cell(

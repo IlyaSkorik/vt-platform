@@ -22,7 +22,12 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.programs.application.commands import HostReorderCommand, SetItemProgressCommand
+from apps.programs.application.commands import (
+    AnnotateItemCommand,
+    HostReorderCommand,
+    MarkBackstageCommand,
+    SetItemProgressCommand,
+)
 from apps.programs.application.dto import PublicProgramView
 from apps.programs.composition import build_program_service
 from apps.programs.domain.exceptions import ProgramError, RunningOrderNotControllableError
@@ -32,6 +37,8 @@ from apps.programs.presentation.api.v1.public_serializers import (
 )
 from apps.programs.presentation.api.v1.serializers import (
     ReorderItemsRequestSerializer,
+    SetBackstageRequestSerializer,
+    SetHostNoteRequestSerializer,
     SetProgressRequestSerializer,
 )
 
@@ -46,7 +53,13 @@ _TAG = "Public Program"
 #: next poll regardless.
 _CACHE_TTL_SECONDS = 60
 
-__all__ = ["PublicProgramDetailView", "PublicProgramOrderView", "PublicProgramRowProgressView"]
+__all__ = [
+    "PublicProgramDetailView",
+    "PublicProgramOrderView",
+    "PublicProgramRowBackstageView",
+    "PublicProgramRowNoteView",
+    "PublicProgramRowProgressView",
+]
 
 
 def _cache_key(slug: str, stamp: str) -> str:
@@ -80,10 +93,19 @@ def _public_json(view: PublicProgramView) -> dict[str, object]:
         "startsAt": view.starts_at,
         "totalSeconds": view.total_seconds,
         "controlsRunningOrder": view.controls_running_order,
-        "columns": [{"key": column.key, "label": column.label, "custom": column.custom} for column in view.columns],
+        "columns": [{"key": column.key, "label": column.label, "custom": column.custom, "sensitive": column.sensitive} for column in view.columns],
         "rows": [
-            # ``id`` is present only on the host's edition - see PublicProgramRowView.
-            {"kind": row.kind, "cells": list(row.cells), "progress": row.progress, "id": row.id}
+            # ``id``, ``backstage`` and ``note`` are present only on the host's edition -
+            # see PublicProgramRowView. On every other one they are null here because the
+            # application layer never put anything in them.
+            {
+                "kind": row.kind,
+                "cells": list(row.cells),
+                "progress": row.progress,
+                "id": row.id,
+                "backstage": row.backstage,
+                "note": row.note,
+            }
             for row in view.rows
         ],
     }
@@ -236,6 +258,91 @@ class PublicProgramRowProgressView(_HostView):
             )
         except RunningOrderNotControllableError:
             return self._refused(request, correlation_id)
+        except ProgramError:
+            return self._refused(request, correlation_id)
+        return Response(
+            {"data": _public_json(program), "meta": {"requestId": correlation_id}},
+            status=status.HTTP_200_OK,
+            headers={"X-Request-ID": correlation_id},
+        )
+
+
+class PublicProgramRowBackstageView(_HostView):
+    """``PUT /public/programs/{slug}/rows/{itemId}/backstage`` - who has turned up.
+
+    The host's own bookkeeping, and the only write here whose result nobody else can see:
+    the answer carries the mark back on her edition and on no other, because the
+    application layer renders it into no other.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="publicProgramSetBackstage",
+        request=SetBackstageRequestSerializer,
+        responses={status.HTTP_200_OK: PublicProgramEnvelopeSerializer},
+        description="Mark one act as present behind the stage, or no longer present. Visible on the host's link only.",
+    )
+    def put(self, request: Request, slug: str, item_id: str) -> Response:
+        correlation_id = request_id(request)
+        refusal = self._authorize(request, slug, correlation_id)
+        if refusal is not None:
+            return refusal
+        serializer = SetBackstageRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problem_response(
+                status=status.HTTP_400_BAD_REQUEST,
+                type_suffix="validation-error",
+                title="Validation failed",
+                detail="Передайте, стоит ли отметка «за сценой».",
+                instance=request.get_full_path(),
+                correlation_id=correlation_id,
+            )
+        try:
+            program = build_program_service().set_item_backstage(
+                MarkBackstageCommand(slug=slug, item_id=item_id, backstage=bool(serializer.validated_data["backstage"]))
+            )
+        except ProgramError:
+            return self._refused(request, correlation_id)
+        return Response(
+            {"data": _public_json(program), "meta": {"requestId": correlation_id}},
+            status=status.HTTP_200_OK,
+            headers={"X-Request-ID": correlation_id},
+        )
+
+
+class PublicProgramRowNoteView(_HostView):
+    """``PUT /public/programs/{slug}/rows/{itemId}/note`` - the host writes to herself.
+
+    An empty note clears it, which is why this is a ``PUT`` of the whole note rather than
+    an append: the thing being set is the one line that stands against this act now.
+    """
+
+    @extend_schema(
+        tags=[_TAG],
+        operation_id="publicProgramSetHostNote",
+        request=SetHostNoteRequestSerializer,
+        responses={status.HTTP_200_OK: PublicProgramEnvelopeSerializer},
+        description="Write the host's own note on one row. Visible on the host's link only; blank clears it.",
+    )
+    def put(self, request: Request, slug: str, item_id: str) -> Response:
+        correlation_id = request_id(request)
+        refusal = self._authorize(request, slug, correlation_id)
+        if refusal is not None:
+            return refusal
+        serializer = SetHostNoteRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return problem_response(
+                status=status.HTTP_400_BAD_REQUEST,
+                type_suffix="validation-error",
+                title="Validation failed",
+                detail="Пометка слишком длинная — оставьте не больше 500 символов.",
+                instance=request.get_full_path(),
+                correlation_id=correlation_id,
+            )
+        try:
+            program = build_program_service().annotate_item(
+                AnnotateItemCommand(slug=slug, item_id=item_id, note=str(serializer.validated_data["note"]))
+            )
         except ProgramError:
             return self._refused(request, correlation_id)
         return Response(

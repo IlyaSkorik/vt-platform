@@ -113,12 +113,13 @@ def _order(
     performer: str,
     receipts: tuple[str, ...] = (),
     benefits: tuple[tuple[str, str], ...] = (),
+    status: str = "SUBMITTED",
 ) -> ApplicationModel:
     """One order with a lead performer, any receipts it paid with, and any benefit files."""
     submission = SubmissionModel.objects.create(
         competition_id=competition_id,
         applicant_id=uuid.uuid4(),
-        status="SUBMITTED",
+        status=status,
         attachments=[{"id": str(uuid.uuid4()), "type": "BENEFIT", "file": reference, "caption": caption} for caption, reference in benefits],
     )
     return ApplicationModel.objects.create(
@@ -215,6 +216,24 @@ class TestDocumentsArchive:
         with _archive(response) as archive:
             assert all("Сидоров" not in name for name in archive.namelist())
             assert any("Иванова Анна" in name for name in archive.namelist())
+
+    def test_the_archive_follows_the_selection_on_screen(self, staff_client: APIClient) -> None:
+        # Организатор отбирает «назначены на фестиваль» и жмёт «Скачать документы»,
+        # имея в виду бумаги этих заявок. Папка за весь сезон вместо них обнаружится,
+        # когда её уже отправили в бухгалтерию.
+        competition_id = _festival()
+        scheduled = _order(
+            competition_id=competition_id,
+            performer="Иванова Анна",
+            receipts=(_stored("scheduled.pdf", b"scheduled"),),
+            status="SCHEDULED",
+        )
+        _order(competition_id=competition_id, performer="Петров Пётр", receipts=(_stored("new.pdf", b"new"),))
+        short = str(scheduled.id).split("-")[0]
+
+        response = staff_client.get(f"{_ARCHIVE}?competitionId={competition_id}&status=SCHEDULED")
+        with _archive(response) as archive:
+            assert archive.namelist() == [f"Иванова Анна — {short}/Квитанция.pdf"]
 
     def test_music_never_enters_the_paperwork_archive(self, staff_client: APIClient) -> None:
         competition_id = _festival()

@@ -51,13 +51,13 @@ from apps.identity.infrastructure.models.user import UserModel
 from apps.notifications.infrastructure import feed as notification_feed
 from apps.notifications.infrastructure.models import NotificationKind
 
+from .support import _StaffView
 from .views import (
     _application_meta_for_submission,
     _application_urls,
     _cabinet_path,
     _capabilities,
     _now,
-    _StaffView,
 )
 
 #: How each changed field is named to a human. The keys are the application layer's

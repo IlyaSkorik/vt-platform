@@ -12,9 +12,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from apps.finance.application.dto.queries import ExpenseLedgerView, ExpenseView
+from apps.finance.application.dto.queries import (
+    CommissionPaymentLedgerView,
+    CommissionPaymentView,
+    ExpenseLedgerView,
+    ExpenseView,
+)
 
-__all__ = ["expense", "ledger"]
+__all__ = ["commission_payment", "commission_payment_ledger", "expense", "ledger"]
 
 
 def expense(view: ExpenseView) -> dict[str, Any]:
@@ -37,5 +42,35 @@ def ledger(view: ExpenseLedgerView) -> dict[str, Any]:
         "expenses": [expense(row) for row in view.expenses],
         "total": str(view.total),
         "byCategory": [{"category": row.category, "amount": str(row.amount), "count": row.count} for row in view.by_category],
+        "truncated": view.truncated,
+    }
+
+
+def commission_payment(view: CommissionPaymentView) -> dict[str, Any]:
+    return {
+        "id": view.id,
+        "organizationId": view.organization_id,
+        "organizationName": view.organization_name,
+        "amount": str(view.amount),
+        "receivedAt": view.received_at,
+        "note": view.note,
+        "createdAt": view.created_at,
+        "updatedAt": view.updated_at,
+    }
+
+
+def commission_payment_ledger(view: CommissionPaymentLedgerView) -> dict[str, Any]:
+    return {
+        "payments": [commission_payment(row) for row in view.payments],
+        "total": str(view.total),
+        "byOrganization": [
+            {
+                "organizationId": row.organization_id,
+                "organizationName": row.organization_name,
+                "amount": str(row.amount),
+                "count": row.count,
+            }
+            for row in view.by_organization
+        ],
         "truncated": view.truncated,
     }

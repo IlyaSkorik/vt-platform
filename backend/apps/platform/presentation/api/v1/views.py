@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import re
 import uuid
+from datetime import date
 from decimal import Decimal
 from typing import Any, Final
 
@@ -162,6 +163,43 @@ def _fee_tiers_data(tiers: Any) -> list[dict[str, Any]]:
         }
         for tier in tiers
     ]
+
+
+def _fee_breakdown_data(rows: Any) -> list[dict[str, Any]]:
+    """The per-band tally on the wire — the rows an act is written from.
+
+    Every band of the schedule appears, including the ones nothing fell into: a
+    price list with rows silently missing is one the organizer cannot check against
+    their own copy.
+    """
+    return [
+        {
+            "minParticipants": row.min_participants,
+            "maxParticipants": row.max_participants,
+            "rangeLabel": row.range_label,
+            "unitAmount": str(row.unit_amount),
+            "performances": row.performances,
+            "amount": str(row.amount),
+        }
+        for row in rows
+    ]
+
+
+def _optional_date(request: Request, name: str) -> date | None:
+    """A ``YYYY-MM-DD`` query parameter, or ``None`` when it was not sent.
+
+    An unparseable date is treated as absent rather than refused, exactly as the
+    expense ledger treats its own: these are the two ends of a period filter on a
+    screen, and a half-typed date in the address bar should narrow nothing rather
+    than blank the dashboard with an error.
+    """
+    raw = (request.query_params.get(name) or "").strip()
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        return None
 
 
 def _fee_tier_rows(payload: Any) -> tuple[FeeTierRow, ...]:
@@ -408,22 +446,35 @@ class PlatformAudienceView(_PlatformView):
 
 
 class PlatformDashboardView(_PlatformView):
-    """GET /api/v1/platform/dashboard — applications and fees across every organization."""
+    """GET /api/v1/platform/dashboard — the platform's books across every organization."""
 
     @extend_schema(
         tags=[_TAG],
         operation_id="platform_dashboard",
         summary="Platform dashboard",
         description=(
-            "Application counts per status across all connected organizations, with the participation "
-            "fees behind them and the platform's commission on those fees — and, against that income, "
-            "the costs recorded in the platform's own expense book and the difference between the two. "
-            "Filterable by organization and by competition; under a competition filter `expensesApply` "
-            "is false, because expenses are recorded per organization and never per festival."
+            "What the platform is owed, what it has been paid and what it has spent, across all "
+            "connected organizations, with the order funnel behind the figures.\n\n"
+            "Commission is counted per **performance**, never per order: an entry is billable once it "
+            "is committed to taking part (`ACCEPTED`, `SCHEDULED` or `COMPLETED`), and is priced "
+            "either off the organization's fee schedule — banded by how many participants it has, with "
+            "`feeBreakdown` giving the per-band rows an act is written from — or as a percentage of "
+            "what those entries themselves cost. Additional services an organizer sells are outside "
+            "the base in both models.\n\n"
+            "`accruedCommission` is what is owed; `receivedCommission` is what the operator has "
+            "recorded as actually paid in the commission receipts ledger; `commissionDebt` is the "
+            "difference.\n\n"
+            "Filterable by organization, by competition and by period. Under a competition filter "
+            "`expensesApply` is false, because expenses and receipts are recorded per organization "
+            "and never per festival. A period narrows the money — entries by the day they became "
+            "chargeable, expenses by the day they were spent, receipts by the day they landed — and "
+            "leaves the order funnel alone, which `periodApplies` says so the console can label it."
         ),
         parameters=[
             OpenApiParameter(name="organizationId", type=str, required=False, description="Narrow to one organization."),
             OpenApiParameter(name="competitionId", type=str, required=False, description="Narrow to one competition."),
+            OpenApiParameter(name="from", type=str, required=False, description="Start of the period, inclusive (YYYY-MM-DD)."),
+            OpenApiParameter(name="to", type=str, required=False, description="End of the period, inclusive (YYYY-MM-DD)."),
         ],
         request=None,
         responses={
@@ -435,19 +486,24 @@ class PlatformDashboardView(_PlatformView):
         dashboard = build_dashboard(
             organization_id=(request.query_params.get("organizationId") or "").strip() or None,
             competition_id=(request.query_params.get("competitionId") or "").strip() or None,
+            since=_optional_date(request, "from"),
+            until=_optional_date(request, "to"),
         )
         data = {
             "statusCounts": dashboard.status_counts,
             "applications": dashboard.applications,
-            "expectedFees": str(dashboard.expected_fees),
-            "settledFees": str(dashboard.settled_fees),
-            "expectedCommission": str(dashboard.expected_commission),
-            "settledCommission": str(dashboard.settled_commission),
+            "orderFees": str(dashboard.order_fees),
+            "performances": dashboard.performances,
+            "participants": dashboard.participants,
+            "commissionBase": str(dashboard.commission_base),
+            "accruedCommission": str(dashboard.accrued_commission),
+            "receivedCommission": str(dashboard.received_commission),
+            "commissionDebt": str(dashboard.commission_debt),
             "expenses": str(dashboard.expenses),
             "unattributedExpenses": str(dashboard.unattributed_expenses),
             "profit": str(dashboard.profit),
-            "potentialProfit": str(dashboard.potential_profit),
             "expensesApply": dashboard.expenses_apply,
+            "periodApplies": dashboard.period_applies,
             "organizations": [
                 {
                     "organizationId": row.organization_id,
@@ -459,13 +515,16 @@ class PlatformDashboardView(_PlatformView):
                     "competitions": row.competitions,
                     "applications": row.applications,
                     "statusCounts": row.status_counts,
-                    "expectedFees": str(row.expected_fees),
-                    "settledFees": str(row.settled_fees),
-                    "expectedCommission": str(row.expected_commission),
-                    "settledCommission": str(row.settled_commission),
+                    "orderFees": str(row.order_fees),
+                    "performances": row.performances,
+                    "participants": row.participants,
+                    "commissionBase": str(row.commission_base),
+                    "accruedCommission": str(row.accrued_commission),
+                    "receivedCommission": str(row.received_commission),
+                    "commissionDebt": str(row.commission_debt),
+                    "feeBreakdown": _fee_breakdown_data(row.fee_breakdown),
                     "expenses": str(row.expenses),
                     "profit": str(row.profit),
-                    "potentialProfit": str(row.potential_profit),
                 }
                 for row in dashboard.organizations
             ],

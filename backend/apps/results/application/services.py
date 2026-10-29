@@ -11,17 +11,31 @@ whole state back after every edit anyway (a saved award changes whether the prot
 be published, and whether what is published is stale), so returning it removes a
 follow-up request and with it any chance of a screen rendering a result it did not save.
 
-:meth:`ProtocolService.publish` is the one method here that does more than move data
-around. It is written as one ordered sequence on purpose:
+Publishing is the one action here that does more than move data around, and the one
+split across two methods. :meth:`ProtocolService.publish` does what the organizer is
+waiting for and nothing else:
 
 1. the domain publishes - status, revision, slug, timestamp, and the refusal to publish
    nothing at all;
 2. the protocol is **saved**, so a failure in anything below cannot leave results that
-   the page says are public but the database calls a draft;
+   the page says are public but the database calls a draft.
+
+:meth:`ProtocolService.complete_publication` does the rest, and is meant to be run by a
+worker rather than inside the request (see :mod:`apps.results.tasks`):
+
 3. the degrees are written onto the diplomas, which is what makes them appear in the
    participant's cabinet;
 4. the letters are queued, last, because a letter is the one effect that cannot be
    undone by trying again.
+
+The seam is at (2) on purpose. Steps 3-4 are linear in the number of rows - a diploma
+is rendered per awarded row, and per named member of a collective on top of that - so a
+nomination of a hundred and fifty acts outlasts anything between the organizer and the
+backend that is willing to hold a connection open. Done inside the request, the
+organizer was shown a failure for work the server went on to finish. Above the seam
+nothing is slow, so the page is public the moment the button is pressed, which is what
+publishing *means*; below it, everything is idempotent, so a job that dies is fixed by
+running it again.
 """
 
 from __future__ import annotations
@@ -344,13 +358,14 @@ class ProtocolService:
     # Publication
     # ------------------------------------------------------------------
 
-    def publish(self, command: PublishProtocolCommand) -> PublicationResultView:
-        """Publish the results: the page, the diplomas, and the letters.
+    def publish(self, command: PublishProtocolCommand) -> ProtocolDetailView:
+        """Make the results public. The diplomas and the letters follow in a worker.
 
-        The order below is the contract, not an implementation detail - see the module
-        docstring. The two side effects are attempted even if the other fails, and both
-        are counted in the response: an organizer who publishes results and gets no mail
-        must be told that, not left to find out from a participant.
+        Everything here is cheap and everything here is what the organizer pressed the
+        button for: the page resolves the moment this returns. What it deliberately does
+        *not* do is issue the diplomas or write to anyone - that is
+        :meth:`complete_publication`, and the module docstring says why the line is
+        drawn exactly here.
         """
         now = self._clock.utcnow()
         protocol = self._load(command.protocol_id)
@@ -361,13 +376,41 @@ class ProtocolService:
         # a protocol the database still calls a draft is the one inconsistency here that
         # nobody could explain afterwards.
         self._protocols.save(protocol)
+        return self._detail(protocol)
+
+    def complete_publication(self, protocol_id: str, *, notify: bool) -> PublicationResultView:
+        """Issue the diplomas and queue the letters for an already published protocol.
+
+        The slow half of publishing, written to be run by a worker and to survive being
+        run twice: awarding writes the same degrees onto the same diplomas, and a second
+        letter to the same applicant is the only part that would be noticed - which is
+        why letters come last, after the part that can fail and be retried.
+
+        Both side effects are attempted even if the other fails, and both are counted:
+        an organizer who publishes results and gets no mail must be told that, not left
+        to find out from a participant.
+
+        A protocol that is no longer published does nothing at all. That is the one
+        state where arriving late is actually wrong: unpublishing says "these were not
+        the results", and a worker that issued diplomas for them a minute afterwards
+        would be handing out documents the organizer had just withdrawn.
+        """
+        now = self._clock.utcnow()
+        protocol = self._load(protocol_id)
+        if not protocol.is_published:
+            return PublicationResultView(
+                diplomas_awarded=0,
+                diplomas_created=0,
+                diplomas_missing=0,
+                letters_sent=0,
+                letters_skipped=0,
+            )
 
         awarded = self._record_awards(protocol, now=now)
-        letters_sent, letters_skipped = self._send_letters(protocol) if command.notify else (0, 0)
+        letters_sent, letters_skipped = self._send_letters(protocol) if notify else (0, 0)
 
         decided = len(protocol.decided_rows)
         return PublicationResultView(
-            protocol=self._detail(protocol),
             diplomas_awarded=len(awarded),
             diplomas_created=sum(1 for entry in awarded if entry.created),
             diplomas_missing=max(0, decided - len(awarded)),

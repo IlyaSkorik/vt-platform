@@ -36,11 +36,20 @@ class ColumnView:
 
     ``custom`` marks a column the organizer added themselves - the only ones that can be
     renamed, removed, or filled in by hand.
+
+    ``sensitive`` marks a column that is about somebody who is not on stage - a phone
+    number, a comment that in practice carries «аллергия», «опекун». It changes nothing
+    about who the cells are *sent* to: that was settled when the organizer chose this
+    edition's columns. It is advice to whoever draws the table, and the host's screen is
+    the one that takes it - she reads the programme backstage, in a corridor, with other
+    people's parents reading it over her shoulder, so those cells stay covered until she
+    asks for one.
     """
 
     key: str
     label: str
     custom: bool = False
+    sensitive: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -267,12 +276,21 @@ class PublicProgramRowView:
     ``progress`` is what makes a screen live: the row on stage is highlighted and the ones
     behind it are greyed out. ``id`` is present **only** on the host's edition, because it
     is the handle their controls act on - a read-only link carries no ids at all.
+
+    ``backstage`` and ``note`` are the host's own two marks and follow ``id`` exactly:
+    ``None`` on every other edition, and not because the client is trusted to hide them -
+    they are never rendered into that payload at all. Who has turned up backstage and what
+    the host wrote to herself about an act are not facts about the festival; publishing
+    them to the screen beside the stage would be a small, permanent betrayal of the one
+    person the link was handed to.
     """
 
     kind: str
     cells: tuple[str, ...]
     progress: str = "PENDING"
     id: str | None = None
+    backstage: bool | None = None
+    note: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

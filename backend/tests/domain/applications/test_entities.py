@@ -22,6 +22,7 @@ from apps.applications.domain.events import (
     SubmissionReturnedForCorrection,
     SubmissionReviewStarted,
     SubmissionSubmitted,
+    SubmissionUnscheduled,
     SubmissionWaitlisted,
 )
 from apps.applications.domain.exceptions import (
@@ -1073,3 +1074,87 @@ class TestSubmitRequirements:
         submission.set_performance(performance=_performance(comment="Нужен свет с левой кулисы"), now=NOW)
         submission.submit(policy=_policy(allows_participant_comment=True), now=NOW)
         assert submission.status is SubmissionStatus.SUBMITTED
+
+
+class TestLosingASlotInTheRunningOrder:
+    """`SCHEDULED` — это «стоит в программе», и место можно отобрать.
+
+    Статус ставит контекст программ, когда номер действительно получает место, и
+    снимает, когда место пропало: номер вынули из программы или удалили саму
+    программу. Без обратного перехода статус навсегда утверждал бы, что номер
+    стоит в программе, которой уже нет.
+    """
+
+    def test_unscheduling_puts_the_entry_back_to_accepted(self) -> None:
+        s = _accepted()
+        s.schedule(now=NOW)
+
+        events = s.unschedule(now=NOW)
+
+        assert s.status is SubmissionStatus.ACCEPTED
+        assert isinstance(events[0], SubmissionUnscheduled)
+
+    def test_losing_a_slot_is_not_losing_the_competition(self) -> None:
+        # Номер по-прежнему оплачен, принят и имеет право на диплом — у него просто
+        # нет места в бегущем порядке. Поэтому участник всё так же не может его
+        # отозвать сам: это решение организатора.
+        s = _accepted()
+        s.schedule(now=NOW)
+        s.unschedule(now=NOW)
+
+        with pytest.raises(IllegalStatusTransitionError):
+            s.cancel(now=NOW)
+
+    def test_an_entry_can_take_a_slot_again(self) -> None:
+        s = _accepted()
+        s.schedule(now=NOW)
+        s.unschedule(now=NOW)
+
+        s.schedule(now=NOW)
+
+        assert s.status is SubmissionStatus.SCHEDULED
+
+    def test_the_whole_round_trip_stays_in_the_history(self) -> None:
+        # История статусов — единственное, по чему потом видно, когда номер попал в
+        # программу и когда его оттуда убрали; отчёты по периоду читают именно её.
+        s = _accepted()
+        s.schedule(now=NOW)
+        s.unschedule(now=NOW)
+
+        tail = [(change.from_status, change.to_status) for change in s.status_history[-2:]]
+        assert tail == [
+            (SubmissionStatus.ACCEPTED, SubmissionStatus.SCHEDULED),
+            (SubmissionStatus.SCHEDULED, SubmissionStatus.ACCEPTED),
+        ]
+
+    def test_scheduling_twice_changes_nothing(self) -> None:
+        # Контекст программ гоняет это из diff'а, и номер, добавленный во вторую
+        # программу, приезжает сюда уже назначенным. Отказ был бы ошибкой на ровном
+        # месте, а лишняя запись в истории — враньём про второе назначение.
+        s = _accepted()
+        s.schedule(now=NOW)
+        history = len(s.status_history)
+        version = s.version
+
+        events = s.schedule(now=NOW)
+
+        assert events == []
+        assert len(s.status_history) == history
+        assert s.version == version
+
+    def test_unscheduling_an_entry_that_holds_no_slot_changes_nothing(self) -> None:
+        s = _accepted()
+
+        events = s.unschedule(now=NOW)
+
+        assert events == []
+        assert s.status is SubmissionStatus.ACCEPTED
+
+    def test_a_performed_entry_does_not_go_back_to_accepted(self) -> None:
+        # Выступление состоялось — это факт, а не место в расписании.
+        s = _accepted()
+        s.schedule(now=NOW)
+        s.complete(now=NOW)
+
+        assert s.unschedule(now=NOW) == []
+        assert s.status is SubmissionStatus.COMPLETED

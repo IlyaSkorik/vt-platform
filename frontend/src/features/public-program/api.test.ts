@@ -18,7 +18,7 @@ const program = (controlsRunningOrder: boolean): PublicProgram => ({
   startsAt: "2026-09-01T10:00:00Z",
   totalSeconds: 1380,
   controlsRunningOrder,
-  columns: [{ key: "TIME", label: "Время", custom: false }],
+  columns: [{ key: "TIME", label: "Время", custom: false, sensitive: false }],
   rows: [],
 });
 

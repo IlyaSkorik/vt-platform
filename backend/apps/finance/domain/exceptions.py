@@ -10,8 +10,10 @@ from __future__ import annotations
 from typing import ClassVar
 
 __all__ = [
+    "CommissionPaymentNotFoundError",
     "ExpenseNotFoundError",
     "FinanceError",
+    "InvalidCommissionPaymentDataError",
     "InvalidExpenseDataError",
 ]
 
@@ -32,3 +34,15 @@ class ExpenseNotFoundError(FinanceError):
     """No such expense — it was never recorded, or it has already been removed."""
 
     code: ClassVar[str] = "expense_not_found"
+
+
+class InvalidCommissionPaymentDataError(FinanceError, ValueError):
+    """A value the domain refuses on a commission receipt: a non-positive sum, no payer."""
+
+    code: ClassVar[str] = "invalid_commission_payment_data"
+
+
+class CommissionPaymentNotFoundError(FinanceError):
+    """No such receipt — it was never recorded, or it has already been struck off."""
+
+    code: ClassVar[str] = "commission_payment_not_found"

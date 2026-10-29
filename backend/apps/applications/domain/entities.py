@@ -105,6 +105,7 @@ from .events import (
     SubmissionReviewStarted,
     SubmissionScheduled,
     SubmissionSubmitted,
+    SubmissionUnscheduled,
     SubmissionWaitlisted,
     TeacherAdded,
     TeacherRemoved,
@@ -205,7 +206,12 @@ _LEGAL_TRANSITIONS: Final[dict[SubmissionStatus, frozenset[SubmissionStatus]]] =
     SubmissionStatus.WAITING_PAYMENT: frozenset({SubmissionStatus.PAID, SubmissionStatus.CANCELLED}),
     SubmissionStatus.PAID: frozenset({SubmissionStatus.ACCEPTED, SubmissionStatus.CANCELLED}),
     SubmissionStatus.ACCEPTED: frozenset({SubmissionStatus.SCHEDULED, SubmissionStatus.CANCELLED}),
-    SubmissionStatus.SCHEDULED: frozenset({SubmissionStatus.COMPLETED, SubmissionStatus.CANCELLED}),
+    # Back to ACCEPTED is not a step backwards in review — it is the slot being
+    # pulled. ``SCHEDULED`` means "holds a place in a running order", and a place
+    # can be taken away: the act is dropped from the programme, or the whole
+    # programme is deleted. Without this edge the status would say the act is in a
+    # programme that no longer contains it, and nothing could ever correct that.
+    SubmissionStatus.SCHEDULED: frozenset({SubmissionStatus.ACCEPTED, SubmissionStatus.COMPLETED, SubmissionStatus.CANCELLED}),
     SubmissionStatus.COMPLETED: frozenset(),
     SubmissionStatus.CANCELLED: frozenset(),
 }
@@ -1388,9 +1394,33 @@ class Submission:
         return [SubmissionAccepted(aggregate_id=self._id.value)]
 
     def schedule(self, *, now: datetime) -> list[DomainEvent]:
-        """Assign the submission a slot in the running order (ACCEPTED -> SCHEDULED)."""
+        """Assign the submission a slot in the running order (ACCEPTED -> SCHEDULED).
+
+        Idempotent on purpose: an act already in a programme that is added to a second
+        one, or re-saved by a rebuild, stays scheduled rather than raising. The Programs
+        context drives this from a diff of what a programme holds, and a diff that has
+        to know which side it is on is a diff that will get it wrong once.
+        """
+        if self._status is SubmissionStatus.SCHEDULED:
+            return []
         self._transition_to(SubmissionStatus.SCHEDULED, now=now)
         return [SubmissionScheduled(aggregate_id=self._id.value)]
+
+    def unschedule(self, *, now: datetime) -> list[DomainEvent]:
+        """Take the submission out of the running order (SCHEDULED -> ACCEPTED).
+
+        The act stays in the competition: it is still paid, still frozen, still due a
+        diploma. It simply holds no slot — because the organizer pulled it from the
+        programme, or deleted the programme it stood in.
+
+        Idempotent for the same reason :meth:`schedule` is: an act that was never
+        scheduled (one from before programmes drove this status, or one the organizer
+        is removing from a second programme) is left alone rather than refused.
+        """
+        if self._status is not SubmissionStatus.SCHEDULED:
+            return []
+        self._transition_to(SubmissionStatus.ACCEPTED, now=now)
+        return [SubmissionUnscheduled(aggregate_id=self._id.value)]
 
     def complete(self, *, now: datetime) -> list[DomainEvent]:
         """Mark the performance as having taken place (SCHEDULED -> COMPLETED)."""

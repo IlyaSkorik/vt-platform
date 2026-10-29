@@ -8,18 +8,28 @@ behind each port. Adapters are stateless and cheap, so they are assembled per ca
 
 from __future__ import annotations
 
-from apps.finance.application.services import ExpenseService
+from apps.finance.application.services import CommissionPaymentService, ExpenseService
 from apps.finance.infrastructure.acl import DjangoOrganizationDirectory
-from apps.finance.infrastructure.repositories import DjangoPlatformExpenseRepository
+from apps.finance.infrastructure.repositories import DjangoCommissionPaymentRepository, DjangoPlatformExpenseRepository
 from apps.finance.infrastructure.system import SystemClock, Uuid7Generator
 
-__all__ = ["build_expense_service"]
+__all__ = ["build_commission_payment_service", "build_expense_service"]
 
 
 def build_expense_service() -> ExpenseService:
     """Assemble the Finance use cases over PostgreSQL and the real clock."""
     return ExpenseService(
         expenses=DjangoPlatformExpenseRepository(),
+        clock=SystemClock(),
+        uuids=Uuid7Generator(),
+        organizations=DjangoOrganizationDirectory(),
+    )
+
+
+def build_commission_payment_service() -> CommissionPaymentService:
+    """Assemble the receipts use cases over PostgreSQL and the real clock."""
+    return CommissionPaymentService(
+        payments=DjangoCommissionPaymentRepository(),
         clock=SystemClock(),
         uuids=Uuid7Generator(),
         organizations=DjangoOrganizationDirectory(),

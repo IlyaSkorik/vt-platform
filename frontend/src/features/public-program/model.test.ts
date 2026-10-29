@@ -6,12 +6,26 @@ import { blockLine, moveRowNextTo, moveRowTo, rowNumber } from "./model";
 const COLUMNS = ["POSITION", "TIME", "TITLE"];
 
 function aRow(number: string, id: string | null = `item-${number}`): PublicProgramRow {
-  return { kind: "PERFORMANCE", cells: [number, "10:00", "Катюша"], progress: "PENDING", id };
+  return {
+    kind: "PERFORMANCE",
+    cells: [number, "10:00", "Катюша"],
+    progress: "PENDING",
+    id,
+    backstage: null,
+    note: null,
+  };
 }
 
 /** A break: a row with a place in the order and no number of its own. */
 function aBreak(id = "item-b"): PublicProgramRow {
-  return { kind: "BREAK", cells: ["", "10:04", "Перерыв"], progress: "PENDING", id };
+  return {
+    kind: "BREAK",
+    cells: ["", "10:04", "Перерыв"],
+    progress: "PENDING",
+    id,
+    backstage: null,
+    note: null,
+  };
 }
 
 /** A published programme, whose numbers stayed with their participants: 4, 9, 7. */
@@ -106,6 +120,8 @@ describe("blockLine", () => {
       cells: ["10:04", "Перерыв", "15:00", "Сцена под награждение"],
       progress: "PENDING",
       id: null,
+      backstage: null,
+      note: null,
     };
 
     expect(blockLine(row, CUT)).toEqual({
@@ -121,6 +137,8 @@ describe("blockLine", () => {
       cells: ["", "10:04", "Награждение", ""],
       progress: "PENDING",
       id: null,
+      backstage: null,
+      note: null,
     };
 
     expect(blockLine(row, ["POSITION", "TIME", "TITLE", "PARTICIPANT"])).toEqual({
@@ -136,6 +154,8 @@ describe("blockLine", () => {
       cells: ["10:04", "Перерыв на обед"],
       progress: "PENDING",
       id: null,
+      backstage: null,
+      note: null,
     };
 
     expect(blockLine(row, ["TIME", "COMMENT"])).toEqual({

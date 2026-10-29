@@ -94,10 +94,10 @@ function StatTile({
  * narrow the ledger, and a bottom line narrowed to March would be a bottom line
  * only for March's costs against every month's commission.
  *
- * Both differences are shown. "Получено" is commission that has actually been
- * paid; "ожидается" is what the same books come to once every outstanding order
- * settles. An operator who is behind on one and ahead on the other is looking at
- * a collection problem, and one figure would hide which.
+ * The difference is against commission that has actually arrived, not against
+ * what was accrued: money still owed is not money the platform has, and folding
+ * it in would report a profit that has not happened. What is still owed is
+ * reported beside it as a debt, which is the operator's follow-up list.
  */
 function BottomLine(): React.JSX.Element {
   const dashboard = usePlatformDashboard("", "");
@@ -110,9 +110,17 @@ function BottomLine(): React.JSX.Element {
     tone?: "positive" | "negative";
   }> = [
     {
-      label: "Комиссия получена",
-      value: data ? formatMoney(data.settledCommission) : "—",
-      hint: "Доля платформы от оплаченных заявок",
+      label: "Комиссия поступила",
+      value: data ? formatMoney(data.receivedCommission) : "—",
+      hint: "Внесено по факту оплаты",
+    },
+    {
+      label: "Долг организаторов",
+      value: data ? formatMoney(data.commissionDebt) : "—",
+      hint: "Начислено, но ещё не поступило",
+      ...(data
+        ? { tone: Number(data.commissionDebt) > 0 ? ("negative" as const) : ("positive" as const) }
+        : {}),
     },
     {
       label: "Расходы",
@@ -122,17 +130,9 @@ function BottomLine(): React.JSX.Element {
     {
       label: "Разница",
       value: data ? formatMoney(data.profit) : "—",
-      hint: "Полученная комиссия минус расходы",
+      hint: "Поступившая комиссия минус расходы",
       ...(data
         ? { tone: Number(data.profit) < 0 ? ("negative" as const) : ("positive" as const) }
-        : {}),
-    },
-    {
-      label: "Разница потенциальная",
-      value: data ? formatMoney(data.potentialProfit) : "—",
-      hint: "Если все ожидаемые заявки будут оплачены",
-      ...(data
-        ? { tone: Number(data.potentialProfit) < 0 ? ("negative" as const) : ("positive" as const) }
         : {}),
     },
   ];

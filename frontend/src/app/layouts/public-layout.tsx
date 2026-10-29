@@ -9,12 +9,10 @@ import { ThemeToggle } from "./theme-toggle";
 const NAV_ITEMS = [
   { label: "Главная", to: ROUTES.home, end: true },
   { label: "Фестивали", to: ROUTES.competitions, end: false },
-  // There is no standalone organiser page yet, so this points at the panel on
-  // the landing that addresses them. A hash target rather than a dead route:
-  // `ScrollRestoration` in the root layout takes the browser there from any
-  // public page, and the day that content grows into a page of its own this
-  // becomes a route change and nothing else moves.
-  { label: "Организаторам", to: `${ROUTES.home}#for-organizers`, end: false },
+  // The one entry here addressed to somebody who is not a participant. It
+  // stays in the bar rather than only in the footer because an organizer sent
+  // the link once will come back to the site, not to the message.
+  { label: "Организаторам", to: ROUTES.organizers, end: false },
 ] as const;
 
 /**

@@ -268,6 +268,31 @@ class TestTheHostsEdition:
         response = APIClient().put(f"{_PUBLIC}/{slug}/order", {"itemIds": [rows[0]["id"]]}, format="json")
         assert response.status_code == 422
 
+    def test_a_cancelled_act_is_cancelled_on_every_screen(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        # The one the host finds out about on the morning: somebody is ill, the act is
+        # not happening, and that is a fact about the day rather than a note to herself.
+        # So it travels like «выступил» does - to the sound desk, to the screen beside
+        # the stage, to the hall.
+        slug, program_id, rows = self._host_link(staff_client, scope)
+        screen_slug = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран"}, format="json").data["data"]["share"]["slug"]
+
+        response = APIClient().put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/progress", {"progress": "CANCELLED"}, format="json")
+        assert response.status_code == 200, response.data
+        assert response.data["data"]["rows"][0]["progress"] == "CANCELLED"
+
+        screen = APIClient().get(f"{_PUBLIC}/{screen_slug}").data["data"]
+        assert screen["rows"][0]["progress"] == "CANCELLED"
+
+    def test_cancelling_an_act_that_is_on_stage_leaves_the_rest_alone(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        # Pulling an act that had already been announced is a correction, not a cue to
+        # the next one: nothing else moves, and the host decides what follows.
+        slug, _program_id, rows = self._host_link(staff_client, scope)
+        client = APIClient()
+        client.put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/progress", {"progress": "ON_STAGE"}, format="json")
+        cancelled = client.put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/progress", {"progress": "CANCELLED"}, format="json")
+
+        assert [row["progress"] for row in cancelled.data["data"]["rows"]] == ["CANCELLED", "PENDING"]
+
     def test_the_organizer_can_reset_the_day(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, program_id, rows = self._host_link(staff_client, scope)
         APIClient().put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/progress", {"progress": "PERFORMED"}, format="json")
@@ -275,6 +300,124 @@ class TestTheHostsEdition:
         reset = staff_client.delete(f"{_PROGRAMS}/{program_id}/progress")
         assert reset.status_code == 200, reset.data
         assert all(item["progress"] == "PENDING" for item in reset.data["data"]["items"])
+
+
+class TestTheHostsPrivateMarks:
+    """What the host writes for herself, and what it takes for it to stay hers.
+
+    Backstage is a corridor full of other people's parents reading over her shoulder, so
+    "private" here cannot mean a client that declines to draw something. It means the
+    other editions' payloads have nothing in them to draw.
+    """
+
+    def _host_link(self, staff_client: APIClient, scope: tuple[str, str]) -> tuple[str, str, list[dict[str, Any]]]:
+        slug, program_id, _items = _published_program(
+            staff_client,
+            scope,
+            name="Программа ведущего",
+            columns=["POSITION", "TITLE", "COMMENT"],
+            controls=True,
+        )
+        rows = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]["rows"]
+        return slug, program_id, rows
+
+    def test_the_host_marks_who_is_standing_behind_the_stage(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        slug, program_id, rows = self._host_link(staff_client, scope)
+        screen_slug = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран"}, format="json").data["data"]["share"]["slug"]
+
+        response = APIClient().put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/backstage", {"backstage": True}, format="json")
+        assert response.status_code == 200, response.data
+        assert [row["backstage"] for row in response.data["data"]["rows"]] == [True, False]
+
+        # The act is behind the stage and has still not performed: the two answers are
+        # independent, which is the whole reason this is not a progress state.
+        assert response.data["data"]["rows"][0]["progress"] == "PENDING"
+
+        # And the screen beside the stage learns nothing at all.
+        screen = APIClient().get(f"{_PUBLIC}/{screen_slug}").data["data"]
+        assert all(row["backstage"] is None for row in screen["rows"])
+
+    def test_an_act_can_leave_again(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        slug, _program_id, rows = self._host_link(staff_client, scope)
+        client = APIClient()
+        client.put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/backstage", {"backstage": True}, format="json")
+        left = client.put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/backstage", {"backstage": False}, format="json")
+
+        assert left.data["data"]["rows"][0]["backstage"] is False
+
+    def test_the_host_writes_a_line_to_herself(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        slug, program_id, rows = self._host_link(staff_client, scope)
+        screen_slug = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран"}, format="json").data["data"]["share"]["slug"]
+
+        response = APIClient().put(
+            f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/note",
+            {"note": "Зовут Алиса, не Алла"},
+            format="json",
+        )
+        assert response.status_code == 200, response.data
+        assert response.data["data"]["rows"][0]["note"] == "Зовут Алиса, не Алла"
+        assert response.data["data"]["rows"][1]["note"] == ""
+
+        screen = APIClient().get(f"{_PUBLIC}/{screen_slug}").data["data"]
+        assert all(row["note"] is None for row in screen["rows"])
+
+    def test_a_blank_note_clears_it(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        slug, _program_id, rows = self._host_link(staff_client, scope)
+        client = APIClient()
+        client.put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/note", {"note": "Папа подойдёт к сцене"}, format="json")
+        cleared = client.put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/note", {"note": ""}, format="json")
+
+        assert cleared.status_code == 200, cleared.data
+        assert cleared.data["data"]["rows"][0]["note"] == ""
+
+    def test_a_note_longer_than_the_limit_is_refused(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        slug, _program_id, rows = self._host_link(staff_client, scope)
+        response = APIClient().put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/note", {"note": "я" * 501}, format="json")
+
+        assert response.status_code == 400
+
+    def test_a_read_only_link_can_neither_write_nor_read_the_marks(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        # Refused as the other host writes are: indistinguishably from a slug nobody
+        # minted, so an audience link cannot be probed for whether it is the host's.
+        slug, program_id, rows = self._host_link(staff_client, scope)
+        APIClient().put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/note", {"note": "аллергия на орехи"}, format="json")
+        screen_slug = staff_client.post(f"{_PROGRAMS}/{program_id}/shares", {"name": "Экран"}, format="json").data["data"]["share"]["slug"]
+
+        assert APIClient().put(f"{_PUBLIC}/{screen_slug}/rows/{rows[0]['id']}/note", {"note": "что угодно"}, format="json").status_code == 404
+        assert APIClient().put(f"{_PUBLIC}/{screen_slug}/rows/{rows[0]['id']}/backstage", {"backstage": True}, format="json").status_code == 404
+
+        screen = APIClient().get(f"{_PUBLIC}/{screen_slug}")
+        assert "аллергия" not in screen.content.decode()
+
+    def test_the_marks_survive_a_rearrangement_with_their_own_rows(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        slug, _program_id, rows = self._host_link(staff_client, scope)
+        client = APIClient()
+        client.put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/note", {"note": "поёт вторым"}, format="json")
+        client.put(f"{_PUBLIC}/{slug}/rows/{rows[0]['id']}/backstage", {"backstage": True}, format="json")
+
+        moved = client.put(f"{_PUBLIC}/{slug}/order", {"itemIds": [rows[1]["id"], rows[0]["id"]]}, format="json")
+        assert [row["note"] for row in moved.data["data"]["rows"]] == ["", "поёт вторым"]
+        assert [row["backstage"] for row in moved.data["data"]["rows"]] == [False, True]
+
+    def test_the_columns_say_which_ones_are_about_somebody_off_the_stage(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
+        # Advice to whoever draws the table, not a gate: the cells are published either
+        # way. It is what lets the host's screen keep them covered until she asks.
+        slug, _program_id, _rows = _published_program(
+            staff_client,
+            scope,
+            name="Программа ведущего",
+            columns=["POSITION", "PARTICIPANT", "TEACHERS", "CONTACTS", "COMMENT"],
+            controls=True,
+        )
+        columns = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]["columns"]
+
+        assert {column["key"]: column["sensitive"] for column in columns} == {
+            "POSITION": False,
+            "PARTICIPANT": False,
+            "TEACHERS": False,
+            "CONTACTS": True,
+            "COMMENT": True,
+        }
 
 
 class TestPublicContent:
@@ -336,9 +479,13 @@ class TestPublicContent:
         data = APIClient().get(f"{_PUBLIC}/{slug}").data["data"]
         assert "id" not in data
         for row in data["rows"]:
-            assert set(row) == {"kind", "cells", "progress", "id"}
+            assert set(row) == {"kind", "cells", "progress", "id", "backstage", "note"}
             # A read-only edition carries no handle on a row - only the host's does.
             assert row["id"] is None
+            # Nor either of the host's own marks: who is standing behind the stage, and
+            # what she wrote to herself about an act, are not facts this link publishes.
+            assert row["backstage"] is None
+            assert row["note"] is None
 
     def test_breaks_appear_on_the_screen(self, staff_client: APIClient, scope: tuple[str, str]) -> None:
         slug, program_id, _items = _published_program(staff_client, scope)

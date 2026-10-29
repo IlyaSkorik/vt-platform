@@ -133,15 +133,16 @@ class ProtocolDetailView:
 
 @dataclass(frozen=True, slots=True)
 class PublicationResultView:
-    """What one publication did, beyond changing the protocol's status.
+    """What the worker half of a publication did: the diplomas and the mail.
 
     Publishing is three effects in one action - the page, the diplomas, the mail - and
-    an organizer who pressed the button needs to see all three land. ``diplomas_awarded``
-    and ``letters_sent`` are counts rather than lists because that is what the
-    confirmation says; the diploma register itself is the place to audit individual rows.
+    an organizer who pressed the button needs to see all three land. The page is already
+    public by the time this is built (it is what the request itself answered with), so
+    what is left here is the two that take time. ``diplomas_awarded`` and ``letters_sent``
+    are counts rather than lists because that is what the confirmation says; the diploma
+    register itself is the place to audit individual rows.
     """
 
-    protocol: ProtocolDetailView
     diplomas_awarded: int
     diplomas_created: int
     #: Awarded rows whose diploma could not be resolved at all - the gap an organizer

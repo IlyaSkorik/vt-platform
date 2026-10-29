@@ -9,7 +9,7 @@ behind each port. Adapters are stateless and cheap, so they are assembled per ca
 from __future__ import annotations
 
 from apps.programs.application.services import ProgramService
-from apps.programs.infrastructure.acl import DjangoPerformanceCatalog
+from apps.programs.infrastructure.acl import DjangoPerformanceCatalog, DjangoPerformanceSchedule
 from apps.programs.infrastructure.messaging import DjangoProgramNotifier
 from apps.programs.infrastructure.pdf import ReportLabTableRenderer
 from apps.programs.infrastructure.repositories import DjangoProgramRepository
@@ -27,4 +27,5 @@ def build_program_service() -> ProgramService:
         slugs=RandomSlugFactory(),
         tables=ReportLabTableRenderer(),
         notifier=DjangoProgramNotifier(),
+        schedule=DjangoPerformanceSchedule(),
     )

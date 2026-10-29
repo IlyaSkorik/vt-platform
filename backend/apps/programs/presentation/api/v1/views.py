@@ -119,7 +119,11 @@ def _download_stem(title: str) -> str:
 
 
 def _columns_json(columns: tuple[dto.ColumnView, ...]) -> list[dict[str, Any]]:
-    return [{"key": column.key, "label": column.label, "custom": column.custom} for column in columns]
+    # ``sensitive`` travels here too, and not because this screen covers anything: the
+    # organizer is choosing which columns to publish, and which of them carry somebody
+    # else's phone number is part of that choice. The contract declared the field from
+    # the day it existed; this is the payload catching up with it.
+    return [{"key": column.key, "label": column.label, "custom": column.custom, "sensitive": column.sensitive} for column in columns]
 
 
 def _share_json(share: dto.ProgramShareView) -> dict[str, Any]:

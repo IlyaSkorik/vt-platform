@@ -1,10 +1,20 @@
-"""The Finance context's one aggregate: a sum the platform spent.
+"""The Finance context's aggregates: what the platform spent, and what it received.
 
-:class:`PlatformExpense` is the other half of the operator's books. The commission
-side is already known — it is derived from the orders organizations take, and
-nobody types it in. What the platform *spends* has no such source: hosting, a
-contractor, an advertisement, a bank fee. It is entered by hand, and this is the
-record of one such entry.
+Two records, both entered by hand, both the half of the books that no projection
+can derive.
+
+:class:`PlatformExpense` is what the platform *spends*: hosting, a contractor, an
+advertisement, a bank fee. Nothing in the system knows about those.
+
+:class:`CommissionPayment` is what an organization *paid*. The commission it owes
+is derived — the dashboard counts its performances and applies its terms — but
+whether the money actually arrived is a fact only the operator's bank statement
+carries. Without this record the console could show what was owed and never what
+was settled, which made the one question worth asking ("who still owes us?")
+unanswerable.
+
+What follows describes :class:`PlatformExpense`; the second aggregate documents
+its own decisions at its definition.
 
 Three decisions shape it.
 
@@ -33,10 +43,10 @@ from dataclasses import InitVar, dataclass
 from datetime import date, datetime
 from typing import Final
 
-from .exceptions import InvalidExpenseDataError
-from .value_objects import ExpenseAmount, ExpenseCategory, ExpenseNote, ExpensePurpose
+from .exceptions import InvalidCommissionPaymentDataError, InvalidExpenseDataError
+from .value_objects import ExpenseAmount, ExpenseCategory, ExpenseNote, ExpensePurpose, PaymentAmount, PaymentNote
 
-__all__ = ["PlatformExpense"]
+__all__ = ["CommissionPayment", "PlatformExpense"]
 
 #: Opaque capability token proving construction went through a factory.
 _CREATION_TOKEN: Final = object()
@@ -211,6 +221,202 @@ class PlatformExpense:
     @property
     def note(self) -> ExpenseNote:
         return self._note or ExpenseNote()
+
+    @property
+    def recorded_by(self) -> uuid.UUID | None:
+        return self._recorded_by
+
+    @property
+    def created_at(self) -> datetime:
+        return self._created_at
+
+    @property
+    def updated_at(self) -> datetime:
+        return self._updated_at
+
+    @property
+    def version(self) -> int:
+        return self._version
+
+    @property
+    def persisted_version(self) -> int | None:
+        return self._persisted_version
+
+    def mark_persisted(self) -> None:
+        """Called by the repository once the row matches this aggregate."""
+        self._persisted_version = self._version
+
+
+@dataclass(slots=True, eq=False, repr=False)
+class CommissionPayment:
+    """One sum an organization actually paid the platform, entered by hand.
+
+    The counterpart to the commission the dashboard *computes*. That figure says
+    what an organization owes once its performances are counted; it says nothing
+    about whether the money arrived, and until this record existed the console had
+    no way to tell the two apart — an organization that had paid in full looked
+    exactly like one that had not paid at all.
+
+    Three decisions shape it, and they are not the expense book's.
+
+    **An organization is required.** An expense may belong to nobody, because the
+    platform really does carry costs for itself. A commission receipt always has a
+    payer: it exists to be subtracted from one organization's debt, and one with no
+    payer would be money that reduces nothing.
+
+    **There is no purpose field.** What the money was for is the commission — that
+    is the whole ledger. :class:`~apps.finance.domain.value_objects.PaymentNote`
+    carries the payment order number and the period, which is the detail that
+    actually varies.
+
+    **It is correctable, not immutable.** The operator's own bookkeeping, like the
+    expense book: a mistyped sum is a wrong debt figure until it is fixed.
+    :meth:`amend` is that fix; removal is the repository's soft delete.
+
+    ``received_at`` is a :class:`datetime.date` and not an instant — money arrives
+    on a day, the bank statement says which, and the hour it was typed into the
+    console is ``created_at`` beside it.
+
+    Framework-free (no Django, no DRF, no clock, no IO): time always arrives as ``now``.
+    """
+
+    _token: InitVar[object]
+    _id: uuid.UUID
+    #: Who paid. Required, unlike an expense's — see the class docstring.
+    _organization_id: uuid.UUID
+    _amount: PaymentAmount
+    _received_at: date
+    _created_at: datetime
+    _updated_at: datetime
+    _note: PaymentNote | None = None
+    #: Which operator recorded it. A bare id: this context has no business knowing
+    #: what people are called, and the console resolves the name it shows.
+    _recorded_by: uuid.UUID | None = None
+    _version: int = 1
+    #: The version this aggregate was last read at, or ``None`` for one never stored.
+    _persisted_version: int | None = None
+
+    def __post_init__(self, _token: object) -> None:
+        if _token is not _CREATION_TOKEN:
+            raise InvalidCommissionPaymentDataError("CommissionPayment must be created via record() or rehydrate().")
+        if not isinstance(self._organization_id, uuid.UUID):
+            raise InvalidCommissionPaymentDataError("Укажите организацию, от которой поступили деньги.")
+        if self._note is None:
+            self._note = PaymentNote()
+
+    # ------------------------------------------------------------------
+    # Factories
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def record(
+        cls,
+        *,
+        payment_id: uuid.UUID,
+        organization_id: uuid.UUID,
+        amount: PaymentAmount,
+        received_at: date,
+        now: datetime,
+        note: PaymentNote | None = None,
+        recorded_by: uuid.UUID | None = None,
+    ) -> CommissionPayment:
+        """Enter one receipt into the books."""
+        return cls(
+            _token=_CREATION_TOKEN,
+            _id=payment_id,
+            _organization_id=organization_id,
+            _amount=amount,
+            _received_at=received_at,
+            _created_at=now,
+            _updated_at=now,
+            _note=note or PaymentNote(),
+            _recorded_by=recorded_by,
+        )
+
+    @classmethod
+    def rehydrate(
+        cls,
+        *,
+        payment_id: uuid.UUID,
+        organization_id: uuid.UUID,
+        amount: PaymentAmount,
+        received_at: date,
+        created_at: datetime,
+        updated_at: datetime,
+        note: PaymentNote | None = None,
+        recorded_by: uuid.UUID | None = None,
+        version: int = 1,
+    ) -> CommissionPayment:
+        """Rebuild a stored receipt without re-running its creation rules."""
+        return cls(
+            _token=_CREATION_TOKEN,
+            _id=payment_id,
+            _organization_id=organization_id,
+            _amount=amount,
+            _received_at=received_at,
+            _created_at=created_at,
+            _updated_at=updated_at,
+            _note=note or PaymentNote(),
+            _recorded_by=recorded_by,
+            _version=version,
+            _persisted_version=version,
+        )
+
+    # ------------------------------------------------------------------
+    # Behaviour
+    # ------------------------------------------------------------------
+
+    def amend(
+        self,
+        *,
+        now: datetime,
+        amount: PaymentAmount | None = None,
+        received_at: date | None = None,
+        note: PaymentNote | None = None,
+        organization_id: uuid.UUID | None = None,
+    ) -> None:
+        """Correct a recorded receipt. ``None`` everywhere means "leave as it was".
+
+        ``organization_id`` needs no ``reassign`` flag of the kind
+        :meth:`PlatformExpense.amend` carries: a receipt always has a payer, so
+        ``None`` here can only mean "unchanged" and never "move it off the client".
+        Re-pointing a receipt at a different organization is still allowed — that is
+        what a payment credited to the wrong client needs.
+        """
+        if amount is not None:
+            self._amount = amount
+        if received_at is not None:
+            self._received_at = received_at
+        if note is not None:
+            self._note = note
+        if organization_id is not None:
+            self._organization_id = organization_id
+        self._updated_at = now
+        self._version += 1
+
+    # ------------------------------------------------------------------
+    # Read access
+    # ------------------------------------------------------------------
+
+    @property
+    def id(self) -> uuid.UUID:
+        return self._id
+
+    @property
+    def organization_id(self) -> uuid.UUID:
+        return self._organization_id
+
+    @property
+    def amount(self) -> PaymentAmount:
+        return self._amount
+
+    @property
+    def received_at(self) -> date:
+        return self._received_at
+
+    @property
+    def note(self) -> PaymentNote:
+        return self._note or PaymentNote()
 
     @property
     def recorded_by(self) -> uuid.UUID | None:

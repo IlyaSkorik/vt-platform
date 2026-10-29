@@ -103,7 +103,11 @@ function PublicProtocolTable({ protocol }: { protocol: PublicProtocol }): React.
   const keyedRows = useMemo(() => keyRows(protocol.rows), [protocol.rows]);
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 md:px-6">
+    // The page sits inside PublicLayout, whose bar is `max-w-336` with `px-4 md:px-8` —
+    // so those are the margins a reader sees the protocol aligned to. A narrower
+    // container of its own read as a column pushed off-centre under a wider header,
+    // and cost a results table the width it has the most use for.
+    <div className="mx-auto flex w-full max-w-336 flex-col gap-6 px-4 py-8 md:px-8">
       <header className="flex flex-col gap-2">
         <p className="text-muted-foreground text-sm">{heading || APP_NAME}</p>
         <div className="flex flex-wrap items-center gap-3">

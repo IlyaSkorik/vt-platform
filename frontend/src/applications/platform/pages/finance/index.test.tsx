@@ -45,15 +45,18 @@ const LEDGER: ExpenseLedger = {
 const DASHBOARD: PlatformDashboard = {
   statusCounts: {},
   applications: 0,
-  expectedFees: "1000.00",
-  settledFees: "700.00",
-  expectedCommission: "100.00",
-  settledCommission: "70.00",
+  orderFees: "1000.00",
+  performances: 10,
+  participants: 24,
+  commissionBase: "1000.00",
+  accruedCommission: "100.00",
+  receivedCommission: "70.00",
+  commissionDebt: "30.00",
   expenses: "400.00",
   unattributedExpenses: "400.00",
   profit: "-330.00",
-  potentialProfit: "-300.00",
   expensesApply: true,
+  periodApplies: false,
   organizations: [],
   competitions: [],
 };
@@ -113,13 +116,26 @@ beforeEach(() => {
 });
 
 describe("PlatformFinancePage — the bottom line", () => {
-  it("prints the difference between commission and costs", () => {
+  it("prints the difference between the commission received and the costs", () => {
     render(<PlatformFinancePage />);
 
     const summary = screen.getByRole("region", { name: "Итог платформы за всё время" });
 
+    expect(within(summary).getByText("70,00 BYN")).toBeInTheDocument();
+    expect(within(summary).getByText("400,00 BYN")).toBeInTheDocument();
     expect(within(summary).getByText("-330,00 BYN")).toBeInTheDocument();
-    expect(within(summary).getByText("-300,00 BYN")).toBeInTheDocument();
+  });
+
+  it("reports what is still owed as a debt rather than folding it into the profit", () => {
+    // 100.00 accrued against 70.00 received. The missing 30.00 is a collection
+    // problem, not income — a profit figure that counted it would be reporting
+    // money the platform does not have.
+    render(<PlatformFinancePage />);
+
+    const summary = screen.getByRole("region", { name: "Итог платформы за всё время" });
+
+    expect(within(summary).getByText("Долг организаторов")).toBeInTheDocument();
+    expect(within(summary).getByText("30,00 BYN")).toBeInTheDocument();
   });
 
   it("marks a loss rather than printing it like any other figure", () => {
