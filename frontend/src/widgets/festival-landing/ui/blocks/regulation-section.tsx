@@ -33,7 +33,7 @@ export function RegulationSection({ regulation }: RegulationSectionProps): React
             aria-hidden="true"
           />
           <div className="min-w-0">
-            <p className="break-words font-bold text-base leading-[22px] md:text-xl md:leading-[27px]">
+            <p className="break-words font-semibold text-base leading-[22px] md:text-xl md:leading-[27px]">
               {regulation.title}
             </p>
             <p className="text-foreground/40 text-sm leading-[19px] md:text-base md:leading-[22px] dark:text-foreground/70">
